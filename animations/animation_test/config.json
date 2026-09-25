@@ -1,0 +1,18 @@
+{
+  "name": "animation_test",
+  "enabled": false,
+  "platforms": ["tiktok", "youtube_shorts"],
+  "inputs": ["home_logo", "away_logo"],
+  "steps": [
+    {
+      "type": "python",
+      "name": "Préparation des données",
+      "script": "python/etape_1_prep.py"
+    },
+    {
+      "type": "python",
+      "name": "Génération de la vidéo factice",
+      "script": "python/etape_2_rendu.py"
+    }
+  ]
+}

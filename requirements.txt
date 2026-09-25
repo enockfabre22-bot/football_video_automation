@@ -1,0 +1,4 @@
+python-dotenv==1.0.0
+schedule==1.2.0
+pandas>=2.0.0
+pydub>=0.25.1

@@ -1,0 +1,15 @@
+{
+  "assets": "assets/",
+  "logos": "assets/logos/",
+  "data": "data/",
+  "jobs": {
+    "pending": "jobs/pending/",
+    "completed": "jobs/completed/",
+    "failed": "jobs/failed/"
+  },
+  "output_temp": "output/temporary/",
+  "output_videos": "output/videos/",
+  "logs": "logs/",
+  "animations": "animations/",
+  "accounts": "accounts/"
+}

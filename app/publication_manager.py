@@ -1,10 +1,16 @@
+import sys
 import json
 import random
 from pathlib import Path
 
+# Garantit que la racine du projet est dans sys.path pour importer 'platforms'
+BASE_DIR = Path(__file__).resolve().parent.parent
+if str(BASE_DIR) not in sys.path:
+    sys.path.insert(0, str(BASE_DIR))
+
 class PublicationManager:
     def __init__(self):
-        self.base_dir = Path(__file__).resolve().parent.parent
+        self.base_dir = BASE_DIR
         self.paths = self._load_json(self.base_dir / "config" / "paths.json")
         self.app_config = self._load_json(self.base_dir / "config" / "app.json")
         
@@ -63,7 +69,6 @@ class PublicationManager:
             print("  --> [DRY-RUN ACTIVÉ] Simulation de publication réussie (aucun envoi réseau réel).")
             return True
 
-        # Lorsque dry_run sera False à l'Étape 8, appel au module platforms/tiktok/uploader.py
         if platform == "tiktok":
             from platforms.tiktok.uploader import upload_tiktok_video
             return upload_tiktok_video(video_path, metadata, account_name, account_cfg)

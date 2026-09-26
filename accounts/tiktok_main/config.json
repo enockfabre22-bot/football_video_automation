@@ -1,6 +1,11 @@
 {
   "platform": "tiktok",
   "enabled": true,
+  "env_prefix": "TIKTOK_MAIN",
+  "privacy_level": "SELF_ONLY",
+  "disable_comment": false,
+  "disable_duet": false,
+  "disable_stitch": false,
   "publication_window": {
     "start": "08:00",
     "end": "10:00"

@@ -70,29 +70,43 @@ class TikTokClient:
 
     def init_video_publish(self, video_size, caption, account_cfg):
         """
-        Étape 1 de la publication TikTok : déclare la vidéo et récupère l'upload_url.
+        Étape 1 de la publication TikTok :
+        - post_mode == "inbox"  -> envoie dans les brouillons/notifications TikTok (video.upload)
+        - post_mode == "direct" -> publie directement sur le profil (video.publish)
         """
-        url = f"{self.BASE_URL}/post/publish/video/init/"
+        post_mode = account_cfg.get("post_mode", "direct")
         headers = {
             "Authorization": f"Bearer {self.access_token}",
             "Content-Type": "application/json; charset=UTF-8"
         }
 
-        payload = {
-            "post_info": {
-                "title": caption,
-                "privacy_level": account_cfg.get("privacy_level", "SELF_ONLY"),
-                "disable_duet": account_cfg.get("disable_duet", False),
-                "disable_comment": account_cfg.get("disable_comment", False),
-                "disable_stitch": account_cfg.get("disable_stitch", False)
-            },
-            "source_info": {
-                "source": "FILE_UPLOAD",
-                "video_size": video_size,
-                "chunk_size": video_size,
-                "total_chunk_count": 1
+        if post_mode == "inbox":
+            url = f"{self.BASE_URL}/post/publish/inbox/video/init/"
+            payload = {
+                "source_info": {
+                    "source": "FILE_UPLOAD",
+                    "video_size": video_size,
+                    "chunk_size": video_size,
+                    "total_chunk_count": 1
+                }
             }
-        }
+        else:
+            url = f"{self.BASE_URL}/post/publish/video/init/"
+            payload = {
+                "post_info": {
+                    "title": caption,
+                    "privacy_level": account_cfg.get("privacy_level", "SELF_ONLY"),
+                    "disable_duet": account_cfg.get("disable_duet", False),
+                    "disable_comment": account_cfg.get("disable_comment", False),
+                    "disable_stitch": account_cfg.get("disable_stitch", False)
+                },
+                "source_info": {
+                    "source": "FILE_UPLOAD",
+                    "video_size": video_size,
+                    "chunk_size": video_size,
+                    "total_chunk_count": 1
+                }
+            }
 
         response = requests.post(url, headers=headers, json=payload, timeout=30)
         return response.status_code, response.json()

@@ -2,6 +2,6 @@
   "project_name": "football_video_automation",
   "version": "1.0.0",
   "timezone": "Europe/Paris",
-  "dry_run": true,
+  "dry_run": false,
   "log_level": "INFO"
 }

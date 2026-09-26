@@ -1,9 +1,11 @@
 import os
 import requests
 from pathlib import Path
-from dotenv import load_dotenv
+from dotenv import load_dotenv, set_key
 
-load_dotenv()
+BASE_DIR = Path(__file__).resolve().parent.parent.parent
+ENV_PATH = BASE_DIR / ".env"
+load_dotenv(ENV_PATH)
 
 class TikTokClient:
     BASE_URL = "https://open.tiktokapis.com/v2"
@@ -50,7 +52,13 @@ class TikTokClient:
             if response.status_code == 200 and "access_token" in res_json:
                 self.access_token = res_json["access_token"]
                 self.refresh_token = res_json.get("refresh_token", self.refresh_token)
-                print("  --> [TikTok Auth] Jeton d'accès rafraîchi avec succès.")
+                
+                # Sauvegarde automatique sur le disque dans .env pour le VPS
+                if ENV_PATH.exists():
+                    set_key(str(ENV_PATH), f"{self.env_prefix}_ACCESS_TOKEN", self.access_token)
+                    set_key(str(ENV_PATH), f"{self.env_prefix}_REFRESH_TOKEN", self.refresh_token)
+                    
+                print("  --> [TikTok Auth] Jeton d'accès rafraîchi et sauvegardé dans .env avec succès.")
                 return True
             else:
                 err_msg = res_json.get("error_description", res_json)

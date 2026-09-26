@@ -107,7 +107,7 @@ class AnimationManager:
     def _run_step(self, step, anim_folder, job_file_path):
         """Exécute une étape spécifique selon son type (python, processing, etc.)."""
         step_type = step.get("type")
-        working_dir = anim_folder  # Dossier de travail par défaut
+        working_dir = anim_folder
 
         if step_type == "python":
             script_rel_path = step.get("script")
@@ -133,13 +133,10 @@ class AnimationManager:
                 java_exe = p_dir / "app" / "resources" / "jdk" / "bin" / "java.exe"
                 resources_dir = p_dir / "app" / "resources"
                 
-                # Important : on ne met que les dossiers de 'resources' pour que Processing trouve son 'core'
                 classpath = (
                     f"{resources_dir / 'core/library'}/*;"
                     f"{resources_dir / 'modes/java/mode'}/*"
                 )
-                
-                # On se place dans resources_dir pour que Processing trouve modes/java/keywords.txt
                 working_dir = resources_dir
                 
                 cmd = [
@@ -152,8 +149,14 @@ class AnimationManager:
                     str(job_file_path)
                 ]
             else:
+                # Sur VPS Linux : utilisation d'un écran virtuel (xvfb-run) si pas d'écran physique
                 processing_bin = os.getenv("PROCESSING_CMD", "processing-java")
-                cmd = [processing_bin, f"--sketch={sketch_folder.resolve()}", "--run", str(job_file_path)]
+                base_cmd = [processing_bin, f"--sketch={sketch_folder.resolve()}", "--run", str(job_file_path)]
+                
+                if os.name == "posix" and not os.getenv("DISPLAY"):
+                    cmd = ["xvfb-run", "-a"] + base_cmd
+                else:
+                    cmd = base_cmd
 
         else:
             print(f"      [ERREUR] Type d'étape non supporté par le moteur : {step_type}")

@@ -1,0 +1,15 @@
+[Unit]
+Description=Football Video Automation Scheduler Daemon
+After=network.target
+
+[Service]
+Type=simple
+User=ubuntu
+WorkingDirectory=/home/ubuntu/football_video_automation
+ExecStart=/home/ubuntu/football_video_automation/.venv/bin/python app/scheduler.py --daemon
+Restart=always
+RestartSec=10
+EnvironmentFile=/home/ubuntu/football_video_automation/.env
+
+[Install]
+WantedBy=multi-user.target

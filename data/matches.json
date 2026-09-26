@@ -28,6 +28,20 @@
     "competition": "Ligue 1"
   },
   {
+    "date": "2026-09-28",
+    "home": "Sweden",
+    "away": "Poland",
+    "animation": "animation_01",
+    "competition": "Ligue 1"
+  },
+  {
+    "date": "2026-09-28",
+    "home": "Turkey",
+    "away": "italie",
+    "animation": "animation_01",
+    "competition": "Ligue 1"
+  },
+  {
     "date": "2026-09-29",
     "home": "Espagne",
     "away": "Croatie",
@@ -42,8 +56,31 @@
     "competition": "Ligue 1"
   },
   {
+    "date": "2026-09-29",
+    "home": "Scotland",
+    "away": "Switzerland",
+    "animation": "animation_01",
+    "competition": "Ligue 1"
+  },
+  {
     "date": "2026-10-01",
-    "home": "Atalanta",
-    "away": "Torino"
+    "home": "Denmark",
+    "away": "portugal",
+    "animation": "animation_01",
+    "competition": "Ligue 1"
+  },
+  {
+    "date": "2026-10-01",
+    "home": "Allemagne",
+    "away": "Serbie",
+    "animation": "animation_01",
+    "competition": "Ligue 1"
+  },
+  {
+    "date": "2026-10-01",
+    "home": "Greece",
+    "away": "Pays-Bas",
+    "animation": "animation_01",
+    "competition": "Ligue 1"
   }
 ]

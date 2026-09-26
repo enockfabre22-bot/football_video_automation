@@ -1,0 +1,9 @@
+{
+  "platform": "tiktok",
+  "enabled": true,
+  "publication_window": {
+    "start": "08:00",
+    "end": "10:00"
+  },
+  "timezone": "Europe/Paris"
+}

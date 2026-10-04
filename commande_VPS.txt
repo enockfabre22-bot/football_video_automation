@@ -1,0 +1,20 @@
+-Quand tu ajoutes de nouveaux matchs sur ton PC avec python scripts/match_planner.py :
+Il te suffit de te connecter au VPS (ssh ubuntu@141.94.31.119) et de faire: 
+
+cd ~/football_video_automation
+git pull origin main
+
+
+-Pour voir si le robot tourne toujours : sudo systemctl status football-automation
+
+-Pour redémarrer le robot après un changement de configuration (config.json ou .env) : 
+sudo systemctl restart football-automation
+
+
+ -Activer et lancer le VPS en mode automatique 24h/24h:
+sudo cp scripts/football-automation.service /etc/systemd/system/
+sudo systemctl daemon-reload
+sudo systemctl enable football-automation
+sudo systemctl start football-automation
+
+-Arrête le robot : sudo systemctl stop football-automation

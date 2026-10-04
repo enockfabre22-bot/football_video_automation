@@ -84,16 +84,30 @@
     "competition": "Ligue 1"
   },
   {
-    "date": "2026-10-05",
-    "home": "Alaves",
-    "away": "Algérie",
+    "date": "2026-10-06",
+    "home": "Angleterre",
+    "away": "Czech Republic",
     "animation": "animation_01",
     "competition": "Ligue 1"
   },
   {
-    "date": "2026-10-05",
-    "home": "Angleterre",
-    "away": "Allemagne",
+    "date": "2026-10-06",
+    "home": "Croatie",
+    "away": "Espagne",
+    "animation": "animation_01",
+    "competition": "Ligue 1"
+  },
+  {
+    "date": "2026-10-06",
+    "home": "italie",
+    "away": "Turkey",
+    "animation": "animation_01",
+    "competition": "Ligue 1"
+  },
+  {
+    "date": "2026-10-06",
+    "home": "France",
+    "away": "Belgique",
     "animation": "animation_01",
     "competition": "Ligue 1"
   }

@@ -35,7 +35,7 @@ def setup_logging():
 def prepare_daily_videos(account_name="tiktok_main"):
     """
     Phase 1 : Détecte les matchs du lendemain, génère les vidéos et prépare les métadonnées.
-    Retourne la liste des jobs prêts à être publiés (statut SCHEDULED).
+    Associe chaque match à un slot de publication spécifique défini dans la configuration du compte.
     """
     setup_logging()
     print("==================================================")
@@ -51,18 +51,33 @@ def prepare_daily_videos(account_name="tiktok_main"):
     if not account_cfg.get("enabled", False):
         print(f"[INFO] Le compte '{account_name}' est désactivé. Arrêt.")
         return []
-    platform = account_cfg.get("platform", "tiktok")
 
     valid_matches = match_mgr.get_valid_matches_for_tomorrow()
     if not valid_matches:
         print("[INFO] Aucun match valide à traiter pour demain.")
         return []
 
+    # Récupération de la grille de programmation (ou création d'un slot par défaut pour la rétrocompatibilité)
+    schedule_slots = account_cfg.get("schedule_slots", [])
+    if not schedule_slots:
+        default_window = account_cfg.get("publication_window", {"start": "08:00", "end": "10:00"})
+        schedule_slots = [{
+            "id": "default_slot",
+            "animation_strategy": "random",
+            "window": default_window
+        }]
+
     ready_jobs = []
 
-    for match in valid_matches:
+    # On associe chaque match à un slot disponible
+    for index, match in enumerate(valid_matches):
+        if index >= len(schedule_slots):
+            print(f"[INFO] Plus de matchs que de créneaux disponibles. Le match {match['home']} VS {match['away']} est ignoré pour aujourd'hui.")
+            break
+            
+        slot = schedule_slots[index]
         home, away, date_str = match["home"], match["away"], match["date"]
-        print(f"\n--- Préparation du match : {home} VS {away} ({date_str}) ---")
+        print(f"\n--- Préparation du match : {home} VS {away} ({date_str}) [Slot: {slot.get('id', 'N/A')}] ---")
 
         if job_mgr.is_match_already_completed(date_str, home, away, account_name):
             print(f"[SKIP] Ce match a déjà été publié sur '{account_name}'. Ignoré.")
@@ -71,15 +86,28 @@ def prepare_daily_videos(account_name="tiktok_main"):
         job = job_mgr.find_existing_pending_job(date_str, home, away, account_name)
         
         if not job:
-            anim_config = anim_mgr.select_animation(platform=platform)
+            # Extraction des règles du slot
+            strategy = slot.get("animation_strategy", "random")
+            target_anim = slot.get("target_animation")
+            exclude_anims = slot.get("exclude_animations", [])
+
+            # Sélection de l'animation en respectant la stratégie du slot
+            anim_config = anim_mgr.select_animation(
+                account_name=account_name, 
+                strategy=strategy, 
+                target_animation=target_anim, 
+                exclude_animations=exclude_anims
+            )
+            
             if not anim_config:
-                print(f"[ERREUR] Aucune animation disponible pour la plateforme {platform}.")
+                print(f"[ERREUR] Impossible de satisfaire la stratégie du slot '{slot.get('id')}'. Match ignoré.")
                 continue
+                
             job = job_mgr.create_job(match, anim_config["name"], account_name)
-            print(f"[JOB] Nouveau job créé : {job['job_id']}")
+            print(f"[JOB] Nouveau job créé : {job['job_id']} (Animation: {anim_config['name']})")
         else:
             print(f"[JOB] Reprise d'un job existant : {job['job_id']} (Statut : {job['status']})")
-            anims = anim_mgr.discover_animations(platform=platform)
+            anims = anim_mgr.discover_animations(account_name=account_name)
             anim_config = next((a for a in anims if a["name"] == job["animation"]), None)
 
         job_id = job["job_id"]
@@ -98,7 +126,10 @@ def prepare_daily_videos(account_name="tiktok_main"):
         else:
             print(f"[CACHE] Vidéo déjà prête et validée ({Path(video_path).name}).")
 
+        # Génération des métadonnées ET injection de la fenêtre de publication du slot
         metadata = job.get("metadata") or pub_mgr.generate_metadata(match)
+        metadata["publish_window"] = slot.get("window", {"start": "08:00", "end": "20:00"})
+        
         updated_job = job_mgr.update_status(job_id, "SCHEDULED", video_path=video_path, metadata=metadata)
         ready_jobs.append(updated_job)
 

@@ -21,10 +21,10 @@ class AnimationManager:
         with open(filepath, 'r', encoding='utf-8') as f:
             return json.load(f)
 
-    def discover_animations(self, platform="tiktok"):
+    def discover_animations(self, account_name):
         """
         Parcourt le dossier animations/ et retourne la liste des animations
-        activées et compatibles avec la plateforme cible.
+        activées et compatibles avec le compte cible.
         """
         available = []
         if not self.animations_dir.exists():
@@ -36,19 +36,49 @@ class AnimationManager:
                 if config_file.exists():
                     try:
                         config = self._load_json(config_file)
-                        if config.get("enabled", False) and platform in config.get("platforms", []):
+                        if config.get("enabled", False) and account_name in config.get("accounts", []):
                             config["folder_path"] = anim_folder
                             available.append(config)
                     except Exception as e:
                         print(f"[ERREUR] Lecture impossible de {config_file}: {e}")
         return available
 
-    def select_animation(self, platform="tiktok"):
-        """Choisit une animation aléatoirement parmi celles disponibles (Stratégie V1)."""
-        animations = self.discover_animations(platform)
+    def select_animation(self, account_name, strategy="random", target_animation=None, exclude_animations=None):
+        """
+        Choisit une animation selon une stratégie donnée.
+        - strategy: "random" ou "fixed"
+        - target_animation: requis si strategy est "fixed"
+        - exclude_animations: liste d'animations à ignorer si strategy est "random"
+        """
+        if exclude_animations is None:
+            exclude_animations = []
+
+        animations = self.discover_animations(account_name)
         if not animations:
+            print(f"[ERREUR] Aucune animation configurée pour le compte '{account_name}'.")
             return None
-        return random.choice(animations)
+
+        if strategy == "fixed":
+            if not target_animation:
+                print("[ERREUR] La stratégie 'fixed' requiert 'target_animation'.")
+                return None
+            for anim in animations:
+                if anim["name"] == target_animation:
+                    return anim
+            print(f"[ERREUR] L'animation cible '{target_animation}' est introuvable ou désactivée.")
+            return None
+
+        elif strategy == "random":
+            # On retire les animations exclues de la liste des choix possibles
+            valid_animations = [a for a in animations if a["name"] not in exclude_animations]
+            if not valid_animations:
+                print(f"[ERREUR] Toutes les animations ont été exclues pour '{account_name}'.")
+                return None
+            return random.choice(valid_animations)
+
+        else:
+            print(f"[ERREUR] Stratégie '{strategy}' inconnue.")
+            return None
 
     def execute_animation(self, match_data, animation_config, job_id):
         """
@@ -185,17 +215,19 @@ if __name__ == "__main__":
     match_mgr = MatchManager()
     anim_mgr = AnimationManager()
 
-    anims = anim_mgr.discover_animations(platform="tiktok")
-    print(f"[INFO] {len(anims)} animation(s) découverte(s) pour TikTok : {[a['name'] for a in anims]}")
+    anims = anim_mgr.discover_animations(account_name="tiktok_main")
+    print(f"[INFO] {len(anims)} animation(s) découverte(s) pour le compte tiktok_main : {[a['name'] for a in anims]}")
 
     matchs = match_mgr.get_valid_matches_for_tomorrow()
 
     if matchs and anims:
         premier_match = matchs[0]
-        anim_choisie = anim_mgr.select_animation(platform="tiktok")
+        # Test avec la nouvelle signature
+        anim_choisie = anim_mgr.select_animation(account_name="tiktok_main", strategy="random")
         
-        clean_home = premier_match['home'].replace(' ', '_')
-        clean_away = premier_match['away'].replace(' ', '_')
-        job_id = f"{premier_match['date']}_{clean_home}_{clean_away}_{anim_choisie['name']}"
-        
-        video_finale = anim_mgr.execute_animation(premier_match, anim_choisie, job_id)
+        if anim_choisie:
+            clean_home = premier_match['home'].replace(' ', '_')
+            clean_away = premier_match['away'].replace(' ', '_')
+            job_id = f"{premier_match['date']}_{clean_home}_{clean_away}_{anim_choisie['name']}"
+            
+            video_finale = anim_mgr.execute_animation(premier_match, anim_choisie, job_id)

@@ -1,7 +1,7 @@
 {
   "name": "animation_01",
   "enabled": true,
-  "platforms": ["tiktok", "youtube_shorts"],
+  "accounts": ["tiktok_main"],
   "inputs": ["home_logo", "away_logo"],
   "steps": [
     {

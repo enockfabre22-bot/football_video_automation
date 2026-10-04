@@ -72,6 +72,11 @@ class PublicationManager:
         if platform == "tiktok":
             from platforms.tiktok.uploader import upload_tiktok_video
             return upload_tiktok_video(video_path, metadata, account_name, account_cfg)
+            
+        elif platform == "youtube":
+            from platforms.youtube.uploader import upload_youtube_video
+            return upload_youtube_video(video_path, metadata, account_name, account_cfg, self.base_dir)
+            
         else:
             print(f"  --> [ERREUR] Plateforme non supportée : {platform}")
             return False

@@ -20,4 +20,5 @@ jobs/failed/*.json
 
 # Ressources lourdes (optionnel, selon la taille de tes assets)
 # assets/music/*
-# assets/sounds/*
+# assets/sounds/*test.mp4
+token.json

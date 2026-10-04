@@ -10,12 +10,6 @@ class AutomationScheduler:
         self.account_name = account_name
         self.pub_mgr = PublicationManager()
 
-    def get_window_config(self):
-        """Lit la fenêtre horaire depuis accounts/<account_name>/config.json."""
-        cfg = self.pub_mgr.get_account_config(self.account_name)
-        window = cfg.get("publication_window", {"start": "08:00", "end": "10:00"})
-        return window.get("start", "08:00"), window.get("end", "10:00")
-
     def pick_random_times_in_window(self, start_str, end_str, count=1):
         """
         Tire au sort 'count' horaires (HH:MM) répartis dans la fenêtre configurée.
@@ -35,23 +29,28 @@ class AutomationScheduler:
     def daily_orchestration(self):
         """
         Job quotidien : prépare les vidéos des matchs du lendemain et planifie
-        leur publication à une heure aléatoire dans la fenêtre autorisée.
+        leur publication selon la fenêtre (slot) associée au job préparé.
         """
         setup_logging()
-        start_win, end_win = self.get_window_config()
         print(f"\n⏰ [SCHEDULER] Lancement du contrôle quotidien pour '{self.account_name}'")
-        print(f"⏰ [SCHEDULER] Fenêtre de publication configurée : {start_win} -> {end_win}")
 
         ready_jobs = prepare_daily_videos(self.account_name)
         if not ready_jobs:
             print("⏰ [SCHEDULER] Aucun job à planifier aujourd'hui.")
             return
 
-        publish_times = self.pick_random_times_in_window(start_win, end_win, len(ready_jobs))
-
-        for job, pub_time in zip(ready_jobs, publish_times):
+        for job in ready_jobs:
             job_id = job["job_id"]
-            print(f"📅 [PLANIFICATION] Le job '{job_id}' est programmé pour publication à {pub_time}")
+            
+            # --- MODIFICATION ICI : On lit la fenêtre depuis les métadonnées du job ---
+            window = job.get("metadata", {}).get("publish_window", {"start": "08:00", "end": "10:00"})
+            start_win = window.get("start", "08:00")
+            end_win = window.get("end", "10:00")
+            
+            # Tirage d'une seule heure pour ce job spécifique
+            pub_time = self.pick_random_times_in_window(start_win, end_win, 1)[0]
+            
+            print(f"📅 [PLANIFICATION] Le job '{job_id}' est programmé pour publication à {pub_time} (Créneau: {start_win}-{end_win})")
             
             # Planifie une exécution unique (CancelJob après envoi)
             schedule.every().day.at(pub_time).do(self._execute_and_cancel, job=job).tag(job_id)
@@ -65,16 +64,25 @@ class AutomationScheduler:
     def start_daemon(self):
         """Lance la boucle infinie (pour le service VPS 24h/24)."""
         setup_logging()
-        start_win, end_win = self.get_window_config()
         
-        # On lance la préparation des vidéos 30 minutes avant l'ouverture de la fenêtre
-        prep_dt = datetime.strptime(start_win, "%H:%M") - timedelta(minutes=30)
+        # On lit la config globale juste pour savoir quand lancer l'orchestration quotidienne
+        cfg = self.pub_mgr.get_account_config(self.account_name)
+        
+        # Si on a des slots, on prend le début du premier slot pour caler l'heure de préparation
+        slots = cfg.get("schedule_slots", [])
+        if slots:
+            earliest_start = min([s.get("window", {}).get("start", "08:00") for s in slots])
+        else:
+            window = cfg.get("publication_window", {"start": "08:00", "end": "10:00"})
+            earliest_start = window.get("start", "08:00")
+            
+        # On lance la préparation des vidéos 30 minutes avant le premier slot
+        prep_dt = datetime.strptime(earliest_start, "%H:%M") - timedelta(minutes=30)
         prep_time_str = prep_dt.strftime("%H:%M")
 
         print("==================================================")
         print(f"🤖 DÉMON SCHEDULER ACTIF (Compte : {self.account_name})")
         print(f"   - Heure de préparation des rendus : {prep_time_str}")
-        print(f"   - Fenêtre de publication          : {start_win} -> {end_win}")
         print("==================================================")
 
         schedule.every().day.at(prep_time_str).do(self.daily_orchestration)
@@ -88,12 +96,14 @@ class AutomationScheduler:
 # ==========================================
 if __name__ == "__main__":
     import sys
-    sched = AutomationScheduler("tiktok_main")
+    # <-- Tu peux changer "tiktok_main" par "youtube_main" ici pour tester ton compte YouTube
+    account_to_run = "tiktok_main" 
+    sched = AutomationScheduler(account_to_run)
     
     if "--daemon" in sys.argv:
         sched.start_daemon()
     else:
-        start_w, end_w = sched.get_window_config()
-        tirage = sched.pick_random_times_in_window(start_w, end_w, count=2)
-        print(f"[TEST SCHEDULER] Fenêtre lue : {start_w} -> {end_w}")
-        print(f"[TEST SCHEDULER] Exemple de 2 horaires tirés au sort pour demain : {tirage}")
+        # Simple test de la fonction de tirage aléatoire
+        tirage = sched.pick_random_times_in_window("08:00", "10:00", count=2)
+        print(f"[TEST SCHEDULER] Compte ciblé : {account_to_run}")
+        print(f"[TEST SCHEDULER] Exemple de 2 horaires tirés au sort pour le créneau 08:00-10:00 : {tirage}")

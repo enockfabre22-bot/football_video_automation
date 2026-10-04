@@ -8,7 +8,7 @@ import processing.data.JSONObject;
 //  PARAMÈTRES GLOBAUX & CONTRAT MOTEUR
 // ============================================================
 boolean exporterFrames = true;   
-float timeSpeed      = 0.04;   
+float timeSpeed      = 0.4;   
 float gameTime       = 0;       
 boolean matchTermine  = false;
 

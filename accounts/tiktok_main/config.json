@@ -7,9 +7,19 @@
   "disable_comment": false,
   "disable_duet": false,
   "disable_stitch": false,
-  "publication_window": {
-    "start": "08:00",
-    "end": "10:00"
-  },
+  "schedule_slots": [
+    {
+      "id": "matin_fixe",
+      "window": {"start": "08:00", "end": "10:00"},
+      "animation_strategy": "fixed",
+      "target_animation": "animation_01"
+    },
+    {
+      "id": "soir_aleatoire",
+      "window": {"start": "17:00", "end": "18:00"},
+      "animation_strategy": "random",
+      "exclude_animations": [""]
+    }
+  ],
   "timezone": "Europe/Paris"
 }

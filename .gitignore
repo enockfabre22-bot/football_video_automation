@@ -22,3 +22,6 @@ jobs/failed/*.json
 # assets/music/*
 # assets/sounds/*test.mp4
 token.json
+
+#autres fichiers
+commande_VPS.txt

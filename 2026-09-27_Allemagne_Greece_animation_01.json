@@ -1,0 +1,16 @@
+{
+    "job_id": "2026-09-27_Allemagne_Greece_animation_01",
+    "match": {
+        "date": "2026-09-27",
+        "home": "Allemagne",
+        "away": "Greece",
+        "animation": "animation_01",
+        "competition": "Ligue 1"
+    },
+    "resources": {
+        "home_logo": "C:\\Users\\enock\\Documents\\football_video_automation\\assets\\logos\\Allemagne.png",
+        "away_logo": "C:\\Users\\enock\\Documents\\football_video_automation\\assets\\logos\\Greece.png"
+    },
+    "work_dir": "C:\\Users\\enock\\Documents\\football_video_automation\\output\\temporary\\2026-09-27_Allemagne_Greece_animation_01",
+    "output_video": "C:\\Users\\enock\\Documents\\football_video_automation\\output\\videos\\2026-09-27_Allemagne_Greece_animation_01.mp4"
+}

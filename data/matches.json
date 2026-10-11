@@ -110,5 +110,13 @@
     "away": "Belgique",
     "animation": "animation_01",
     "competition": "Ligue 1"
+  },
+   {
+    "date": "2026-10-12",
+    "home": "Arsenal",
+    "away": "Chelsea",
+    "animation": "animation_01",
+    "competition": "Ligue 1"
   }
+
 ]

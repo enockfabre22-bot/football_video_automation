@@ -1,11 +1,18 @@
 {
   "platform": "youtube",
   "enabled": true,
-  "privacy_status": "public",
-  "category_id": "24",
-  "publication_window": {
-    "start": "08:00",
-    "end": "10:00"
+  "privacy_status": "private",
+  "metadata_rules": {
+    "hashtag_count": 4,
+    "youtube_tag_count": 5
   },
+  "schedule_slots": [
+    {
+      "id": "soir_fixe_yt",
+      "window": {"start": "18:00", "end": "20:00"},
+      "animation_strategy": "fixed",
+      "target_animation": "animation_01"
+    }
+  ],
   "timezone": "Europe/Paris"
 }

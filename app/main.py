@@ -1,5 +1,5 @@
 import sys
-from datetime import datetime
+from datetime import datetime, timedelta
 from pathlib import Path
 from match_manager import MatchManager
 from animation_manager import AnimationManager
@@ -34,8 +34,8 @@ def setup_logging():
 
 def prepare_daily_videos(account_name="tiktok_main"):
     """
-    Phase 1 : Détecte les matchs du lendemain, génère les vidéos et prépare les métadonnées.
-    Associe chaque match à un slot de publication spécifique défini dans la configuration du compte.
+    Phase 1 : Itère sur les créneaux (slots) du compte, sélectionne l'animation,
+    associe un match si requis, génère les métadonnées spécifiques, puis produit la vidéo.
     """
     setup_logging()
     print("==================================================")
@@ -48,16 +48,14 @@ def prepare_daily_videos(account_name="tiktok_main"):
     pub_mgr = PublicationManager()
 
     account_cfg = pub_mgr.get_account_config(account_name)
-    if not account_cfg.get("enabled", False):
-        print(f"[INFO] Le compte '{account_name}' est désactivé. Arrêt.")
+    if not account_cfg or not account_cfg.get("enabled", False):
+        print(f"[INFO] Le compte '{account_name}' est introuvable ou désactivé. Arrêt.")
         return []
 
+    # Chargement global des matchs pour demain
     valid_matches = match_mgr.get_valid_matches_for_tomorrow()
-    if not valid_matches:
-        print("[INFO] Aucun match valide à traiter pour demain.")
-        return []
+    match_index = 0
 
-    # Récupération de la grille de programmation (ou création d'un slot par défaut pour la rétrocompatibilité)
     schedule_slots = account_cfg.get("schedule_slots", [])
     if not schedule_slots:
         default_window = account_cfg.get("publication_window", {"start": "08:00", "end": "10:00"})
@@ -69,53 +67,73 @@ def prepare_daily_videos(account_name="tiktok_main"):
 
     ready_jobs = []
 
-    # On associe chaque match à un slot disponible
-    for index, match in enumerate(valid_matches):
-        if index >= len(schedule_slots):
-            print(f"[INFO] Plus de matchs que de créneaux disponibles. Le match {match['home']} VS {match['away']} est ignoré pour aujourd'hui.")
-            break
-            
-        slot = schedule_slots[index]
-        home, away, date_str = match["home"], match["away"], match["date"]
-        print(f"\n--- Préparation du match : {home} VS {away} ({date_str}) [Slot: {slot.get('id', 'N/A')}] ---")
+    for slot in schedule_slots:
+        slot_id = slot.get("id", "unknown_slot")
+        print(f"\n--- Évaluation du créneau : [{slot_id}] ---")
 
+        strategy = slot.get("animation_strategy", "random")
+        target_anim = slot.get("target_animation")
+        exclude_anims = slot.get("exclude_animations", [])
+
+        # 1. Sélection de l'animation
+        anim_config = anim_mgr.select_animation(
+            account_name=account_name, 
+            strategy=strategy, 
+            target_animation=target_anim, 
+            exclude_animations=exclude_anims
+        )
+        
+        if not anim_config:
+            print(f"[ERREUR] Impossible de satisfaire la stratégie du slot '{slot_id}'. Créneau ignoré.")
+            continue
+
+        requires_match = anim_config.get("requires_match_data", False)
+        match_data = None
+        
+        # 2. Gestion de la dépendance au calendrier
+        if requires_match:
+            if match_index >= len(valid_matches):
+                print(f"[INFO] Plus de matchs disponibles pour remplir le slot '{slot_id}'. Ignoré.")
+                continue
+            match_data = valid_matches[match_index]
+            match_index += 1
+            home, away, date_str = match_data["home"], match_data["away"], match_data["date"]
+            print(f"  -> Match assigné : {home} VS {away} ({date_str})")
+        else:
+            print(f"  -> Animation '{anim_config['name']}' sélectionnée (Ne requiert aucun match)")
+            date_str = (datetime.now() + timedelta(days=1)).strftime("%Y-%m-%d")
+            # Faux match_data pour préserver la structure du JobManager sans le casser
+            home, away = slot_id, "no_match" 
+            match_data = {"date": date_str, "home": home, "away": away, "resources": {}}
+
+        # 3. Création ou récupération du Job (Anti-doublons)
         if job_mgr.is_match_already_completed(date_str, home, away, account_name):
-            print(f"[SKIP] Ce match a déjà été publié sur '{account_name}'. Ignoré.")
+            print(f"[SKIP] La tâche '{home}_VS_{away}' a déjà été complétée sur '{account_name}'. Ignorée.")
             continue
 
         job = job_mgr.find_existing_pending_job(date_str, home, away, account_name)
         
         if not job:
-            # Extraction des règles du slot
-            strategy = slot.get("animation_strategy", "random")
-            target_anim = slot.get("target_animation")
-            exclude_anims = slot.get("exclude_animations", [])
-
-            # Sélection de l'animation en respectant la stratégie du slot
-            anim_config = anim_mgr.select_animation(
-                account_name=account_name, 
-                strategy=strategy, 
-                target_animation=target_anim, 
-                exclude_animations=exclude_anims
-            )
-            
-            if not anim_config:
-                print(f"[ERREUR] Impossible de satisfaire la stratégie du slot '{slot.get('id')}'. Match ignoré.")
-                continue
-                
-            job = job_mgr.create_job(match, anim_config["name"], account_name)
-            print(f"[JOB] Nouveau job créé : {job['job_id']} (Animation: {anim_config['name']})")
+            job = job_mgr.create_job(match_data, anim_config["name"], account_name)
+            print(f"[JOB] Nouveau job créé : {job['job_id']}")
         else:
-            print(f"[JOB] Reprise d'un job existant : {job['job_id']} (Statut : {job['status']})")
-            anims = anim_mgr.discover_animations(account_name=account_name)
-            anim_config = next((a for a in anims if a["name"] == job["animation"]), None)
+            print(f"[JOB] Reprise du job existant : {job['job_id']} (Statut : {job['status']})")
 
         job_id = job["job_id"]
         video_path = job.get("video_path")
 
+        # 4. Génération des métadonnées (Titre, description, hashtags piochés au hasard)
+        metadata = job.get("metadata")
+        if not metadata:
+            metadata = anim_mgr.generate_job_metadata(anim_config, account_cfg, match_data if requires_match else None)
+            job["metadata"] = metadata
+
+        # 5. Exécution de l'animation
         if job["status"] in ["PENDING", "RUNNING"] or not video_path or not Path(video_path).exists():
             job_mgr.update_status(job_id, "RUNNING")
-            video_path = anim_mgr.execute_animation(match, anim_config, job_id)
+            
+            # Injection de match_data complet si requis, ou None, ET des metadata générées
+            video_path = anim_mgr.execute_animation(match_data if requires_match else None, anim_config, job_id, job_metadata=metadata)
             
             if not video_path:
                 job_mgr.update_status(job_id, "FAILED", error="Échec lors de la génération de la vidéo")
@@ -126,10 +144,8 @@ def prepare_daily_videos(account_name="tiktok_main"):
         else:
             print(f"[CACHE] Vidéo déjà prête et validée ({Path(video_path).name}).")
 
-        # Génération des métadonnées ET injection de la fenêtre de publication du slot
-        metadata = job.get("metadata") or pub_mgr.generate_metadata(match)
+        # 6. Planification finale
         metadata["publish_window"] = slot.get("window", {"start": "08:00", "end": "20:00"})
-        
         updated_job = job_mgr.update_status(job_id, "SCHEDULED", video_path=video_path, metadata=metadata)
         ready_jobs.append(updated_job)
 
@@ -162,4 +178,8 @@ def run_daily_workflow(account_name="tiktok_main"):
         publish_scheduled_job(job, account_name)
 
 if __name__ == "__main__":
-    run_daily_workflow()
+    import sys
+    account_to_test = "tiktok_main"
+    if len(sys.argv) > 1:
+        account_to_test = sys.argv[1]
+    run_daily_workflow(account_to_test)

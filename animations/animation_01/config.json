@@ -1,17 +1,31 @@
 {
   "name": "animation_01",
   "enabled": true,
-  "accounts": ["tiktok_main"],
+  "accounts": ["tiktok_main", "youtube_main"],
+  "requires_match_data": true, 
   "inputs": ["home_logo", "away_logo"],
+  "metadata": {
+    "titles": [
+      "Simulation : {home} vs {away} ⚽",
+      "Qui va gagner ? {home} ou {away} !"
+    ],
+    "descriptions": ["Abonne-toi pour plus de pronostics !"],
+    "hashtags": ["#football", "#pronostic", "#simulation", "#match"],
+    "youtube_tags": ["football", "pes", "fifa", "simulation"]
+  },
+  "thumbnail": {
+    "enabled": true,
+    "source_image": "thumbnail_source.png"
+  },
   "steps": [
     {
       "type": "processing",
-      "name": "Simulation physique et export des frames HD",
+      "name": "Simulation physique",
       "project": "processing/arena_match"
     },
     {
       "type": "python",
-      "name": "Mixage audio Pydub et encodage FFmpeg",
+      "name": "Mixage",
       "script": "python/compiler_foot.py"
     }
   ]

@@ -6,6 +6,9 @@ import sys
 from pathlib import Path
 from dotenv import load_dotenv
 
+# Import du nouveau générateur de miniatures
+from thumbnail_generator import generate_custom_thumbnail
+
 load_dotenv()
 
 class AnimationManager:
@@ -22,10 +25,6 @@ class AnimationManager:
             return json.load(f)
 
     def discover_animations(self, account_name):
-        """
-        Parcourt le dossier animations/ et retourne la liste des animations
-        activées et compatibles avec le compte cible.
-        """
         available = []
         if not self.animations_dir.exists():
             return available
@@ -44,12 +43,6 @@ class AnimationManager:
         return available
 
     def select_animation(self, account_name, strategy="random", target_animation=None, exclude_animations=None):
-        """
-        Choisit une animation selon une stratégie donnée.
-        - strategy: "random" ou "fixed"
-        - target_animation: requis si strategy est "fixed"
-        - exclude_animations: liste d'animations à ignorer si strategy est "random"
-        """
         if exclude_animations is None:
             exclude_animations = []
 
@@ -69,7 +62,6 @@ class AnimationManager:
             return None
 
         elif strategy == "random":
-            # On retire les animations exclues de la liste des choix possibles
             valid_animations = [a for a in animations if a["name"] not in exclude_animations]
             if not valid_animations:
                 print(f"[ERREUR] Toutes les animations ont été exclues pour '{account_name}'.")
@@ -80,16 +72,47 @@ class AnimationManager:
             print(f"[ERREUR] Stratégie '{strategy}' inconnue.")
             return None
 
-    def execute_animation(self, match_data, animation_config, job_id):
-        """
-        Prépare l'environnement du job, exécute le pipeline étape par étape
-        et valide la présence de la vidéo finale.
-        """
+    def generate_job_metadata(self, animation_config, account_config, match_data=None):
+        anim_meta = animation_config.get("metadata", {})
+        acc_rules = account_config.get("metadata_rules", {})
+        
+        titles = anim_meta.get("titles", ["Simulation Football"])
+        descriptions = anim_meta.get("descriptions", [""])
+        
+        chosen_title = random.choice(titles) if titles else "Simulation Football"
+        chosen_desc = random.choice(descriptions) if descriptions else ""
+        
+        if match_data:
+            home = match_data.get("home", "Domicile")
+            away = match_data.get("away", "Extérieur")
+            chosen_title = chosen_title.replace("{home}", home).replace("{away}", away)
+            chosen_desc = chosen_desc.replace("{home}", home).replace("{away}", away)
+            
+        hashtags_pool = anim_meta.get("hashtags", [])
+        nb_hashtags = acc_rules.get("hashtag_count", 3)
+        nb_hashtags = min(nb_hashtags, len(hashtags_pool))
+        chosen_hashtags = random.sample(hashtags_pool, nb_hashtags) if nb_hashtags > 0 else []
+        
+        yt_tags_pool = anim_meta.get("youtube_tags", [])
+        nb_yt_tags = acc_rules.get("youtube_tag_count", 0)
+        nb_yt_tags = min(nb_yt_tags, len(yt_tags_pool))
+        chosen_yt_tags = random.sample(yt_tags_pool, nb_yt_tags) if nb_yt_tags > 0 else []
+        
+        return {
+            "title": chosen_title,
+            "description": chosen_desc,
+            "hashtags": chosen_hashtags,
+            "youtube_tags": chosen_yt_tags
+        }
+
+    def execute_animation(self, match_data, animation_config, job_id, job_metadata=None):
+        if job_metadata is None:
+            job_metadata = {}
+
         anim_name = animation_config["name"]
         anim_folder = animation_config["folder_path"]
         print(f"\n[ANIMATION] Démarrage de '{anim_name}' pour le job : {job_id}")
 
-        # 1. Préparation des dossiers et chemins du Job
         job_work_dir = self.temp_dir / job_id
         job_work_dir.mkdir(parents=True, exist_ok=True)
         self.videos_dir.mkdir(parents=True, exist_ok=True)
@@ -97,16 +120,16 @@ class AnimationManager:
         output_video_path = self.videos_dir / f"{job_id}.mp4"
         job_file_path = job_work_dir / "job.json"
 
-        # 2. Création du contrat d'interface (job.json)
         job_payload = {
             "job_id": job_id,
             "animation": anim_name,
             "match": {
-                "date": match_data["date"],
-                "home": match_data["home"],
-                "away": match_data["away"]
+                "date": match_data["date"] if match_data else "",
+                "home": match_data["home"] if match_data else "",
+                "away": match_data["away"] if match_data else ""
             },
-            "resources": match_data["resources"],
+            "metadata": job_metadata,
+            "resources": match_data["resources"] if match_data else {},
             "work_dir": str(job_work_dir.resolve()),
             "output_video": str(output_video_path.resolve())
         }
@@ -114,7 +137,6 @@ class AnimationManager:
         with open(job_file_path, 'w', encoding='utf-8') as f:
             json.dump(job_payload, f, indent=4, ensure_ascii=False)
 
-        # 3. Exécution séquentielle des étapes (steps)
         steps = animation_config.get("steps", [])
         for index, step in enumerate(steps, start=1):
             step_type = step.get("type")
@@ -126,16 +148,34 @@ class AnimationManager:
                 print(f"[ERREUR] Échec critique à l'étape {index} ({step_name}). Abandon du rendu.")
                 return None
 
-        # 4. Validation de la vidéo finale produite (Test 10)
+        # Validation de la vidéo finale
         if output_video_path.exists() and output_video_path.stat().st_size > 0:
             print(f"[SUCCÈS] Vidéo finale générée et validée : {output_video_path}")
+            
+            # --- NOUVEAU : Bloc Miniature Facultative ---
+            thumb_config = animation_config.get("thumbnail", {})
+            if thumb_config.get("enabled", False):
+                source_filename = thumb_config.get("source_image", "thumbnail_source.png")
+                source_path = anim_folder / source_filename
+                output_thumb_path = self.videos_dir / f"{job_id}.jpg"
+                
+                if source_path.exists():
+                    print(f"  --> Création de la miniature personnalisée depuis {source_filename}...")
+                    title = job_metadata.get("title", "Simulation Football")
+                    t_path = generate_custom_thumbnail(str(source_path), str(output_thumb_path), title)
+                    if t_path:
+                        # Injection dynamique dans les métadonnées (le dictionnaire est modifié en place)
+                        job_metadata["thumbnail_path"] = t_path
+                        print(f"      [SUCCÈS] Miniature sauvegardée : {output_thumb_path.name}")
+                else:
+                    print(f"  --> [AVERTISSEMENT] Image source de miniature introuvable : {source_path}")
+            
             return output_video_path
         else:
             print(f"[ERREUR] Le pipeline s'est terminé mais la vidéo finale est absente ou vide : {output_video_path}")
             return None
 
     def _run_step(self, step, anim_folder, job_file_path):
-        """Exécute une étape spécifique selon son type (python, processing, etc.)."""
         step_type = step.get("type")
         working_dir = anim_folder
 
@@ -179,7 +219,6 @@ class AnimationManager:
                     str(job_file_path)
                 ]
             else:
-                # Sur VPS Linux : utilisation d'un écran virtuel (xvfb-run) si pas d'écran physique
                 processing_bin = os.getenv("PROCESSING_CMD", "processing-java")
                 base_cmd = [processing_bin, f"--sketch={sketch_folder.resolve()}", "--run", str(job_file_path)]
                 
@@ -192,42 +231,14 @@ class AnimationManager:
             print(f"      [ERREUR] Type d'étape non supporté par le moteur : {step_type}")
             return False
 
-        # Lancement du sous-processus avec le bon working_dir
         try:
             result = subprocess.run(cmd, cwd=working_dir, capture_output=True, text=True, check=False)
-            
             if result.stdout:
                 print(result.stdout.rstrip())
-            
             if result.returncode != 0:
                 print(f"      [ERREUR CODE {result.returncode}] Détail :\n{result.stderr.rstrip()}")
                 return False
-                
             return True
         except Exception as e:
             print(f"      [EXCEPTION] Erreur lors de l'exécution de la commande : {e}")
             return False
-
-if __name__ == "__main__":
-    from match_manager import MatchManager
-    
-    print("--- Test du Moteur d'Animations ---")
-    match_mgr = MatchManager()
-    anim_mgr = AnimationManager()
-
-    anims = anim_mgr.discover_animations(account_name="tiktok_main")
-    print(f"[INFO] {len(anims)} animation(s) découverte(s) pour le compte tiktok_main : {[a['name'] for a in anims]}")
-
-    matchs = match_mgr.get_valid_matches_for_tomorrow()
-
-    if matchs and anims:
-        premier_match = matchs[0]
-        # Test avec la nouvelle signature
-        anim_choisie = anim_mgr.select_animation(account_name="tiktok_main", strategy="random")
-        
-        if anim_choisie:
-            clean_home = premier_match['home'].replace(' ', '_')
-            clean_away = premier_match['away'].replace(' ', '_')
-            job_id = f"{premier_match['date']}_{clean_home}_{clean_away}_{anim_choisie['name']}"
-            
-            video_finale = anim_mgr.execute_animation(premier_match, anim_choisie, job_id)

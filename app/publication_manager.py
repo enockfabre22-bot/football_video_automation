@@ -1,4 +1,5 @@
 import sys
+import os
 import json
 import random
 from pathlib import Path
@@ -27,10 +28,43 @@ class PublicationManager:
             raise FileNotFoundError(f"Configuration du compte introuvable : {config_path}")
         return self._load_json(config_path)
 
+    def get_all_active_accounts(self, accounts_dir="accounts"):
+        """
+        Parcourt le dossier accounts/ et retourne une liste des configurations 
+        de tous les comptes dont le statut 'enabled' est à True.
+        """
+        active_accounts = []
+        if not os.path.exists(accounts_dir):
+            print(f"⚠️ [MANAGER] Le dossier {accounts_dir} est introuvable.")
+            return active_accounts
+
+        for account_folder in os.listdir(accounts_dir):
+            config_path = os.path.join(accounts_dir, account_folder, "config.json")
+            
+            if os.path.isfile(config_path):
+                try:
+                    with open(config_path, "r", encoding="utf-8") as f:
+                        config = json.load(f)
+                        
+                        # On injecte le nom du dossier comme identifiant interne de sécurité
+                        config["internal_id"] = account_folder 
+                        
+                        if config.get("enabled", False):
+                            active_accounts.append(config)
+                        else:
+                            print(f"⏸️ [MANAGER] Compte '{account_folder}' ignoré (désactivé).")
+                            
+                except json.JSONDecodeError:
+                    print(f"❌ [MANAGER] Erreur de syntaxe JSON dans {config_path}")
+                except Exception as e:
+                    print(f"❌ [MANAGER] Impossible de lire {config_path} : {str(e)}")
+                    
+        return active_accounts
+
     def generate_metadata(self, match_data, max_hashtags=5):
         """
-        Construit le titre (Home VS Away), sélectionne les hashtags
-        et assemble la légende finale (Test 12).
+        Fallback V1 : Construit le format V2 de base si l'animation 
+        n'a pas fourni ses propres métadonnées.
         """
         title = f"{match_data['home']} VS {match_data['away']}"
         
@@ -41,14 +75,12 @@ class PublicationManager:
 
         k = min(len(hashtags_pool), max_hashtags)
         selected_hashtags = random.sample(hashtags_pool, k) if k > 0 else []
-        
-        hashtags_str = " ".join(selected_hashtags)
-        full_caption = f"{title} {hashtags_str}".strip()
 
         return {
             "title": title,
+            "description": "",
             "hashtags": selected_hashtags,
-            "caption": full_caption
+            "youtube_tags": []
         }
 
     def publish_video(self, video_path, metadata, account_name="tiktok_main"):
@@ -60,9 +92,19 @@ class PublicationManager:
         platform = account_cfg.get("platform", "tiktok")
         dry_run = self.app_config.get("dry_run", True)
 
+        # Extraction sécurisée du nouveau format V2
+        title = metadata.get("title", "Vidéo automatique")
+        desc = metadata.get("description", "")
+        hashtags_str = " ".join(metadata.get("hashtags", []))
+        
+        # Légende d'affichage pour les logs
+        display_caption = f"{desc} {hashtags_str}".strip()
+        if not display_caption:
+            display_caption = title
+
         print(f"\n[PUBLICATION] Préparation pour le compte '{account_name}' ({platform})")
-        print(f"  --> Titre    : {metadata['title']}")
-        print(f"  --> Légende  : {metadata['caption']}")
+        print(f"  --> Titre    : {title}")
+        print(f"  --> Légende  : {display_caption}")
         print(f"  --> Fichier  : {Path(video_path).name}")
 
         if dry_run:

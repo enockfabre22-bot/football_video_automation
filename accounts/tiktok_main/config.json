@@ -7,6 +7,10 @@
   "disable_comment": false,
   "disable_duet": false,
   "disable_stitch": false,
+  "metadata_rules": {
+    "hashtag_count": 3,
+    "youtube_tag_count": 0
+  },
   "schedule_slots": [
     {
       "id": "matin_01",
@@ -18,25 +22,7 @@
       "id": "soir_aleatoire",
       "window": {"start": "17:00", "end": "18:00"},
       "animation_strategy": "random",
-      "exclude_animations": [""]
-    },
-    {
-      "id": "matin_02",
-      "window": {"start": "10:00", "end": "11:00"},
-      "animation_strategy": "fixed",
-      "target_animation": "animation_01"
-    },
-    {
-      "id": "midi_01",
-      "window": {"start": "12:00", "end": "14:00"},
-      "animation_strategy": "fixed",
-      "target_animation": "animation_01"
-    },
-    {
-      "id": "journee_large",
-      "window": {"start": "08:00", "end": "18:00"},
-      "animation_strategy": "fixed",
-      "target_animation": "animation_01"
+      "exclude_animations": ["animation_02"]
     }
   ],
   "timezone": "Europe/Paris"

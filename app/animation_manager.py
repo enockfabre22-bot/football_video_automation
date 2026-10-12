@@ -88,6 +88,16 @@ class AnimationManager:
             chosen_title = chosen_title.replace("{home}", home).replace("{away}", away)
             chosen_desc = chosen_desc.replace("{home}", home).replace("{away}", away)
             
+            # --- NOUVEAU : Remplacement dynamique basé sur les fichiers en entrée (ressources) ---
+            if "resources" in match_data and isinstance(match_data["resources"], dict):
+                for res_key, res_path in match_data["resources"].items():
+                    if isinstance(res_path, str):
+                        # Extrait "a_thousant_years" depuis "chemin/a_thousant_years.mid"
+                        file_name_without_ext = Path(res_path).stem 
+                        # Remplace la balise (ex: {midi}) par le nom du fichier
+                        chosen_title = chosen_title.replace(f"{{{res_key}}}", file_name_without_ext)
+                        chosen_desc = chosen_desc.replace(f"{{{res_key}}}", file_name_without_ext)
+            
         hashtags_pool = anim_meta.get("hashtags", [])
         nb_hashtags = acc_rules.get("hashtag_count", 3)
         nb_hashtags = min(nb_hashtags, len(hashtags_pool))

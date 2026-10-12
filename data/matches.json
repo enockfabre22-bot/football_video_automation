@@ -111,12 +111,25 @@
     "animation": "animation_01",
     "competition": "Ligue 1"
   },
-   {
+  {
     "date": "2026-10-12",
     "home": "Arsenal",
     "away": "Chelsea",
     "animation": "animation_01",
     "competition": "Ligue 1"
+  },
+  {
+    "date": "2026-10-14",
+    "home": "Arsenal",
+    "away": "Lille",
+    "animation": "animation_01",
+    "competition": "Ligue 1"
+  },
+  {
+    "date": "2026-10-14",
+    "home": "Galatasaray",
+    "away": "barca",
+    "animation": "animation_01",
+    "competition": "Ligue 1"
   }
-
 ]

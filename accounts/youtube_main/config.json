@@ -1,6 +1,6 @@
 {
   "platform": "youtube",
-  "enabled": true,
+  "enabled": false,
   "privacy_status": "private",
   "metadata_rules": {
     "hashtag_count": 4,

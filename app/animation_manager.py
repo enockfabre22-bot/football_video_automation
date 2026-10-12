@@ -88,13 +88,12 @@ class AnimationManager:
             chosen_title = chosen_title.replace("{home}", home).replace("{away}", away)
             chosen_desc = chosen_desc.replace("{home}", home).replace("{away}", away)
             
-            # --- NOUVEAU : Remplacement dynamique basé sur les fichiers en entrée (ressources) ---
+            # Remplacement dynamique basé sur les fichiers en entrée (ressources)
             if "resources" in match_data and isinstance(match_data["resources"], dict):
                 for res_key, res_path in match_data["resources"].items():
                     if isinstance(res_path, str):
-                        # Extrait "a_thousant_years" depuis "chemin/a_thousant_years.mid"
+                        # Extrait le nom du fichier sans l'extension
                         file_name_without_ext = Path(res_path).stem 
-                        # Remplace la balise (ex: {midi}) par le nom du fichier
                         chosen_title = chosen_title.replace(f"{{{res_key}}}", file_name_without_ext)
                         chosen_desc = chosen_desc.replace(f"{{{res_key}}}", file_name_without_ext)
             
@@ -107,7 +106,27 @@ class AnimationManager:
         nb_yt_tags = acc_rules.get("youtube_tag_count", 0)
         nb_yt_tags = min(nb_yt_tags, len(yt_tags_pool))
         chosen_yt_tags = random.sample(yt_tags_pool, nb_yt_tags) if nb_yt_tags > 0 else []
-        
+
+        # Remplacement dynamique dans les tags générés
+        if match_data:
+            home_nom = match_data.get("home", "Domicile")
+            away_nom = match_data.get("away", "Extérieur")
+            
+            # Hashtags (on retire les espaces pour que #Real Madrid devienne #RealMadrid)
+            home_ht = home_nom.replace(" ", "")
+            away_ht = away_nom.replace(" ", "")
+            
+            chosen_hashtags = [
+                h.replace("{home}", home_ht).replace("{away}", away_ht) 
+                for h in chosen_hashtags
+            ]
+            
+            # YouTube Tags (les espaces sont autorisés nativement)
+            chosen_yt_tags = [
+                t.replace("{home}", home_nom).replace("{away}", away_nom) 
+                for t in chosen_yt_tags
+            ]
+
         return {
             "title": chosen_title,
             "description": chosen_desc,
@@ -162,7 +181,7 @@ class AnimationManager:
         if output_video_path.exists() and output_video_path.stat().st_size > 0:
             print(f"[SUCCÈS] Vidéo finale générée et validée : {output_video_path}")
             
-            # --- NOUVEAU : Bloc Miniature Facultative ---
+            # Bloc Miniature Facultative
             thumb_config = animation_config.get("thumbnail", {})
             if thumb_config.get("enabled", False):
                 source_filename = thumb_config.get("source_image", "thumbnail_source.png")
@@ -174,7 +193,7 @@ class AnimationManager:
                     title = job_metadata.get("title", "Simulation Football")
                     t_path = generate_custom_thumbnail(str(source_path), str(output_thumb_path), title)
                     if t_path:
-                        # Injection dynamique dans les métadonnées (le dictionnaire est modifié en place)
+                        # Injection dynamique dans les métadonnées
                         job_metadata["thumbnail_path"] = t_path
                         print(f"      [SUCCÈS] Miniature sauvegardée : {output_thumb_path.name}")
                 else:

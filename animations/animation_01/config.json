@@ -1,20 +1,31 @@
 {
   "name": "animation_01",
   "enabled": true,
-  "accounts": ["tiktok_main", "youtube_main"],
+  "accounts": ["tiktok_main", "youtube_avantfoot"],
   "requires_match_data": true, 
   "inputs": ["home_logo", "away_logo"],
   "metadata": {
     "titles": [
       "Simulation : {home} vs {away} ⚽",
-      "Qui va gagner ? {home} ou {away} !"
+      "Who will Win ? {home} ou {away} !",
+      "{home} vs {away} — Who Takes the Win? ⚽",
+      "{home} or {away}? Make Your Prediction! 👀",
+      "Who Deserves to Win? 🏆 {home} vs {away}",
+      "{home} vs {away} — What's Your Prediction? 🔮",
+      "{home} vs {away} ⚔️ Who Wins?",
+      "{home} or {away}? 🤔",
+      "Predicting {home} vs {away} Before Kick-Off! ⚽",
+      "Before Kick-Off: Who Wins? ⚽",
+      "Drop Your Prediction Before Kick-Off! ⚽",
+      "Comment Your Winner! 🏆",
+      "What's Your Score Prediction? ⚽"
     ],
-    "descriptions": ["Abonne-toi pour plus de pronostics !"],
-    "hashtags": ["#football", "#pronostic", "#simulation", "#match"],
-    "youtube_tags": ["football", "pes", "fifa", "simulation"]
+    "descriptions": ["Drop your prediction in the comments!"],
+    "hashtags": ["#football", "#pronostic", "#simulation", "#match", "#{home}", "#{away}","#foot","#footballtiktok"],
+    "youtube_tags": ["football", "pes", "fifa", "simulation", "foot", "matchfoot","{home}","{away}"]
   },
   "thumbnail": {
-    "enabled": true,
+    "enabled": false,
     "source_image": "thumbnail_source.png"
   },
   "steps": [

@@ -1,0 +1,38 @@
+{
+  "platform": "youtube",
+  "enabled": true,
+  "privacy_status": "public",
+  "metadata_rules": {
+    "hashtag_count": 4,
+    "youtube_tag_count": 15
+  },
+  "schedule_slots": [
+    {
+      "id": "matin_01",
+      "window": {"start": "07:00", "end": "09:00"},
+      "animation_strategy": "fixed",
+      "target_animation": "animation_01"
+    },
+    {
+      "id": "matin_02",
+      "window": {"start": "09:00", "end": "10:30"},
+      "animation_strategy": "fixed",
+      "target_animation": "animation_01"
+    },
+    {
+      "id": "midi",
+      "window": {"start": "11:00", "end": "13:00"},
+      "animation_strategy": "fixed",
+      "target_animation": "animation_01"
+    },
+    
+    
+    {
+      "id": "soir_aleatoire",
+      "window": {"start": "17:00", "end": "18:00"},
+      "animation_strategy": "random",
+      "exclude_animations": ["animation_02"]
+    }
+  ],
+  "timezone": "Europe/Paris"
+}

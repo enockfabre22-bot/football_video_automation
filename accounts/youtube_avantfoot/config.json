@@ -9,19 +9,19 @@
   "schedule_slots": [
     {
       "id": "matin_01",
-      "window": {"start": "17:20", "end": "17:40"},
+      "window": {"start": "8:00", "end": "10:00"},
       "animation_strategy": "fixed",
       "target_animation": "animation_01"
     },
     {
       "id": "matin_02",
-      "window": {"start": "18:00", "end": "18:10"},
+      "window": {"start": "10:30", "end": "11:30"},
       "animation_strategy": "fixed",
       "target_animation": "animation_01"
     },
     {
       "id": "midi",
-      "window": {"start": "19:00", "end": "19:30"},
+      "window": {"start": "12:00", "end": "14:30"},
       "animation_strategy": "fixed",
       "target_animation": "animation_01"
     },
@@ -29,7 +29,7 @@
     
     {
       "id": "soir_aleatoire",
-      "window": {"start": "19:40", "end": "20:00"},
+      "window": {"start": "16:40", "end": "10:00"},
       "animation_strategy": "random",
       "exclude_animations": ["animation_02"]
     }

@@ -127,8 +127,17 @@ class AnimationManager:
                 for t in chosen_yt_tags
             ]
 
+        # --- NOUVEAUTÉ : Ajout sécurisé des hashtags dans le titre ---
+        titre_final = chosen_title
+        for hashtag in chosen_hashtags:
+            # On vérifie si l'ajout du hashtag (+1 pour l'espace) dépasse 100 caractères
+            if len(titre_final) + len(hashtag) + 1 <= 100:
+                titre_final += f" {hashtag}"
+            else:
+                break # Stop : on protège la publication YouTube
+
         return {
-            "title": chosen_title,
+            "title": titre_final,
             "description": chosen_desc,
             "hashtags": chosen_hashtags,
             "youtube_tags": chosen_yt_tags

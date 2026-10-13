@@ -1,0 +1,34 @@
+{
+    "job_id": "2026-10-06_Croatie_Espagne_animation_01",
+    "status": "PUBLISHED",
+    "account": "tiktok_main",
+    "animation": "animation_01",
+    "match": {
+        "date": "2026-10-06",
+        "home": "Croatie",
+        "away": "Espagne",
+        "resources": {
+            "home_logo": "/home/ubuntu/football_video_automation/assets/logos/Croatie.png",
+            "away_logo": "/home/ubuntu/football_video_automation/assets/logos/Espagne.png"
+        }
+    },
+    "video_path": "/home/ubuntu/football_video_automation/output/videos/2026-10-06_Croatie_Espagne_animation_01.mp4",
+    "metadata": {
+        "title": "Croatie VS Espagne",
+        "hashtags": [
+            "#soccer",
+            "#premierleague",
+            "#football",
+            "#prediction",
+            "#ligue1"
+        ],
+        "caption": "Croatie VS Espagne #soccer #premierleague #football #prediction #ligue1",
+        "publish_window": {
+            "start": "17:30",
+            "end": "21:00"
+        }
+    },
+    "error": null,
+    "created_at": "2026-10-05T17:06:41",
+    "updated_at": "2026-10-05T18:05:19"
+}

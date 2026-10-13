@@ -1,0 +1,43 @@
+{
+  "platform": "tiktok",
+  "enabled": true,
+  "env_prefix": "TIKTOK_MAIN",
+  "post_mode": "inbox",
+  "privacy_level": "SELF_ONLY",
+  "disable_comment": false,
+  "disable_duet": false,
+  "disable_stitch": false,
+  "schedule_slots": [
+    {
+      "id": "matin_01",
+      "window": {"start": "17:30", "end": "21:00"},
+      "animation_strategy": "fixed",
+      "target_animation": "animation_01"
+    },
+    {
+      "id": "soir_aleatoire",
+      "window": {"start": "17:30", "end": "21:00"},
+      "animation_strategy": "random",
+      "exclude_animations": [""]
+    },
+    {
+      "id": "matin_02",
+      "window": {"start": "17:30", "end": "21:00"},
+      "animation_strategy": "fixed",
+      "target_animation": "animation_01"
+    },
+    {
+      "id": "midi_01",
+      "window": {"start": "17:30", "end": "21:00"},
+      "animation_strategy": "fixed",
+      "target_animation": "animation_01"
+    },
+    {
+      "id": "journee_large",
+      "window": {"start": "17:30", "end": "21:00"},
+      "animation_strategy": "fixed",
+      "target_animation": "animation_01"
+    }
+  ],
+  "timezone": "Europe/Paris"
+}

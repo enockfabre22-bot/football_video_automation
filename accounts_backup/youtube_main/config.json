@@ -1,0 +1,11 @@
+{
+  "platform": "youtube",
+  "enabled": true,
+  "privacy_status": "public",
+  "category_id": "24",
+  "publication_window": {
+    "start": "08:00",
+    "end": "10:00"
+  },
+  "timezone": "Europe/Paris"
+}

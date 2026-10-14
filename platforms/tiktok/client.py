@@ -126,4 +126,10 @@ class TikTokClient:
         with open(video_file, "rb") as f:
             response = requests.put(upload_url, headers=headers, data=f, timeout=300)
 
-        return response.status_code in [200, 201, 206]
+        if response.status_code in [200, 201, 206]:
+            return True
+        else:
+            # --- NOUVEAUTÉ : Affichage de l'erreur exacte de TikTok ---
+            print(f"  --> [TikTok API DEBUG] Code HTTP : {response.status_code}")
+            print(f"  --> [TikTok API DEBUG] Réponse serveur : {response.text}")
+            return False

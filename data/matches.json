@@ -159,5 +159,327 @@
     "away": "Crystal Palace",
     "animation": "animation_01",
     "competition": "Ligue 1"
+  },
+  {
+    "date": "2026-10-16",
+    "home": "rb leipzig",
+    "away": "ac milan",
+    "animation": "animation_01",
+    "competition": "Ligue 1"
+  },
+  {
+    "date": "2026-10-16",
+    "home": "Benfica",
+    "away": "Celtic FC",
+    "animation": "animation_01",
+    "competition": "Ligue 1"
+  },
+  {
+    "date": "2026-10-16",
+    "home": "celta vigo",
+    "away": "juventus",
+    "animation": "animation_01",
+    "competition": "Ligue 1"
+  },
+  {
+    "date": "2026-10-16",
+    "home": "le mans",
+    "away": "toulouse",
+    "animation": "animation_01",
+    "competition": "Ligue 1"
+  },
+  {
+    "date": "2026-10-17",
+    "home": "strasbourg",
+    "away": "paris saint germain",
+    "animation": "animation_01",
+    "competition": "Ligue 1"
+  },
+  {
+    "date": "2026-10-17",
+    "home": "brentford",
+    "away": "liverpool",
+    "animation": "animation_01",
+    "competition": "Ligue 1"
+  },
+  {
+    "date": "2026-10-17",
+    "home": "manchester city",
+    "away": "ipswich",
+    "animation": "animation_01",
+    "competition": "Ligue 1"
+  },
+  {
+    "date": "2026-10-17",
+    "home": "real betis",
+    "away": "barcelona",
+    "animation": "animation_01",
+    "competition": "Ligue 1"
+  },
+  {
+    "date": "2026-10-18",
+    "home": "angers",
+    "away": "marseille",
+    "animation": "animation_01",
+    "competition": "Ligue 1"
+  },
+  {
+    "date": "2026-10-18",
+    "home": "nottingham forest",
+    "away": "arsenal",
+    "animation": "animation_01",
+    "competition": "Ligue 1"
+  },
+  {
+    "date": "2026-10-18",
+    "home": "real madrid",
+    "away": "sevilla",
+    "animation": "animation_01",
+    "competition": "Ligue 1"
+  },
+  {
+    "date": "2026-10-18",
+    "home": "bayer leverkusen",
+    "away": "sc freiburg",
+    "animation": "animation_01",
+    "competition": "Ligue 1"
+  },
+  {
+    "date": "2026-10-19",
+    "home": "tottenham",
+    "away": "coventry",
+    "animation": "animation_01",
+    "competition": "Ligue 1"
+  },
+  {
+    "date": "2026-10-19",
+    "home": "getafe",
+    "away": "rayo vallecano",
+    "animation": "animation_01",
+    "competition": "Ligue 1"
+  },
+  {
+    "date": "2026-10-20",
+    "home": "liverpool",
+    "away": "villarreal",
+    "animation": "animation_01",
+    "competition": "Ligue 1"
+  },
+  {
+    "date": "2026-10-20",
+    "home": "paris saint germain",
+    "away": "barcelona",
+    "animation": "animation_01",
+    "competition": "Ligue 1"
+  },
+  {
+    "date": "2026-10-20",
+    "home": "napoli",
+    "away": "bodo glimt",
+    "animation": "animation_01",
+    "competition": "Ligue 1"
+  },
+  {
+    "date": "2026-10-20",
+    "home": "vfb stuttgart",
+    "away": "atletico madrid",
+    "animation": "animation_01",
+    "competition": "Ligue 1"
+  },
+  {
+    "date": "2026-10-21",
+    "home": "bayern munchen",
+    "away": "arsenal",
+    "animation": "animation_01",
+    "competition": "Ligue 1"
+  },
+  {
+    "date": "2026-10-21",
+    "home": "real madrid",
+    "away": "rb leipzig",
+    "animation": "animation_01",
+    "competition": "Ligue 1"
+  },
+  {
+    "date": "2026-10-21",
+    "home": "como",
+    "away": "manchester united",
+    "animation": "animation_01",
+    "competition": "Ligue 1"
+  },
+  {
+    "date": "2026-10-22",
+    "home": "juventus",
+    "away": "rennes",
+    "animation": "animation_01",
+    "competition": "Ligue 1"
+  },
+  {
+    "date": "2026-10-22",
+    "home": "bournemouth",
+    "away": "ac milan",
+    "animation": "animation_01",
+    "competition": "Ligue 1"
+  },
+  {
+    "date": "2026-10-22",
+    "home": "1899 hoffenheim",
+    "away": "lyon",
+    "animation": "animation_01",
+    "competition": "Ligue 1"
+  },
+  {
+    "date": "2026-10-23",
+    "home": "stade brestois 29",
+    "away": "nice",
+    "animation": "animation_01",
+    "competition": "Ligue 1"
+  },
+  {
+    "date": "2026-10-23",
+    "home": "ipswich",
+    "away": "nottingham forest",
+    "animation": "animation_01",
+    "competition": "Ligue 1"
+  },
+  {
+    "date": "2026-10-24",
+    "home": "aston villa",
+    "away": "manchester city",
+    "animation": "animation_01",
+    "competition": "Ligue 1"
+  },
+  {
+    "date": "2026-10-24",
+    "home": "arsenal",
+    "away": "everton",
+    "animation": "animation_01",
+    "competition": "Ligue 1"
+  },
+  {
+    "date": "2026-10-24",
+    "home": "atletico madrid",
+    "away": "deportivo la coruna",
+    "animation": "animation_01",
+    "competition": "Ligue 1"
+  },
+  {
+    "date": "2026-10-24",
+    "home": "chelsea",
+    "away": "tottenham",
+    "animation": "animation_01",
+    "competition": "Ligue 1"
+  },
+  {
+    "date": "2026-10-25",
+    "home": "barcelona",
+    "away": "real madrid",
+    "animation": "animation_01",
+    "competition": "Ligue 1"
+  },
+  {
+    "date": "2026-10-25",
+    "home": "paris saint germain",
+    "away": "lyon",
+    "animation": "animation_01",
+    "competition": "Ligue 1"
+  },
+  {
+    "date": "2026-10-25",
+    "home": "liverpool",
+    "away": "brighton",
+    "animation": "animation_01",
+    "competition": "Ligue 1"
+  },
+  {
+    "date": "2026-10-25",
+    "home": "sc freiburg",
+    "away": "bayern munchen",
+    "animation": "animation_01",
+    "competition": "Ligue 1"
+  },
+  {
+    "date": "2026-10-26",
+    "home": "sevilla",
+    "away": "osasuna",
+    "animation": "animation_01",
+    "competition": "Ligue 1"
+  },
+  {
+    "date": "2026-10-27",
+    "home": "torino",
+    "away": "como",
+    "animation": "animation_01",
+    "competition": "Ligue 1"
+  },
+  {
+    "date": "2026-10-27",
+    "home": "as roma",
+    "away": "cagliari",
+    "animation": "animation_01",
+    "competition": "Ligue 1"
+  },
+  {
+    "date": "2026-10-28",
+    "home": "ac milan",
+    "away": "bologna",
+    "animation": "animation_01",
+    "competition": "Ligue 1"
+  },
+  {
+    "date": "2026-10-29",
+    "home": "fiorentina",
+    "away": "atalanta",
+    "animation": "animation_01",
+    "competition": "Ligue 1"
+  },
+  {
+    "date": "2026-10-30",
+    "home": "le havre",
+    "away": "paris saint germain",
+    "animation": "animation_01",
+    "competition": "Ligue 1"
+  },
+  {
+    "date": "2026-10-30",
+    "home": "lille",
+    "away": "lens",
+    "animation": "animation_01",
+    "competition": "Ligue 1"
+  },
+  {
+    "date": "2026-10-30",
+    "home": "villarreal",
+    "away": "espanyol",
+    "animation": "animation_01",
+    "competition": "Ligue 1"
+  },
+  {
+    "date": "2026-10-31",
+    "home": "chelsea",
+    "away": "manchester united",
+    "animation": "animation_01",
+    "competition": "Ligue 1"
+  },
+  {
+    "date": "2026-10-31",
+    "home": "manchester city",
+    "away": "brighton",
+    "animation": "animation_01",
+    "competition": "Ligue 1"
+  },
+  {
+    "date": "2026-10-31",
+    "home": "barcelona",
+    "away": "alaves",
+    "animation": "animation_01",
+    "competition": "Ligue 1"
+  },
+  {
+    "date": "2026-10-31",
+    "home": "bayern munchen",
+    "away": "borussia dortmund",
+    "animation": "animation_01",
+    "competition": "Ligue 1"
   }
 ]

@@ -1,0 +1,43 @@
+{
+  "name": "BallClash",
+  "enabled": true,
+  "accounts": ["tiktok_main", "youtube_avantfoot"],
+  "requires_match_data": true, 
+  "inputs": ["home_logo", "away_logo","home","away"],
+  "metadata": {
+    "titles": [
+      "Simulation : {home} vs {away} ⚽",
+      "Who will Win ? {home} ou {away} !",
+      "{home} vs {away} — Who Takes the Win? ⚽",
+      "{home} or {away}? Make Your Prediction! 👀",
+      "Who Deserves to Win? 🏆 {home} vs {away}",
+      "{home} vs {away} — What's Your Prediction? 🔮",
+      "{home} vs {away} ⚔️ Who Wins?",
+      "{home} or {away}? 🤔",
+      "Predicting {home} vs {away} Before Kick-Off! ⚽",
+      "Before Kick-Off: Who Wins? ⚽",
+      "Drop Your Prediction Before Kick-Off! ⚽",
+      "Comment Your Winner! 🏆",
+      "What's Your Score Prediction? ⚽"
+    ],
+    "descriptions": ["Drop your prediction in the comments!"],
+    "hashtags": ["#football", "#pronostic", "#simulation", "#match", "#{home}", "#{away}","#foot","#footballtiktok"],
+    "youtube_tags": ["football", "pes", "fifa", "simulation", "foot", "matchfoot","{home}","{away}"]
+  },
+  "thumbnail": {
+    "enabled": false,
+    "source_image": "thumbnail_source.png"
+  },
+  "steps": [
+    {
+      "type": "processing",
+      "name": "Simulation physique",
+      "project": "processing/BallClash" 
+    },
+    {
+      "type": "python",
+      "name": "Mixage",
+      "script": "python/compiler_foot.py"
+    }
+  ]
+}

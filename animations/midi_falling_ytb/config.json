@@ -1,0 +1,39 @@
+{
+  "name": "midi_falling_ytb",
+  "enabled": true,
+  "accounts": ["youtube_piano"],
+  "requires_match_data": false, 
+  "inputs": ["midi", "jpg"],
+  "metadata": {
+    "titles": [
+      "{midi} (Official Piano Tutorial)",
+      "{midi} Official Piano"
+    ],
+    "descriptions": [""],
+    "hashtags": ["#tonyann", "#taurus", "#pianotutorial", "#piano"],
+    "youtube_tags": [
+      "ClassicalMusic", "TonyAnn", "Piano", "Pianosolo", "InstrumentalPiano", "ClassicalPiano", "{midi}", "piano tuto"
+    ]
+  },
+  "thumbnail": {
+    "enabled": true,
+    "source_image": "thumbnail_source.jpg"
+  },
+  "steps": [
+    {
+      "type": "processing",
+      "name": "Simulation physique",
+      "project": "processing/midi_falling_ytb"
+    },
+    {
+      "type": "processing",
+      "name": "audio out",
+      "project": "processing/AudioPlayerTXT"
+    },
+    {
+      "type": "python",
+      "name": "Mixage",
+      "script": "python/compiler.py"
+    }
+  ]
+}

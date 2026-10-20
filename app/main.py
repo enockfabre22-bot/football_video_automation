@@ -1,4 +1,5 @@
 import sys
+import random
 from datetime import datetime, timedelta
 from pathlib import Path
 from match_manager import MatchManager
@@ -66,6 +67,7 @@ def prepare_daily_videos(account_name="tiktok_main"):
         }]
 
     ready_jobs = []
+    base_dir = Path(__file__).resolve().parent.parent
 
     for slot in schedule_slots:
         slot_id = slot.get("id", "unknown_slot")
@@ -90,7 +92,7 @@ def prepare_daily_videos(account_name="tiktok_main"):
         requires_match = anim_config.get("requires_match_data", False)
         match_data = None
         
-        # 2. Gestion de la dépendance au calendrier
+        # 2. Gestion de la dépendance au calendrier ou aux fichiers externes (Piano)
         if requires_match:
             if match_index >= len(valid_matches):
                 print(f"[INFO] Plus de matchs disponibles pour remplir le slot '{slot_id}'. Ignoré.")
@@ -102,9 +104,42 @@ def prepare_daily_videos(account_name="tiktok_main"):
         else:
             print(f"  -> Animation '{anim_config['name']}' sélectionnée (Ne requiert aucun match)")
             date_str = (datetime.now() + timedelta(days=1)).strftime("%Y-%m-%d")
-            # Faux match_data pour préserver la structure du JobManager sans le casser
             home, away = slot_id, "no_match" 
             match_data = {"date": date_str, "home": home, "away": away, "resources": {}}
+
+            # SÉLECTION DYNAMIQUE DES FICHIERS (MIDI, JPG, etc.)
+            inputs = anim_config.get("inputs", [])
+            
+            if "midi" in inputs:
+                midi_dir = base_dir / "assets" / "midi"
+                midis = list(midi_dir.glob("*.mid"))
+                if not midis:
+                    print("[ERREUR] Aucun fichier .mid trouvé dans assets/midi/")
+                    continue
+                chosen_midi = random.choice(midis)
+                match_data["resources"]["midi_file"] = str(chosen_midi)
+                
+                # Extraction "Titre - Auteur" (ex: "Euphoria - Tony Ann.mid")
+                stem = chosen_midi.stem
+                if "-" in stem:
+                    parts = stem.split("-", 1)
+                    match_data["song_title"] = parts[0].strip()
+                    match_data["song_author"] = parts[1].strip()
+                else:
+                    match_data["song_title"] = stem
+                    match_data["song_author"] = "Unknown"
+                    
+                print(f"  -> Audio sélectionné : {match_data['song_title']} (par {match_data['song_author']})")
+
+            if "jpg" in inputs:
+                jpg_dir = base_dir / "assets" / "jpg"
+                jpgs = list(jpg_dir.glob("*.jpg"))
+                if not jpgs:
+                    print("[ERREUR] Aucune image .jpg trouvée dans assets/jpg/")
+                    continue
+                chosen_jpg = random.choice(jpgs)
+                match_data["resources"]["bg_image"] = str(chosen_jpg)
+                print(f"  -> Fond sélectionné : {chosen_jpg.name}")
 
         # 3. Création ou récupération du Job (Anti-doublons)
         if job_mgr.is_match_already_completed(date_str, home, away, account_name):
@@ -122,18 +157,38 @@ def prepare_daily_videos(account_name="tiktok_main"):
         job_id = job["job_id"]
         video_path = job.get("video_path")
 
-        # 4. Génération des métadonnées (Titre, description, hashtags piochés au hasard)
+        # 4. Génération des métadonnées
         metadata = job.get("metadata")
         if not metadata:
             metadata = anim_mgr.generate_job_metadata(anim_config, account_cfg, match_data if requires_match else None)
+            
+            # Injection des données musicales dans les métadonnées
+            if not requires_match and "song_title" in match_data:
+                song_title = match_data["song_title"]
+                metadata["song_title"] = song_title
+                metadata["song_author"] = match_data["song_author"]
+                
+                # AJOUT : On glisse les fichiers dans les métadonnées pour être sûr que Processing les lise !
+                if "resources" in match_data:
+                    metadata["midi_file"] = match_data["resources"].get("midi_file", "")
+                    metadata["bg_image"] = match_data["resources"].get("bg_image", "")
+                
+                # Remplacement de {midi} dans les textes configurés
+                if "title" in metadata:
+                    metadata["title"] = metadata["title"].replace("{midi}", song_title)
+                if "description" in metadata:
+                    metadata["description"] = metadata["description"].replace("{midi}", song_title)
+                if "youtube_tags" in metadata:
+                    metadata["youtube_tags"] = [tag.replace("{midi}", song_title) for tag in metadata["youtube_tags"]]
+            
             job["metadata"] = metadata
 
         # 5. Exécution de l'animation
         if job["status"] in ["PENDING", "RUNNING"] or not video_path or not Path(video_path).exists():
             job_mgr.update_status(job_id, "RUNNING")
             
-            # Injection de match_data complet si requis, ou None, ET des metadata générées
-            video_path = anim_mgr.execute_animation(match_data if requires_match else None, anim_config, job_id, job_metadata=metadata)
+            # Injection du job_id et des metadata (On envoie match_data même si requires_match est False)
+            video_path = anim_mgr.execute_animation(match_data, anim_config, job_id, job_metadata=metadata)
             
             if not video_path:
                 job_mgr.update_status(job_id, "FAILED", error="Échec lors de la génération de la vidéo")

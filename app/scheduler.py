@@ -80,8 +80,8 @@ class AutomationScheduler:
                 window = cfg.get("publication_window", {"start": "08:00", "end": "10:00"})
                 earliest_start = window.get("start", "08:00")
                 
-            # On lance la préparation 120 minutes avant le premier créneau du compte
-            prep_dt = datetime.strptime(earliest_start, "%H:%M") - timedelta(minutes=120)
+            # On lance la préparation 300 minutes avant le premier créneau du compte
+            prep_dt = datetime.strptime(earliest_start, "%H:%M") - timedelta(minutes=300)
             prep_time_str = prep_dt.strftime("%H:%M")
 
             print(f"   ⚙️  [{acc_name}] Heure de préparation calée à {prep_time_str}")

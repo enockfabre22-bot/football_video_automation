@@ -199,6 +199,14 @@ def prepare_daily_videos(account_name="tiktok_main"):
         else:
             print(f"[CACHE] Vidéo déjà prête et validée ({Path(video_path).name}).")
 
+        # 5.bis Récupération de la miniature personnalisée (si générée par Processing)
+        # On cherche dans le dossier temporaire du job
+        job_temp_dir = base_dir / "output" / "temporary" / job_id
+        possible_thumbnail = job_temp_dir / "thumbnail_source.jpg"
+        if possible_thumbnail.exists():
+            metadata["thumbnail_path"] = str(possible_thumbnail)
+            print(f" [INFO] Miniature détectée et associée pour le job : {job_id}")
+
         # 6. Planification finale
         metadata["publish_window"] = slot.get("window", {"start": "08:00", "end": "20:00"})
         updated_job = job_mgr.update_status(job_id, "SCHEDULED", video_path=video_path, metadata=metadata)

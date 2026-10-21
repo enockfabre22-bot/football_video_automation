@@ -151,23 +151,27 @@ void setup() {
     println("Attention : Image de fond non trouvée.");
   }
 
-  // Chargement sécurisé du fichier MIDI
+  // Chargement sécurisé du fichier MIDI (Optimisé pour Serveur Linux)
   try {
-    synth = MidiSystem.getReceiver();
-    ShortMessage inst = new ShortMessage();
-    inst.setMessage(ShortMessage.PROGRAM_CHANGE, 0, 0, 0); 
-    synth.send(inst, -1);
+    // On ne cherche à allumer la carte son que si on est sur PC (exportMode = false)
+    if (!exportMode) {
+      synth = MidiSystem.getReceiver();
+      ShortMessage inst = new ShortMessage();
+      inst.setMessage(ShortMessage.PROGRAM_CHANGE, 0, 0, 0); 
+      synth.send(inst, -1);
+    }
     
     File midiFile = new File(MIDI_FILE);
     if(!midiFile.exists() && !MIDI_FILE.contains(":")) midiFile = new File(dataPath(MIDI_FILE)); 
     
+    // getSequence se contente de lire le fichier, pas besoin de carte son !
     Sequence seq = MidiSystem.getSequence(midiFile);
     parseMidi(seq);
     
     startTime = millis();
-    isReady = true;
+    isReady = true; // Le programme est débloqué !
   } catch (Exception e) {
-    println("❌ Erreur de chargement MIDI : " + MIDI_FILE);
+    println("❌ Erreur de chargement MIDI : " + e.getMessage());
   }
 }
 

@@ -110,36 +110,43 @@ def prepare_daily_videos(account_name="tiktok_main"):
             # SÉLECTION DYNAMIQUE DES FICHIERS (MIDI, JPG, etc.)
             inputs = anim_config.get("inputs", [])
             
-            if "midi" in inputs:
-                midi_dir = base_dir / "assets" / "midi"
+            # --- GESTION DES FICHIERS MIDI ---
+            # Détecte si l'animation demande "midi" (classique) ou "midi2" (vertical)
+            midi_key = "midi2" if "midi2" in inputs else "midi" if "midi" in inputs else None
+            
+            if midi_key:
+                midi_dir = base_dir / "assets" / midi_key
                 midis = list(midi_dir.glob("*.mid"))
                 if not midis:
-                    print("[ERREUR] Aucun fichier .mid trouvé dans assets/midi/")
+                    print(f"[ERREUR] Aucun fichier .mid trouvé dans assets/{midi_key}/")
                     continue
                 chosen_midi = random.choice(midis)
                 match_data["resources"]["midi_file"] = str(chosen_midi)
                 
-                # Extraction "Titre - Auteur" (ex: "Euphoria - Tony Ann.mid")
+                # Extraction du nom du fichier
                 stem = chosen_midi.stem
-                if "-" in stem:
-                    parts = stem.split("-", 1)
-                    match_data["song_title"] = parts[0].strip()
+                match_data["song_title"] = stem
+                if " - " in stem:
+                    parts = stem.split(" - ", 1)
                     match_data["song_author"] = parts[1].strip()
                 else:
-                    match_data["song_title"] = stem
                     match_data["song_author"] = "Unknown"
                     
-                print(f"  -> Audio sélectionné : {match_data['song_title']} (par {match_data['song_author']})")
+                print(f"  -> Audio sélectionné : {match_data['song_title']} (Dossier: {midi_key})")
 
-            if "jpg" in inputs:
-                jpg_dir = base_dir / "assets" / "jpg"
+            # --- GESTION DES FONDS D'ÉCRAN (JPG) ---
+            # Détecte si l'animation demande "jpg" (horizontal) ou "jpg_portrait" (vertical)
+            jpg_key = "jpg_portrait" if "jpg_portrait" in inputs else "jpg" if "jpg" in inputs else None
+            
+            if jpg_key:
+                jpg_dir = base_dir / "assets" / jpg_key
                 jpgs = list(jpg_dir.glob("*.jpg"))
                 if not jpgs:
-                    print("[ERREUR] Aucune image .jpg trouvée dans assets/jpg/")
+                    print(f"[ERREUR] Aucune image .jpg trouvée dans assets/{jpg_key}/")
                     continue
                 chosen_jpg = random.choice(jpgs)
                 match_data["resources"]["bg_image"] = str(chosen_jpg)
-                print(f"  -> Fond sélectionné : {chosen_jpg.name}")
+                print(f"  -> Fond sélectionné : {chosen_jpg.name} (Dossier: {jpg_key})")
 
         # 3. Création ou récupération du Job (Anti-doublons)
         if job_mgr.is_match_already_completed(date_str, home, away, account_name):

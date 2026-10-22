@@ -8,10 +8,22 @@
   },
   "schedule_slots": [
     {
-      "id": "matin_01",
-      "window": {"start": "08:00", "end": "12:00"},
-      "animation_strategy": "random",
-      "exclude_animations": ["animation_02"]
+      "id": "short_01_matin",
+      "window": {"start": "08:00", "end": "10:00"},
+      "animation_strategy": "specific",
+      "target_animation": "midi_falling"
+    },
+    {
+      "id": "short_02_apresmidi",
+      "window": {"start": "13:00", "end": "16:00"},
+      "animation_strategy": "specific",
+      "target_animation": "midi_falling"
+    },
+    {
+      "id": "video_01_soir",
+      "window": {"start": "13:00", "end": "17:00"},
+      "animation_strategy": "specific",
+      "target_animation": "midi_falling_ytb"
     }
   ],
   "timezone": "Europe/Paris"

@@ -10,19 +10,19 @@
     {
       "id": "short_01_matin",
       "window": {"start": "08:00", "end": "10:00"},
-      "animation_strategy": "specific",
+      "animation_strategy": "fixed",
       "target_animation": "midi_falling"
     },
     {
       "id": "short_02_apresmidi",
       "window": {"start": "13:00", "end": "16:00"},
-      "animation_strategy": "specific",
+      "animation_strategy": "fixed",
       "target_animation": "midi_falling"
     },
     {
       "id": "video_01_soir",
       "window": {"start": "13:00", "end": "17:00"},
-      "animation_strategy": "specific",
+      "animation_strategy": "fixed",
       "target_animation": "midi_falling_ytb"
     }
   ],

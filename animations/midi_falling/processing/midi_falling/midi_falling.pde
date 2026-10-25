@@ -9,7 +9,7 @@ import processing.data.JSONObject;
 // ==========================================================
 boolean exportMode = true;     // <--- METTRE SUR TRUE POUR EXPORTER LES IMAGES ET LE TXT
 boolean fastTestMode = false;  // <--- ACTIVER (true) POUR UN TEST ULTRA-RAPIDE (30 FPS, JPG)
-float MAX_DURATION_SEC = 45.0; // <--- LIMITE DE TEMPS : Coupe la vidéo après X secondes
+float MAX_DURATION_SEC = 3.0; // <--- LIMITE DE TEMPS : Coupe la vidéo après X secondes
 
 // --- VARIABLES DYNAMIQUES (Remplacées par le job.json) ---
 String SONG_TITLE = "Unknown Title";

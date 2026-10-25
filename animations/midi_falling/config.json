@@ -1,7 +1,7 @@
 {
   "name": "midi_falling",
   "enabled": true,
-  "accounts": ["youtube_piano"],
+  "accounts": ["youtube_piano","tiktok_ItPiano"],
   "requires_match_data": false, 
   "inputs": ["midi2", "jpg_portrait"],
   "metadata": {

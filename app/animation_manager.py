@@ -261,7 +261,7 @@ class AnimationManager:
                 base_cmd = [processing_bin, f"--sketch={sketch_folder.resolve()}", "--run", str(job_file_path)]
                 
                 if os.name == "posix" and not os.getenv("DISPLAY"):
-                    cmd = ["xvfb-run", "-a"] + base_cmd
+                    cmd = ["xvfb-run", "-a", "-s", "-screen 0 1920x1920x24"] + base_cmd
                 else:
                     cmd = base_cmd
 

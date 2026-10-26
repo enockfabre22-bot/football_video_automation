@@ -13,13 +13,13 @@
   },
   "schedule_slots": [
     {
-      "id": "short_01_matin",
+      "id": "tiktok_ItPiano_matin",
       "window": {"start": "08:00", "end": "10:00"},
       "animation_strategy": "fixed",
       "target_animation": "midi_falling"
     },
     {
-      "id": "short_02_apresmidi",
+      "id": "tiktok_ItPiano_apresmidi",
       "window": {"start": "13:00", "end": "16:00"},
       "animation_strategy": "fixed",
       "target_animation": "midi_falling"

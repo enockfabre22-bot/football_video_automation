@@ -7,6 +7,7 @@ from animation_manager import AnimationManager
 from job_manager import JobManager
 from publication_manager import PublicationManager
 import time
+import os
 
 class FileLogger:
     """Redirige automatiquement tous les print() vers la console ET vers logs/automation.log."""
@@ -238,6 +239,11 @@ def publish_scheduled_job(job, account_name="tiktok_main"):
         print(f"✅ [SUCCÈS TOTAL] Job {job_id} terminé et classé dans jobs/completed/ !")
         print("Pause de 30 secondes pour éviter le blocage API TikTok...")
         time.sleep(30)
+        # --- NOUVELLES LIGNES POUR VIDER LE DISQUE ---
+        if os.path.exists(video_path):
+            os.remove(video_path)
+            print(f"[CLEANUP] Fichier vidéo supprimé pour libérer de l'espace : {video_path}")
+        # ---------------------------------------------
         return True
     else:
         job_mgr.update_status(job_id, "FAILED", error="Échec lors de la publication sur la plateforme")

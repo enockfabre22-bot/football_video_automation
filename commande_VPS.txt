@@ -18,3 +18,12 @@ sudo systemctl enable football-automation
 sudo systemctl start football-automation
 
 -Arrête le robot : sudo systemctl stop football-automation
+
+
+pour lancer a la main les publication sur un compte on fait: 
+1.cd ~/football_video_automation 
+2.source .venv/bin/activate
+3.nohup python app/main.py tiktok_ItPiano > output_tiktok_itpiano.log 2>&1 &
+
+pour voir la place qu'il reste dans le disque dure
+df -h

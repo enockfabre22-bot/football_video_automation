@@ -4,20 +4,20 @@
   "privacy_status": "public",
   "metadata_rules": {
     "hashtag_count": 4,
-    "youtube_tag_count": 15
+    "youtube_tag_count": 20
   },
   "schedule_slots": [
     {
-      "id": "short_01_matin",
+      "id": "short_01_matin_youtube_piano",
       "window": {"start": "08:00", "end": "10:00"},
       "animation_strategy": "fixed",
-      "target_animation": "midi_falling"
+      "target_animation": "midi_falling_short"
     },
     {
-      "id": "short_02_apresmidi",
+      "id": "short_02_apresmidi_youtube_piano",
       "window": {"start": "13:00", "end": "16:00"},
       "animation_strategy": "fixed",
-      "target_animation": "midi_falling"
+      "target_animation": "midi_falling_short"
     },
     {
       "id": "video_01_soir",

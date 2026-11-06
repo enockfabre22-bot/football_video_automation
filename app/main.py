@@ -234,21 +234,30 @@ def publish_scheduled_job(job, account_name="tiktok_main"):
     metadata = job["metadata"]
 
     pub_success = pub_mgr.publish_video(video_path, metadata, account_name)
+    
+    # 1. GESTION DU STATUT (Succès ou Échec)
     if pub_success:
         job_mgr.update_status(job_id, "PUBLISHED")
         print(f"✅ [SUCCÈS TOTAL] Job {job_id} terminé et classé dans jobs/completed/ !")
-        print("Pause de 30 secondes pour éviter le blocage API TikTok...")
+        print("Pause de 30 secondes pour éviter le blocage API...")
         time.sleep(30)
-        # --- NOUVELLES LIGNES POUR VIDER LE DISQUE ---
-        if os.path.exists(video_path):
-            os.remove(video_path)
-            print(f"[CLEANUP] Fichier vidéo supprimé pour libérer de l'espace : {video_path}")
-        # ---------------------------------------------
-        return True
     else:
         job_mgr.update_status(job_id, "FAILED", error="Échec lors de la publication sur la plateforme")
         print(f"❌ [JOB FAILED] Échec de publication. Job déplacé dans jobs/failed/")
-        return False
+
+    # 2. NETTOYAGE GARANTI (S'exécute dans TOUS LES CAS : Succès ou Échec)
+    if os.path.exists(video_path):
+        os.remove(video_path)
+        print(f"[CLEANUP] Fichier vidéo supprimé pour libérer de l'espace : {video_path}")
+        
+    temp_dir = Path("output/temporary") / job_id
+    if temp_dir.exists():
+        import shutil
+        shutil.rmtree(temp_dir)
+        print(f"[CLEANUP] Dossier temporaire nettoyé : {temp_dir}")
+    
+    # 3. RETOUR DU RÉSULTAT
+    return pub_success
 
 def run_daily_workflow(account_name="tiktok_main"):
     """Exécute immédiatement la préparation suivie de la publication (Mode direct / Test)."""

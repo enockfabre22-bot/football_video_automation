@@ -27,3 +27,7 @@ pour lancer a la main les publication sur un compte on fait:
 
 pour voir la place qu'il reste dans le disque dure
 df -h
+
+
+nohup python app/main.py youtube_piano > output_youtube_piano.log 2>&1 &
+

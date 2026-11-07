@@ -202,6 +202,14 @@ def prepare_daily_videos(account_name="tiktok_main"):
             if not video_path:
                 job_mgr.update_status(job_id, "FAILED", error="Échec lors de la génération de la vidéo")
                 print(f"[JOB FAILED] Le job {job_id} a été déplacé dans jobs/failed/")
+            
+                # --- NOUVEAU : NETTOYAGE SI LA GÉNÉRATION PLANTE ---
+                temp_dir = Path("output/temporary") / job_id
+                if temp_dir.exists():
+                    import shutil
+                    shutil.rmtree(temp_dir)
+                    print(f"[CLEANUP FATAL] Dossier temporaire nettoyé après crash de génération : {temp_dir}")
+                # -----------------------------------------------------
                 continue
                 
             job_mgr.update_status(job_id, "VIDEO_READY", video_path=video_path)

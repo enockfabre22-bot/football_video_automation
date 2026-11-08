@@ -1,5 +1,5 @@
 {
-  "name": "midi_falling _tkt",
+  "name": "midi_falling_tkt",
   "enabled": true,
   "accounts": ["tiktok_ItPiano"],
   "requires_match_data": false, 

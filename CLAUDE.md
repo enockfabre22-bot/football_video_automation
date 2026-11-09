@@ -1,0 +1,51 @@
+# CLAUDE.md
+
+This file provides guidance to Claude Code (claude.ai/code) when working with code in this repository.
+
+## Overview
+
+Automation engine that renders short videos (football match "simulations" and MIDI piano "falling notes" animations) and publishes them to TikTok / YouTube accounts on a schedule. Code, comments, logs and commit messages are in French. Production runs on an Ubuntu VPS as a systemd daemon; development happens on Windows.
+
+## Commands
+
+There is no build step, linter or test suite. The modules in `app/` import each other by bare name (`from main import ...`), so run them as scripts from the repo root (paths like `output/temporary` are also resolved relative to the CWD):
+
+```bash
+python app/main.py <account_name>        # prepare AND immediately publish all slots for one account (direct/test mode)
+python app/scheduler.py --daemon         # production daemon: schedules all enabled accounts (what systemd runs)
+python app/scheduler.py                  # dry check: random-time draw + list detected accounts
+python app/match_manager.py              # list tomorrow's matches that have both team logos
+python test_accounts.py                  # list enabled accounts and their slot ids
+python scripts/match_planner.py          # Tkinter GUI to edit data/matches.json (run locally, then git push)
+python get_youtube_token.py              # OAuth flow -> token.json (move it to accounts/<yt_account>/token.json)
+```
+
+Set `"dry_run": true` in `config/app.json` to run the full pipeline without uploading. Note it is currently `false`.
+
+External requirements: `ffmpeg` on PATH, Processing 4 (`processing-java`, or on Windows `PROCESSING_DIR` in `.env` pointing at the Processing install so the engine calls its bundled JDK + `processing.mode.java.Commander` directly). On a headless Linux box the engine wraps Processing in `xvfb-run`. `requirements.txt` does not list the Google API packages (`google-api-python-client`, `google-auth-oauthlib`) needed by the YouTube uploader.
+
+VPS deployment notes are in `scripts/setup_vps.sh` and `scripts/football-automation.service` (deploy = `git pull` on the VPS + `sudo systemctl restart football-automation`).
+
+## Architecture
+
+### Three layers, all config-driven
+- **`accounts/<account_name>/config.json`** — one folder per publishing account. `platform` (`tiktok`/`youtube`), `enabled`, `metadata_rules` (how many hashtags / YouTube tags to sample), and `schedule_slots`: each slot has an `id`, a publish `window`, and an `animation_strategy` (`fixed` + `target_animation`, or `random` + optional `exclude_animations`). The folder name is the account id used everywhere. TikTok credentials come from `.env` as `<env_prefix>_CLIENT_KEY/_CLIENT_SECRET/_ACCESS_TOKEN/_REFRESH_TOKEN`; YouTube uses `accounts/<name>/token.json` (gitignored).
+- **`animations/<folder>/config.json`** — self-contained render pipelines. An animation is eligible for an account only if `enabled` and the account is listed in its `accounts` array. `target_animation` must match the config's `name` field, **not** the folder name (e.g. folder `foot_ballclash` has `name: "BallClash"`). `steps` is an ordered list of `processing` (sketch folder) or `python` (script) steps. `metadata` holds pools of titles/descriptions/hashtags/youtube_tags with `{home}`, `{away}`, `{midi}` placeholders. `inputs` drives resource selection (see below).
+- **`platforms/`** — upload clients (`tiktok/client.py` + `uploader.py`, `youtube/uploader.py`), dispatched by `PublicationManager.publish_video` based on the account's `platform`.
+
+### Pipeline (`app/main.py`)
+1. **Phase 1 `prepare_daily_videos(account)`** — for each slot: select animation → if `requires_match_data`, consume the next match from `data/matches.json` dated **tomorrow** whose team logos exist in `assets/logos/<Team>.png` (matches without logos are silently skipped); otherwise pick random assets based on `inputs` (`midi`/`midi2` → `assets/midi[2]/*.mid`, `jpg`/`jpg_portrait` → `assets/jpg[_portrait]/*.jpg`; the song title/author is parsed from the MIDI filename `Author - Title`). Then create/resume a job, generate metadata, render, and mark the job `SCHEDULED`.
+2. **Phase 2 `publish_scheduled_job(job, account)`** — upload, move job to completed/failed, then always delete the final video and `output/temporary/<job_id>/` (disk space on the VPS is tight).
+
+The **scheduler** (`app/scheduler.py`) runs Phase 1 per account once a day at *(earliest slot start − 300 min)*, then registers a one-shot `schedule` job at a random minute inside each slot's window to run Phase 2.
+
+### Animation contract (engine ↔ steps)
+`AnimationManager.execute_animation` writes `output/temporary/<job_id>/job.json` (job_id, match, metadata, `resources` with absolute asset paths, `work_dir`, `output_video`) and runs every step with that path as the sole argument (`python script.py <job.json>` / `processing-java --sketch=... --run <job.json>`; Processing sketches read it via `args[0]`). Sketches render frames into `<work_dir>/frames/` and call `exit()`; the final Python step muxes frames + audio with ffmpeg into `output_video` (`output/videos/<job_id>.mp4`). A step fails on non-zero exit code; the job fails if `output_video` is missing or empty. A sketch may also drop `<work_dir>/thumbnail_source.jpg`, which is picked up as the upload thumbnail; alternatively `thumbnail.enabled` in the animation config renders one via `app/thumbnail_generator.py`.
+
+Several animations duplicate their sketches/compilers (`midi_falling_short`, `midi_falling_tkt`, `midi_falling_ytb`); a fix in one usually needs to be applied to the others.
+
+### Job state machine (`app/job_manager.py`)
+Jobs are JSON files: `jobs/pending/` (`PENDING` → `RUNNING` → `VIDEO_READY` → `SCHEDULED`) then moved to `jobs/completed/` (`PUBLISHED`) or `jobs/failed/` (`FAILED`). `job_id = <date>_<home>_<away>_<animation_name>` (spaces → `_`). For non-match animations `home` is the slot id and `away` is `no_match`, so **slot ids must be unique across accounts**. Idempotence: a job already `PUBLISHED` for the same date/home/away/account is skipped; an existing pending job is resumed without re-rendering if its video still exists. Note the account name is not part of `job_id`, so two accounts rendering the same match with the same animation share a job filename.
+
+### Logging
+`setup_logging()` replaces `sys.stdout` with a tee that timestamps every `print()` into `logs/automation.log`. Use `print` for logging; there is no `logging` module setup.

@@ -10,6 +10,22 @@ load_dotenv(ENV_PATH)
 class TikTokClient:
     BASE_URL = "https://open.tiktokapis.com/v2"
 
+    # Règles d'upload par morceaux de l'API TikTok :
+    # - chaque morceau doit faire entre 5 Mo et 64 Mo (le dernier peut aller jusqu'à 128 Mo)
+    # - une vidéo < 5 Mo doit être envoyée en un seul morceau
+    # - une vidéo > 64 Mo doit obligatoirement être découpée
+    # - total_chunk_count = floor(video_size / chunk_size), le reste est absorbé par le dernier morceau
+    MAX_SINGLE_CHUNK = 64 * 1024 * 1024
+    DEFAULT_CHUNK_SIZE = 10 * 1024 * 1024
+
+    @classmethod
+    def compute_chunk_plan(cls, video_size):
+        """Retourne (chunk_size, total_chunk_count) conforme aux exigences de TikTok."""
+        if video_size <= cls.MAX_SINGLE_CHUNK:
+            return video_size, 1
+        chunk_size = cls.DEFAULT_CHUNK_SIZE
+        return chunk_size, video_size // chunk_size
+
     def __init__(self, env_prefix="TIKTOK_MAIN"):
         self.env_prefix = env_prefix
         self.client_key = os.getenv(f"{env_prefix}_CLIENT_KEY")
@@ -80,16 +96,17 @@ class TikTokClient:
             "Content-Type": "application/json; charset=UTF-8"
         }
 
+        chunk_size, total_chunk_count = self.compute_chunk_plan(video_size)
+        source_info = {
+            "source": "FILE_UPLOAD",
+            "video_size": video_size,
+            "chunk_size": chunk_size,
+            "total_chunk_count": total_chunk_count
+        }
+
         if post_mode == "inbox":
             url = f"{self.BASE_URL}/post/publish/inbox/video/init/"
-            payload = {
-                "source_info": {
-                    "source": "FILE_UPLOAD",
-                    "video_size": video_size,
-                    "chunk_size": video_size,
-                    "total_chunk_count": 1
-                }
-            }
+            payload = {"source_info": source_info}
         else:
             url = f"{self.BASE_URL}/post/publish/video/init/"
             payload = {
@@ -100,12 +117,7 @@ class TikTokClient:
                     "disable_comment": account_cfg.get("disable_comment", False),
                     "disable_stitch": account_cfg.get("disable_stitch", False)
                 },
-                "source_info": {
-                    "source": "FILE_UPLOAD",
-                    "video_size": video_size,
-                    "chunk_size": video_size,
-                    "total_chunk_count": 1
-                }
+                "source_info": source_info
             }
 
         response = requests.post(url, headers=headers, json=payload, timeout=30)
@@ -113,23 +125,35 @@ class TikTokClient:
 
     def upload_video_binary(self, upload_url, video_path):
         """
-        Étape 2 de la publication TikTok : envoie le fichier binaire MP4 via PUT.
+        Étape 2 de la publication TikTok : envoie le fichier MP4 via PUT, morceau par morceau,
+        en respectant exactement le découpage annoncé lors de l'initialisation.
         """
         video_file = Path(video_path)
         video_size = video_file.stat().st_size
-
-        headers = {
-            "Content-Range": f"bytes 0-{video_size - 1}/{video_size}",
-            "Content-Type": "video/mp4"
-        }
+        chunk_size, total_chunk_count = self.compute_chunk_plan(video_size)
 
         with open(video_file, "rb") as f:
-            response = requests.put(upload_url, headers=headers, data=f, timeout=300)
+            for index in range(total_chunk_count):
+                start = index * chunk_size
+                # Le dernier morceau absorbe le reste du fichier
+                end = video_size - 1 if index == total_chunk_count - 1 else start + chunk_size - 1
+                f.seek(start)
+                chunk = f.read(end - start + 1)
 
-        if response.status_code in [200, 201, 206]:
-            return True
-        else:
-            # --- NOUVEAUTÉ : Affichage de l'erreur exacte de TikTok ---
-            print(f"  --> [TikTok API DEBUG] Code HTTP : {response.status_code}")
-            print(f"  --> [TikTok API DEBUG] Réponse serveur : {response.text}")
-            return False
+                headers = {
+                    "Content-Range": f"bytes {start}-{end}/{video_size}",
+                    "Content-Length": str(len(chunk)),
+                    "Content-Type": "video/mp4"
+                }
+                if total_chunk_count > 1:
+                    print(f"  --> [TikTok API] Envoi du morceau {index + 1}/{total_chunk_count} (octets {start}-{end})...")
+
+                response = requests.put(upload_url, headers=headers, data=chunk, timeout=300)
+
+                if response.status_code not in [200, 201, 206]:
+                    print(f"  --> [TikTok API DEBUG] Morceau {index + 1}/{total_chunk_count} refusé")
+                    print(f"  --> [TikTok API DEBUG] Code HTTP : {response.status_code}")
+                    print(f"  --> [TikTok API DEBUG] Réponse serveur : {response.text}")
+                    return False
+
+        return True

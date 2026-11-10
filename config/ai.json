@@ -9,8 +9,8 @@
     "escalation": null
   },
 
-  "effort": { "concept": "high", "code": "high", "fix": "high", "review": "high", "card": "low" },
-  "max_tokens": { "concept": 8000, "code": 64000, "fix": 32000, "review": 32000, "card": 4000 },
+  "effort": { "concept": "medium", "code": "medium", "fix": "medium", "review": "medium", "card": "low" },
+  "max_tokens": { "concept": 16000, "code": 100000, "fix": 64000, "review": 32000, "card": 4000 },
 
   "pricing_usd_per_mtok": {
     "claude-sonnet-5-5": { "input": 2.00, "output": 10.00, "cache_read": 0.10, "cache_write_1h": 4.00 },

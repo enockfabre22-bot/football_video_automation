@@ -1,5 +1,6 @@
 import json
 import os
+import time
 from datetime import date, datetime
 from pathlib import Path
 
@@ -46,7 +47,14 @@ class AIStockManager:
         tmp = creation_dir / (self.STATE_FILE + ".tmp")
         with open(tmp, "w", encoding="utf-8") as f:
             json.dump(state, f, indent=4, ensure_ascii=False)
-        os.replace(tmp, creation_dir / self.STATE_FILE)
+        for attempt in range(10):
+            try:
+                os.replace(tmp, creation_dir / self.STATE_FILE)
+                return
+            except PermissionError:   # Windows : fichier ouvert un instant par l'antivirus / l'indexation
+                if attempt == 9:
+                    raise
+                time.sleep(0.2)
 
     def list_creations(self, anim_name, status=None):
         """Retourne [(dossier, state)] triés du plus ancien au plus récent."""
@@ -196,5 +204,19 @@ class AIStockManager:
         s["published"] = record
         s.pop("reserved_by", None)
         self._save_state(d, s)
+
+        # Fiche créative de la chaîne (historique partagé par ses animations) : statut + lien
+        if s.get("channel"):
+            card_path = self.ai_data_dir / "channels" / s["channel"] / "creative" / f"{record['creation_id']}.json"
+            try:
+                with open(card_path, "r", encoding="utf-8") as f:
+                    card = json.load(f)
+                card.update({"status": PUBLISHED, "published_at": now, "url": url, "account": account_name})
+                tmp = card_path.with_suffix(".json.tmp")
+                with open(tmp, "w", encoding="utf-8") as f:
+                    json.dump(card, f, indent=2, ensure_ascii=False)
+                os.replace(tmp, card_path)
+            except (OSError, json.JSONDecodeError):
+                pass
         print(f"  -> [STOCK IA] Création '{record['creation_id']}' publiée et retirée du stock.")
         return True

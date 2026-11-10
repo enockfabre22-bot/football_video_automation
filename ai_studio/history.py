@@ -27,7 +27,7 @@ class ChannelHistory:
         return out
 
     def successful_cards(self):
-        return self.cards(statuses={"READY", "PUBLISHED"})
+        return self.cards(statuses={"CODE_READY", "READY", "PUBLISHED"})
 
     def summary_lines(self, count):
         lines = []

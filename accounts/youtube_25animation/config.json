@@ -1,6 +1,6 @@
 {
   "platform": "youtube",
-  "enabled": false,
+  "enabled": true,
   "privacy_status": "private",
   "channel_name": "2.5Animation",
   "metadata_rules": {

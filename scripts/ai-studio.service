@@ -1,0 +1,20 @@
+[Unit]
+Description=Studio IA (conception par lots + file de rendu des animations IA)
+After=network-online.target docker.service
+Wants=network-online.target
+
+[Service]
+Type=simple
+User=ubuntu
+WorkingDirectory=/home/ubuntu/football_video_automation
+ExecStart=/home/ubuntu/football_video_automation/.venv/bin/python ai_studio/cli.py daemon
+Restart=always
+RestartSec=30
+# Arrêt propre : les créations en cours reprennent au prochain démarrage, le conteneur est tué
+KillSignal=SIGTERM
+TimeoutStopSec=60
+# Priorité CPU plus basse que le scheduler (le processus Python ; les conteneurs ont --cpu-shares)
+Nice=10
+
+[Install]
+WantedBy=multi-user.target

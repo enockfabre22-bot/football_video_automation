@@ -27,7 +27,9 @@ from studio_common import (BASE_DIR, ai_data_dir, ai_settings, channel_dir, load
                            merged_limits, now_iso, read_json, write_json_atomic)
 
 IN_PROGRESS = "IN_PROGRESS"
+CODE_READY = "CODE_READY"     # code conçu et validé (aperçu OK), en attente de la file de rendu
 READY = "READY"
+DESIGN_STEPS = ("concept", "code", "preview", "review")
 FAILED = "FAILED"
 ABANDONED = "ABANDONED"
 FILE_NAME_RE = re.compile(r"^[A-Za-z0-9_\-]+\.(cpp|h|hpp)$")
@@ -187,8 +189,13 @@ class CreationPipeline:
     # ------------------------------------------------------------------ #
     # Boucle principale
     # ------------------------------------------------------------------ #
-    def run(self):
+    def run(self, stop_before_render=False):
+        """Exécute la création. stop_before_render=True : session de conception (API) uniquement,
+        la création s'arrête en CODE_READY et sera rendue plus tard par la file de rendu."""
         st = self.state
+        if st["status"] == CODE_READY and not stop_before_render:
+            st["status"] = IN_PROGRESS   # passage dans la file de rendu
+            st["step"] = "render"
         if st["status"] != IN_PROGRESS:
             log(f"{st['creation_id']} est déjà {st['status']}")
             return st["status"]
@@ -196,6 +203,9 @@ class CreationPipeline:
         t0 = time.time()
         try:
             while st["status"] == IN_PROGRESS:
+                if stop_before_render and st["step"] not in DESIGN_STEPS:
+                    self._mark_code_ready()
+                    break
                 if st["elapsed_s"] + (time.time() - t0) > max_s:
                     raise CreationStop(ABANDONED, f"durée maximale dépassée ({max_s / 60:.0f} min)")
                 step = st["step"]
@@ -214,6 +224,26 @@ class CreationPipeline:
             st["elapsed_s"] = int(st["elapsed_s"] + (time.time() - t0))
             self.save()
         return st["status"]
+
+    def _mark_code_ready(self):
+        st = self.state
+        st["status"] = CODE_READY
+        st["code_ready_at"] = now_iso()
+        shutil.rmtree(self.dir / "work", ignore_errors=True)   # build + sorties d'aperçu (copiées dans preview/)
+        c = st.get("concept") or {}
+        # Fiche provisoire : les concepts suivants du même lot s'en distinguent (anti-répétition)
+        self.history.save_card({
+            "creation_id": st["creation_id"], "animation": self.name, "status": CODE_READY,
+            "created_at": st["created_at"], "title": c.get("title", ""), "summary": c.get("pitch", ""),
+            "pitch": c.get("pitch", ""), "scenario": c.get("scenario", []),
+            "mechanisms": c.get("mechanisms", []), "objects": c.get("objects", []),
+            "palette": c.get("palette", []), "tags": c.get("tags", []),
+            "event": (st.get("event") or {}).get("name", ""),
+            "cost_usd": round(self.client.ledger.spent(creation_id=st["creation_id"]), 4),
+        })
+        self.save()
+        log(f"🧩 {st['creation_id']} CODE PRÊT : « {c.get('title')} » — en attente de rendu "
+            f"({self.client.ledger.spent(creation_id=st['creation_id']):.2f} $)")
 
     def _finish(self, status, reason, detail=None):
         st = self.state

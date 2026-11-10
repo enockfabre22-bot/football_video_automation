@@ -2,8 +2,10 @@
 Studio IA — ligne de commande (à lancer depuis la racine du projet).
 
   python ai_studio/cli.py status                         stock, créations en cours, budgets du mois
+  python ai_studio/cli.py daemon [--mock] [--once]       service : sessions de conception + file de rendu
   python ai_studio/cli.py create <animation> [--mock]    lance UNE création complète
         [--event "Noël" | --no-event]                    forcer / interdire un événement
+        [--design-only]                                  s'arrête au code validé (CODE_READY)
   python ai_studio/cli.py resume <creation_id> [--mock]  reprend une création interrompue ou échouée
                                                          (à l'étape où elle s'est arrêtée)
   python ai_studio/cli.py render <creation_id>           rendu final forcé (décision humaine malgré la revue)
@@ -20,7 +22,8 @@ import sys
 from collections import defaultdict
 from datetime import datetime
 
-from studio_common import BASE_DIR, ai_settings, list_ai_animations, load_ai_animation, load_ai_config
+from studio_common import (BASE_DIR, StudioBusy, ai_settings, list_ai_animations, load_ai_animation,
+                           load_ai_config, studio_lock)
 
 
 class _Tee:
@@ -59,18 +62,23 @@ def _client(ai_cfg, mock):
 
 def cmd_status(ai_cfg):
     from ai_stock import AIStockManager
+    from daemon import StudioDaemon
     from ledger import UsageLedger
     stock = AIStockManager()
     ledger = UsageLedger(ai_cfg)
-    print(f"Studio IA : {'ACTIVÉ' if ai_cfg.get('enabled') else 'désactivé'}")
+    daemon = StudioDaemon()
+    print(f"Studio IA : {'ACTIVÉ' if ai_cfg.get('enabled') else 'désactivé'}  "
+          f"(revue visuelle : {'oui' if ai_cfg.get('limits', {}).get('review_enabled', True) else 'non'})")
     for anim in list_ai_animations():
         name = anim["name"]
         ai = ai_settings(anim)
         counts = defaultdict(int)
         for _, s in stock.list_creations(name):
             counts[s.get("status")] += 1
-        print(f"\n■ {name} (chaîne {ai['channel']}, {'activée' if anim.get('enabled') else 'désactivée'}) "
-              f"— prêtes {stock.count_ready(name)}/{ai['stock_target']}")
+        target, ready, code_ready, in_progress = daemon.stock_levels(anim)
+        print(f"\n■ {name} (chaîne {ai['channel']}, {'activée' if anim.get('enabled') else 'désactivée'}) — "
+              f"objectif {target} | vidéos prêtes {ready} (publiables aujourd'hui {stock.count_ready(name)}) | "
+              f"codes en attente de rendu {code_ready} | en cours {in_progress}")
         print("   " + ", ".join(f"{k}: {v}" for k, v in sorted(counts.items())) if counts else "   (aucune création)")
         print(f"   dépense du mois : {ledger.spent(animation=name):.2f} $")
     b = ai_cfg.get("budgets_usd", {})
@@ -81,9 +89,14 @@ def cmd_create(ai_cfg, args):
     from pipeline import CreationPipeline
     client = _client(ai_cfg, args.mock)
     p = CreationPipeline.start_new(args.animation, client, ai_cfg, event_name=args.event, no_event=args.no_event)
-    status = p.run()
+    status = p.run(stop_before_render=args.design_only)
     print(f"\nRésultat : {status} — {p.dir}")
-    return 0 if status == "READY" else 1
+    return 0 if status in ("READY", "CODE_READY") else 1
+
+
+def cmd_daemon(args):
+    from daemon import StudioDaemon
+    StudioDaemon(mock=args.mock, once=args.once).run_forever()
 
 
 def cmd_resume(ai_cfg, args):
@@ -165,6 +178,10 @@ def main():
     p.add_argument("--mock", action="store_true")
     p.add_argument("--event")
     p.add_argument("--no-event", action="store_true")
+    p.add_argument("--design-only", action="store_true")
+    p = sub.add_parser("daemon")
+    p.add_argument("--mock", action="store_true")
+    p.add_argument("--once", action="store_true")
     p = sub.add_parser("resume")
     p.add_argument("creation_id")
     p.add_argument("--mock", action="store_true")
@@ -185,16 +202,24 @@ def main():
 
     sys.stdout = _Tee(sys.stdout, BASE_DIR / "logs" / "ai_studio.log")
     ai_cfg = load_ai_config()
+    if args.cmd in ("create", "resume", "render", "discard", "daemon"):
+        # Commandes qui modifient des créations : un seul processus studio à la fois
+        try:
+            with studio_lock():
+                if args.cmd == "create":
+                    return cmd_create(ai_cfg, args)
+                if args.cmd == "resume":
+                    return cmd_resume(ai_cfg, args)
+                if args.cmd == "render":
+                    return cmd_render(ai_cfg, args)
+                if args.cmd == "discard":
+                    return cmd_discard(ai_cfg, args)
+                return cmd_daemon(args)
+        except StudioBusy as e:
+            print(f"❌ {e}")
+            return 2
     if args.cmd == "status":
         cmd_status(ai_cfg)
-    elif args.cmd == "create":
-        return cmd_create(ai_cfg, args)
-    elif args.cmd == "resume":
-        return cmd_resume(ai_cfg, args)
-    elif args.cmd == "render":
-        return cmd_render(ai_cfg, args)
-    elif args.cmd == "discard":
-        cmd_discard(ai_cfg, args)
     elif args.cmd == "history":
         cmd_history(args)
     elif args.cmd == "costs":

@@ -46,12 +46,15 @@
 
   "studio": {
     "loop_interval_minutes": 10,
+    "design_batch_size": 3,
+    "max_creations_per_day": 8,
     "window": { "start": "00:00", "end": "23:59" }
   },
 
   "sandbox": {
     "engine": "docker",
     "cpus": 3,
+    "cpu_shares": 512,
     "memory": "5g",
     "pids_limit": 256,
     "gpu": false,

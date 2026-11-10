@@ -2,6 +2,8 @@
 import json
 import os
 import sys
+import time
+from contextlib import contextmanager
 from datetime import datetime
 from pathlib import Path
 
@@ -29,7 +31,14 @@ def write_json_atomic(path, data):
     tmp = path.with_suffix(path.suffix + ".tmp")
     with open(tmp, "w", encoding="utf-8") as f:
         json.dump(data, f, indent=2, ensure_ascii=False)
-    os.replace(tmp, path)
+    for attempt in range(10):
+        try:
+            os.replace(tmp, path)
+            return
+        except PermissionError:   # Windows : fichier ouvert un instant par l'antivirus / l'indexation
+            if attempt == 9:
+                raise
+            time.sleep(0.2)
 
 
 def now_iso():
@@ -75,7 +84,6 @@ def ai_settings(anim_cfg):
     """Section "ai" de l'animation, avec les valeurs par défaut."""
     ai = dict(anim_cfg.get("ai", {}))
     ai.setdefault("profile", "raylib_box2d")
-    ai.setdefault("stock_target", 2)
     ai.setdefault("max_bodies", 2000)
     ai.setdefault("sound", "music")          # "music" (ajoutée après coup) ou "events" (ctx.sound)
     if not ai.get("channel"):
@@ -95,3 +103,49 @@ def channel_dir(channel):
 
 def log(msg):
     print(f"[STUDIO IA] {msg}", flush=True)
+
+
+class StudioBusy(RuntimeError):
+    pass
+
+
+@contextmanager
+def studio_lock():
+    """Un seul processus studio à la fois (service OU commande manuelle) : évite que deux processus
+    reprennent la même création en même temps."""
+    from render_lock import _try_lock, _unlock
+    path = ai_data_dir() / ".studio.lock"
+    path.parent.mkdir(parents=True, exist_ok=True)
+    fd = os.open(str(path), os.O_RDWR | os.O_CREAT)
+    if not _try_lock(fd, False):
+        os.close(fd)
+        raise StudioBusy("Le studio IA tourne déjà dans un autre processus (service ai-studio ?). "
+                         "Arrête-le d'abord : sudo systemctl stop ai-studio")
+    try:
+        yield
+    finally:
+        _unlock(fd)
+        os.close(fd)
+
+
+def slots_per_day(anim_cfg):
+    """Nombre de créneaux quotidiens qui peuvent consommer cette animation (comptes activés ou non)."""
+    name = anim_cfg["name"]
+    count = 0
+    for account in anim_cfg.get("accounts", []):
+        acc = read_json(BASE_DIR / "accounts" / account / "config.json", {}) or {}
+        for slot in acc.get("schedule_slots", []):
+            strategy = slot.get("animation_strategy", "random")
+            if strategy == "fixed" and slot.get("target_animation") == name:
+                count += 1
+            elif strategy == "random" and name not in slot.get("exclude_animations", []):
+                count += 1
+    return max(1, count)
+
+
+def stock_target(anim_cfg):
+    """Nombre de vidéos d'avance visé = jours d'avance × créneaux par jour."""
+    ai = anim_cfg.get("ai", {})
+    if "stock_target" in ai:
+        return int(ai["stock_target"])
+    return int(ai.get("stock_days", 5)) * slots_per_day(anim_cfg)

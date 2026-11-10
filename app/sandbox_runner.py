@@ -67,6 +67,8 @@ class SandboxRunner:
             "--tmpfs", "/tmp:rw,exec,size=1g",
             "--memory", str(self.cfg["memory"]), "--memory-swap", str(self.cfg["memory"]),
             "--cpus", str(self.cfg["cpus"]),
+            # Part de CPU en cas de concurrence (1024 = normal) : les rendus du scheduler passent avant
+            "--cpu-shares", str(self.cfg.get("cpu_shares", 512)),
             "--pids-limit", str(self.cfg["pids_limit"]),
             "--security-opt", "no-new-privileges",
             "--cap-drop", "ALL",
@@ -94,6 +96,10 @@ class SandboxRunner:
         except FileNotFoundError:
             print("      [SANDBOX ERREUR] Docker n'est pas installé ou introuvable dans le PATH.")
             return False, "NO_DOCKER"
+        except BaseException:
+            # Arrêt du processus (systemctl stop, Ctrl+C) : le conteneur ne doit pas continuer seul
+            subprocess.run(["docker", "kill", container_name], capture_output=True)
+            raise
 
         output = (res.stdout or "") + (res.stderr or "")
         elapsed = time.time() - start

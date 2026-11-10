@@ -19,7 +19,7 @@
     "max_bodies": 2000,
     "sound": "music",
     "audio_required": true,
-    "stock_target": 3,
+    "stock_days": 5,
     "events": { "enabled": true, "probability": 0.5, "max_per_event": 2, "lead_days": 21 },
     "publish_overrides": { "privacy_status": "private" }
   },

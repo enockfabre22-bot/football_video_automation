@@ -1,0 +1,25 @@
+{
+  "platform": "youtube",
+  "enabled": false,
+  "privacy_status": "private",
+  "channel_name": "2.5Animation",
+  "metadata_rules": {
+    "hashtag_count": 3,
+    "youtube_tag_count": 15
+  },
+  "schedule_slots": [
+    {
+      "id": "s4k_long_soir",
+      "window": {"start": "18:00", "end": "20:00"},
+      "animation_strategy": "fixed",
+      "target_animation": "satisfying4k_long"
+    },
+    {
+      "id": "s4k_short_midi",
+      "window": {"start": "12:00", "end": "14:00"},
+      "animation_strategy": "fixed",
+      "target_animation": "satisfying4k_short"
+    }
+  ],
+  "timezone": "Europe/Paris"
+}

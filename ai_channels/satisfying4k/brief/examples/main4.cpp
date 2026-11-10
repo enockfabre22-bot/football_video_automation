@@ -44,7 +44,7 @@ static constexpr float WORLD_H = OUTPUT_HEIGHT / PIXELS_PER_METER;
 static constexpr float CX = WORLD_W * 0.5f;   // axe central de la machine
 static constexpr float DRAW_SCALE = PIXELS_PER_METER;
 
-static constexpr int TOTAL_BALLS = 000; // peut être modifié
+static constexpr int TOTAL_BALLS = 1200; // peut être modifié
 static constexpr int MAX_FRAMES  = 18000;   // 5 min à 60 fps (36000 = 10 min)
 
 static constexpr bool EXPORT_VIDEO = false; // true pour le rendu final

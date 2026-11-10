@@ -1,3 +1,4 @@
+import os
 import time
 import random
 import schedule
@@ -5,6 +6,15 @@ from datetime import datetime, timedelta
 from main import prepare_daily_videos, publish_scheduled_job, discard_job, setup_logging
 from publication_manager import PublicationManager
 from job_manager import JobManager
+from maintenance import cleanup_disk
+
+
+def safe_cleanup():
+    """Le nettoyage ne doit jamais faire tomber le démon."""
+    try:
+        cleanup_disk()
+    except Exception as e:
+        print(f"[MAINTENANCE] Erreur pendant le nettoyage (ignorée) : {e}")
 
 # Au redémarrage, une publication manquée est rattrapée si son créneau s'est terminé
 # il y a moins de CATCH_UP_MAX_HOURS heures. Au-delà, le job est considéré comme expiré.
@@ -47,6 +57,7 @@ class AutomationScheduler:
         """
         setup_logging()
         print(f"\n⏰ [SCHEDULER] Lancement du contrôle quotidien pour '{account_name}'")
+        safe_cleanup()
 
         ready_jobs = prepare_daily_videos(account_name)
         if not ready_jobs:
@@ -125,6 +136,12 @@ class AutomationScheduler:
             if schedule.get_jobs(job_id):
                 continue  # déjà planifié en mémoire
 
+            video_path = job.get("video_path")
+            if not video_path or not os.path.exists(video_path):
+                print(f"   [REPRISE] '{job_id}' : vidéo introuvable ({video_path}) -> job abandonné")
+                discard_job(job, reason="Vidéo introuvable lors de la reprise après redémarrage")
+                continue
+
             start_win, end_win = self._window(job)
             planned_str = (job.get("metadata") or {}).get("planned_publish_at")
 
@@ -197,6 +214,9 @@ class AutomationScheduler:
             schedule.every().day.at(prep_time_str).do(self.daily_orchestration, account_name=acc_name)
 
         print("==================================================\n")
+
+        # Nettoyage des restes d'un éventuel plantage (images partielles, vidéos orphelines)
+        safe_cleanup()
 
         # Reprise des publications perdues lors d'un redémarrage du service
         catch_up = self.restore_scheduled_jobs({cfg["internal_id"] for cfg in accounts})

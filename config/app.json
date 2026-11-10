@@ -3,5 +3,6 @@
   "version": "1.0.0",
   "timezone": "Europe/Paris",
   "dry_run": false,
-  "log_level": "INFO"
+  "log_level": "INFO",
+  "min_free_disk_gb": 15
 }

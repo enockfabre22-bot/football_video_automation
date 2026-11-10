@@ -11,6 +11,7 @@ from dotenv import load_dotenv
 from thumbnail_generator import generate_custom_thumbnail
 from ai_stock import AIStockManager
 from render_lock import render_lock
+from maintenance import has_enough_disk_space
 
 load_dotenv()
 
@@ -187,6 +188,10 @@ class AnimationManager:
 
         with open(job_file_path, 'w', encoding='utf-8') as f:
             json.dump(job_payload, f, indent=4, ensure_ascii=False)
+
+        # Garde-fou : un disque plein fait planter le rendu ET tout le service
+        if not has_enough_disk_space(animation_config):
+            return None
 
         steps = animation_config.get("steps", [])
         # Verrou partagé avec le studio IA : non bloquant côté scheduler (la publication reste prioritaire)

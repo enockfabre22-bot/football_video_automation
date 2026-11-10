@@ -20,13 +20,20 @@ class FileLogger:
         self.terminal.write(message)
         if message.strip():
             timestamp = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
-            for line in message.rstrip().split("\n"):
-                self.log_file.write(f"[{timestamp}] {line}\n")
-            self.log_file.flush()
+            # Disque plein : on perd la ligne de log plutôt que de faire planter tout le service
+            try:
+                for line in message.rstrip().split("\n"):
+                    self.log_file.write(f"[{timestamp}] {line}\n")
+                self.log_file.flush()
+            except OSError:
+                pass
 
     def flush(self):
         self.terminal.flush()
-        self.log_file.flush()
+        try:
+            self.log_file.flush()
+        except OSError:
+            pass
 
 def setup_logging():
     base_dir = Path(__file__).resolve().parent.parent

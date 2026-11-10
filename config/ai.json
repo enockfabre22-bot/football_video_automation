@@ -27,6 +27,7 @@
   "limits": {
     "max_concept_attempts": 2,
     "max_code_fixes": 3,
+    "review_enabled": false,
     "max_visual_reviews": 3,
     "review_accept_score": 6,
     "max_final_renders": 1,

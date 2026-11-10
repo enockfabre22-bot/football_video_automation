@@ -412,7 +412,8 @@ class CreationPipeline:
     def _step_review(self):
         st = self.state
         max_reviews = int(self.limits.get("max_visual_reviews", 2))
-        if max_reviews <= 0:
+        if not self.limits.get("review_enabled", True) or max_reviews <= 0:
+            log("Revue visuelle désactivée (review_enabled = false) : passage direct au rendu")
             st["step"] = "render"
             return
         prev_dir = self.dir / "preview"

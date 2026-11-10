@@ -1,7 +1,7 @@
 // Planche de Galton : des billes tombent à travers des rangées de clous et s'empilent dans des bacs.
-// Exemple de scène écrite à la main qui respecte le contrat anim_runtime.h.
+// Exemple de scène écrite à la main qui respecte le contrat anim_runtime.h (Box2D 2.4, API C++).
 #include "anim_runtime.h"
-#include "box2d/box2d.h"
+#include <box2d/box2d.h>
 
 #include <algorithm>
 #include <cmath>
@@ -12,9 +12,24 @@ namespace {
 const float PPM = 40.0f;   // pixels (logiques) par mètre
 
 struct Ball {
-    b2BodyId body;
+    b2Body* body;
     float radius;
     Color color;
+};
+
+// Récupère la vitesse d'impact de chaque nouveau contact (pour déclencher les sons)
+class ImpactListener : public b2ContactListener {
+public:
+    std::vector<float> impacts;
+    void BeginContact(b2Contact* contact) override {
+        b2WorldManifold wm;
+        contact->GetWorldManifold(&wm);
+        b2Body* a = contact->GetFixtureA()->GetBody();
+        b2Body* b = contact->GetFixtureB()->GetBody();
+        b2Vec2 p = wm.points[0];
+        b2Vec2 rel = b->GetLinearVelocityFromWorldPoint(p) - a->GetLinearVelocityFromWorldPoint(p);
+        impacts.push_back(std::fabs(b2Dot(rel, wm.normal)));
+    }
 };
 
 class GaltonScene : public Scene {
@@ -23,25 +38,20 @@ public:
         worldW = ctx.width / PPM;    // 27 m
         worldH = ctx.height / PPM;   // 48 m
 
-        b2WorldDef wd = b2DefaultWorldDef();
-        wd.gravity = b2Vec2{0.0f, -12.0f};
-        world = b2CreateWorld(&wd);
+        world = new b2World(b2Vec2(0.0f, -12.0f));
+        world->SetContactListener(&listener);
 
-        b2BodyDef gd = b2DefaultBodyDef();
-        ground = b2CreateBody(world, &gd);
-
-        b2ShapeDef sd = b2DefaultShapeDef();
-        sd.material.friction = 0.3f;
-        sd.material.restitution = 0.2f;
+        b2BodyDef gd;
+        ground = world->CreateBody(&gd);
 
         // Murs et sol
-        addSegment(sd, {0.5f, 0.5f}, {worldW - 0.5f, 0.5f});
-        addSegment(sd, {0.5f, 0.5f}, {0.5f, worldH});
-        addSegment(sd, {worldW - 0.5f, 0.5f}, {worldW - 0.5f, worldH});
+        addSegment({0.5f, 0.5f}, {worldW - 0.5f, 0.5f});
+        addSegment({0.5f, 0.5f}, {0.5f, worldH});
+        addSegment({worldW - 0.5f, 0.5f}, {worldW - 0.5f, worldH});
 
         // Entonnoir au sommet
-        addSegment(sd, {3.0f, 44.0f}, {worldW / 2 - 1.2f, 40.5f});
-        addSegment(sd, {worldW - 3.0f, 44.0f}, {worldW / 2 + 1.2f, 40.5f});
+        addSegment({3.0f, 44.0f}, {worldW / 2 - 1.2f, 40.5f});
+        addSegment({worldW - 3.0f, 44.0f}, {worldW / 2 + 1.2f, 40.5f});
 
         // Clous en quinconce
         const int rows = 13;
@@ -50,15 +60,21 @@ public:
             float y = 37.5f - r * 1.65f;
             float offset = (r % 2) * spacing / 2;
             for (float x = 1.6f + offset; x < worldW - 1.4f; x += spacing) {
-                b2Circle peg = {b2Vec2{x, y}, 0.22f};
-                b2CreateCircleShape(ground, &sd, &peg);
-                pegs.push_back(b2Vec2{x, y});
+                b2CircleShape peg;
+                peg.m_p.Set(x, y);
+                peg.m_radius = 0.22f;
+                b2FixtureDef fd;
+                fd.shape = &peg;
+                fd.friction = 0.3f;
+                fd.restitution = 0.2f;
+                ground->CreateFixture(&fd);
+                pegs.push_back(b2Vec2(x, y));
             }
         }
 
         // Séparateurs des bacs
         for (float x = 0.5f + 1.5f; x < worldW - 0.6f; x += 1.5f) {
-            addSegment(sd, {x, 0.5f}, {x, 12.0f});
+            addSegment({x, 0.5f}, {x, 12.0f});
             dividers.push_back(x);
         }
     }
@@ -67,12 +83,11 @@ public:
         // Une bille toutes les 3 images pendant les 2/3 de la vidéo
         if (ctx.frame % 3 == 0 && ctx.time < ctx.duration * 0.66 && balls.size() < 450) spawnBall(ctx);
 
-        b2World_Step(world, dt, 4);
+        listener.impacts.clear();
+        world->Step(dt, 8, 3);
 
         // Son à chaque impact assez fort
-        b2ContactEvents ev = b2World_GetContactEvents(world);
-        for (int i = 0; i < ev.hitCount; ++i) {
-            float speed = ev.hitEvents[i].approachSpeed;
+        for (float speed : listener.impacts) {
             if (speed < 4.0f) continue;
             ctx.sound(speed > 10.0f ? "hit" : "bounce", std::min(1.0f, speed / 14.0f));
         }
@@ -80,7 +95,7 @@ public:
         // Métriques de contrôle (lues par l'application)
         int outOfBounds = 0;
         for (const Ball& b : balls) {
-            b2Vec2 p = b2Body_GetPosition(b.body);
+            b2Vec2 p = b.body->GetPosition();
             if (!std::isfinite(p.x) || p.x < -1 || p.x > worldW + 1 || p.y < -1) outOfBounds++;
         }
         ctx.metric("balls", (double)balls.size());
@@ -103,25 +118,31 @@ public:
         DrawLineEx(toScreen({worldW - 3.0f, 44.0f}, ctx), toScreen({worldW / 2 + 1.2f, 40.5f}, ctx), 6.0f, Color{120, 130, 170, 255});
 
         for (const Ball& b : balls) {
-            Vector2 s = toScreen(b2Body_GetPosition(b.body), ctx);
+            Vector2 s = toScreen(b.body->GetPosition(), ctx);
             DrawCircleV(s, b.radius * PPM, b.color);
             DrawCircleV(Vector2{s.x - b.radius * PPM * 0.3f, s.y - b.radius * PPM * 0.3f}, b.radius * PPM * 0.3f, Fade(WHITE, 0.35f));
         }
     }
 
-    void shutdown(AnimContext&) override { b2DestroyWorld(world); }
+    void shutdown(AnimContext&) override { delete world; }
 
 private:
-    b2WorldId world;
-    b2BodyId ground;
+    b2World* world = nullptr;
+    b2Body* ground = nullptr;
+    ImpactListener listener;
     float worldW = 27.0f, worldH = 48.0f;
     std::vector<Ball> balls;
     std::vector<b2Vec2> pegs;
     std::vector<float> dividers;
 
-    void addSegment(const b2ShapeDef& sd, b2Vec2 a, b2Vec2 b) {
-        b2Segment seg = {a, b};
-        b2CreateSegmentShape(ground, &sd, &seg);
+    void addSegment(b2Vec2 a, b2Vec2 b) {
+        b2EdgeShape edge;
+        edge.SetTwoSided(a, b);
+        b2FixtureDef fd;
+        fd.shape = &edge;
+        fd.friction = 0.3f;
+        fd.restitution = 0.2f;
+        ground->CreateFixture(&fd);
     }
 
     Vector2 toScreen(b2Vec2 p, const AnimContext& ctx) const {
@@ -129,21 +150,22 @@ private:
     }
 
     void spawnBall(AnimContext& ctx) {
-        b2BodyDef bd = b2DefaultBodyDef();
+        b2BodyDef bd;
         bd.type = b2_dynamicBody;
-        bd.position = b2Vec2{worldW / 2 + ctx.randf(-2.5f, 2.5f), 46.0f};
-        b2BodyId body = b2CreateBody(world, &bd);
+        bd.position.Set(worldW / 2 + ctx.randf(-2.5f, 2.5f), 46.0f);
+        b2Body* body = world->CreateBody(&bd);
 
         float r = ctx.randf(0.26f, 0.34f);
-        b2ShapeDef sd = b2DefaultShapeDef();
-        sd.density = 1.0f;
-        sd.material.friction = 0.1f;
-        sd.material.restitution = 0.25f;
-        sd.enableHitEvents = true;
-        b2Circle c = {b2Vec2{0.0f, 0.0f}, r};
-        b2CreateCircleShape(body, &sd, &c);
+        b2CircleShape c;
+        c.m_radius = r;
+        b2FixtureDef fd;
+        fd.shape = &c;
+        fd.density = 1.0f;
+        fd.friction = 0.1f;
+        fd.restitution = 0.25f;
+        body->CreateFixture(&fd);
 
-        float hue = std::fmod(ctx.time * 40.0f, 360.0f);
+        float hue = std::fmod((float)ctx.time * 40.0f, 360.0f);
         balls.push_back({body, r, ColorFromHSV(hue, 0.75f, 1.0f)});
     }
 };

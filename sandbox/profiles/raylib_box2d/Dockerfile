@@ -3,7 +3,7 @@
 FROM ubuntu:24.04
 
 ARG RAYLIB_VERSION=5.5
-ARG BOX2D_VERSION=v3.1.0
+ARG BOX2D_VERSION=v2.4.2
 
 ENV DEBIAN_FRONTEND=noninteractive
 
@@ -23,16 +23,16 @@ RUN git clone --depth 1 --branch ${RAYLIB_VERSION} https://github.com/raysan5/ra
     && cmake --install /opt/src/raylib/build \
     && rm -rf /opt/src/raylib
 
-# Box2D v3 (API C)
-# Box2D compile avec -Werror codé en dur : GCC 13 (Ubuntu 24.04) y lève un faux positif
-# "maybe-uninitialized" dans distance.c. On désactive seulement le "avertissement = erreur".
+# Box2D 2.4 (API C++ : b2World, CreateFixture...) — même API que les exemples des cahiers des charges.
+# En-tête de compatibilité <Box2D/Box2D.h> : sous Windows la casse est ignorée, pas sous Linux.
 RUN git clone --depth 1 --branch ${BOX2D_VERSION} https://github.com/erincatto/box2d.git /opt/src/box2d \
-    && sed -i -e 's/ -Werror//g' -e 's/COMPILE_WARNING_AS_ERROR ON/COMPILE_WARNING_AS_ERROR OFF/' /opt/src/box2d/src/CMakeLists.txt \
     && cmake -S /opt/src/box2d -B /opt/src/box2d/build -DCMAKE_BUILD_TYPE=Release \
-        -DBOX2D_SAMPLES=OFF -DBOX2D_BENCHMARKS=OFF -DBOX2D_UNIT_TESTS=OFF -DBOX2D_DOCS=OFF \
+        -DBOX2D_BUILD_UNIT_TESTS=OFF -DBOX2D_BUILD_TESTBED=OFF -DBOX2D_BUILD_DOCS=OFF \
     && cmake --build /opt/src/box2d/build -j"$(nproc)" \
     && find /opt/src/box2d/build -name 'libbox2d*.a' -exec cp {} /usr/local/lib/ \; \
     && cp -r /opt/src/box2d/include/box2d /usr/local/include/ \
+    && mkdir -p /usr/local/include/Box2D \
+    && printf '#pragma once\n#include <box2d/box2d.h>\n' > /usr/local/include/Box2D/Box2D.h \
     && rm -rf /opt/src/box2d
 
 # Rendu OpenGL logiciel (Mesa llvmpipe) ; caches dans /tmp (le reste du système est en lecture seule)

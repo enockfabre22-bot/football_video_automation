@@ -48,6 +48,26 @@ class JobManager:
                 return data
         return None
 
+    def get_pending_job(self, job_id):
+        """Relit un job en attente depuis le disque (None s'il a déjà été traité)."""
+        job_file = self.pending_dir / f"{job_id}.json"
+        if not job_file.exists():
+            return None
+        return self._load_json(job_file)
+
+    def list_pending_jobs(self, status=None):
+        """Liste les jobs de jobs/pending/, éventuellement filtrés par statut."""
+        jobs = []
+        for f in sorted(self.pending_dir.glob("*.json")):
+            try:
+                data = self._load_json(f)
+            except (OSError, json.JSONDecodeError) as e:
+                print(f"[AVERTISSEMENT] Job illisible ignoré : {f.name} ({e})")
+                continue
+            if status is None or data.get("status") == status:
+                jobs.append(data)
+        return jobs
+
     @staticmethod
     def build_job_id(date_str, home, away, anim_name):
         """Identifiant unique d'un job (source unique de vérité pour le format)."""

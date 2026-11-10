@@ -359,6 +359,29 @@ def publish_scheduled_job(job, account_name="tiktok_main"):
     # 3. RETOUR DU RÉSULTAT
     return pub_success
 
+def discard_job(job, reason):
+    """
+    Abandonne un job sans le publier (ex. créneau expiré pendant un arrêt du service) :
+    job -> jobs/failed/, vidéo et dossier temporaire supprimés, création IA remise en stock.
+    """
+    job_id = job["job_id"]
+    job_mgr = JobManager()
+    job_mgr.update_status(job_id, "FAILED", error=reason)
+    print(f"❌ [JOB FAILED] {job_id} : {reason}")
+
+    ai_anim = (job.get("metadata") or {}).get("ai_animation")
+    if ai_anim:
+        try:
+            AIStockManager().release(ai_anim, job_id, reason="job expiré")
+        except Exception as e:
+            print(f"[AVERTISSEMENT] Mise à jour du stock IA impossible : {e}")
+
+    video_path = job.get("video_path")
+    if video_path and os.path.exists(video_path):
+        os.remove(video_path)
+        print(f"[CLEANUP] Fichier vidéo supprimé : {video_path}")
+    job_mgr.cleanup_temp(job_id)
+
 def run_daily_workflow(account_name="tiktok_main"):
     """Exécute immédiatement la préparation suivie de la publication (Mode direct / Test)."""
     ready_jobs = prepare_daily_videos(account_name)

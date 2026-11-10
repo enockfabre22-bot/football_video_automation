@@ -1,6 +1,7 @@
 import os
 import json
 import random
+import shutil
 import subprocess
 import sys
 from pathlib import Path
@@ -8,6 +9,8 @@ from dotenv import load_dotenv
 
 # Import du nouveau générateur de miniatures
 from thumbnail_generator import generate_custom_thumbnail
+from ai_stock import AIStockManager
+from render_lock import render_lock
 
 load_dotenv()
 
@@ -72,16 +75,21 @@ class AnimationManager:
             print(f"[ERREUR] Stratégie '{strategy}' inconnue.")
             return None
 
-    def generate_job_metadata(self, animation_config, account_config, match_data=None):
+    def generate_job_metadata(self, animation_config, account_config, match_data=None, extra_placeholders=None):
         anim_meta = animation_config.get("metadata", {})
         acc_rules = account_config.get("metadata_rules", {})
-        
+
         titles = anim_meta.get("titles", ["Simulation Football"])
         descriptions = anim_meta.get("descriptions", [""])
-        
+
         chosen_title = random.choice(titles) if titles else "Simulation Football"
         chosen_desc = random.choice(descriptions) if descriptions else ""
-        
+
+        # Placeholders supplémentaires (ex. {ai_title}, {ai_concept} pour les animations IA)
+        for key, value in (extra_placeholders or {}).items():
+            chosen_title = chosen_title.replace(f"{{{key}}}", str(value))
+            chosen_desc = chosen_desc.replace(f"{{{key}}}", str(value))
+
         if match_data:
             home = match_data.get("home", "Domicile")
             away = match_data.get("away", "Extérieur")
@@ -156,6 +164,11 @@ class AnimationManager:
         self.videos_dir.mkdir(parents=True, exist_ok=True)
 
         output_video_path = self.videos_dir / f"{job_id}.mp4"
+
+        # Animation IA : la vidéo a déjà été conçue, validée et rendue par le studio IA.
+        # Le scheduler se contente de livrer la création réservée (aucun appel à Claude ici).
+        if animation_config.get("type") == "ai":
+            return self._deliver_ai_creation(anim_name, job_id, job_work_dir, output_video_path)
         job_file_path = job_work_dir / "job.json"
 
         job_payload = {
@@ -176,15 +189,17 @@ class AnimationManager:
             json.dump(job_payload, f, indent=4, ensure_ascii=False)
 
         steps = animation_config.get("steps", [])
-        for index, step in enumerate(steps, start=1):
-            step_type = step.get("type")
-            step_name = step.get("name", f"Étape {index}")
-            print(f"  --> Exécution étape {index}/{len(steps)} ({step_type}) : {step_name}")
+        # Verrou partagé avec le studio IA : non bloquant côté scheduler (la publication reste prioritaire)
+        with render_lock(owner=f"scheduler:{job_id}", blocking=False):
+            for index, step in enumerate(steps, start=1):
+                step_type = step.get("type")
+                step_name = step.get("name", f"Étape {index}")
+                print(f"  --> Exécution étape {index}/{len(steps)} ({step_type}) : {step_name}")
 
-            success = self._run_step(step, anim_folder, job_file_path)
-            if not success:
-                print(f"[ERREUR] Échec critique à l'étape {index} ({step_name}). Abandon du rendu.")
-                return None
+                success = self._run_step(step, anim_folder, job_file_path)
+                if not success:
+                    print(f"[ERREUR] Échec critique à l'étape {index} ({step_name}). Abandon du rendu.")
+                    return None
 
         # Validation de la vidéo finale
         if output_video_path.exists() and output_video_path.stat().st_size > 0:
@@ -212,6 +227,29 @@ class AnimationManager:
         else:
             print(f"[ERREUR] Le pipeline s'est terminé mais la vidéo finale est absente ou vide : {output_video_path}")
             return None
+
+    def _deliver_ai_creation(self, anim_name, job_id, job_work_dir, output_video_path):
+        """Copie la vidéo de la création IA réservée pour ce job vers output/videos/<job_id>.mp4."""
+        found = AIStockManager().get_reservation(anim_name, job_id)
+        if not found:
+            print(f"[ERREUR] Aucune création IA réservée pour le job {job_id}.")
+            return None
+
+        creation_dir, state = found
+        source = AIStockManager().get_video_path(creation_dir, state)
+        if not source or not source.exists():
+            print(f"[ERREUR] Vidéo de la création IA introuvable : {source}")
+            return None
+
+        # Copie (et non déplacement) : si la publication échoue, la création reste intacte dans le stock
+        shutil.copy2(source, output_video_path)
+
+        thumbnail = creation_dir / "thumbnail.jpg"
+        if thumbnail.exists():
+            shutil.copy2(thumbnail, job_work_dir / "thumbnail_source.jpg")
+
+        print(f"[SUCCÈS] Création IA '{state.get('creation_id', creation_dir.name)}' livrée : {output_video_path}")
+        return output_video_path
 
     def _run_step(self, step, anim_folder, job_file_path):
         step_type = step.get("type")

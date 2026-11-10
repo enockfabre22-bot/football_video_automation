@@ -6,6 +6,7 @@ from match_manager import MatchManager
 from animation_manager import AnimationManager
 from job_manager import JobManager
 from publication_manager import PublicationManager
+from ai_stock import AIStockManager
 import time
 import os
 
@@ -35,6 +36,47 @@ def setup_logging():
     if not isinstance(sys.stdout, FileLogger):
         sys.stdout = FileLogger(log_file)
 
+def resolve_ai_animation(anim_config, slot, account_name, anim_mgr, ai_stock):
+    """
+    Si l'animation choisie est une animation IA sans création prête dans le stock,
+    bascule sur l'animation de secours du slot ('fallback_animation') ou, en stratégie
+    'random', sur une autre animation. Les animations classiques sont renvoyées telles quelles.
+    """
+    if anim_config.get("type") != "ai":
+        return anim_config
+
+    anim_name = anim_config["name"]
+    slot_id = slot.get("id", "unknown_slot")
+    date_str = (datetime.now() + timedelta(days=1)).strftime("%Y-%m-%d")
+    expected_job_id = JobManager.build_job_id(date_str, slot_id, "no_match", anim_name)
+
+    if ai_stock.can_serve(anim_name, expected_job_id):
+        print(f"  -> Animation IA '{anim_name}' : {ai_stock.count_ready(anim_name)} création(s) prête(s) en stock")
+        return anim_config
+
+    print(f"  -> [STOCK IA VIDE] Aucune création prête pour '{anim_name}'.")
+
+    fallback = slot.get("fallback_animation")
+    if fallback:
+        print(f"  -> [FALLBACK] Utilisation de l'animation de secours '{fallback}'")
+        fallback_cfg = anim_mgr.select_animation(account_name, strategy="fixed", target_animation=fallback)
+        if fallback_cfg and fallback_cfg.get("type") == "ai":
+            # Une animation de secours IA pourrait elle aussi être vide : on refuse l'enchaînement
+            print(f"  -> [FALLBACK] '{fallback}' est une animation IA : elle ne peut pas servir de secours.")
+            return None
+        return fallback_cfg
+
+    if slot.get("animation_strategy", "random") == "random":
+        exclude = list(slot.get("exclude_animations", [])) + [anim_name]
+        # On exclut aussi toutes les autres animations IA sans stock
+        for candidate in anim_mgr.discover_animations(account_name):
+            if candidate.get("type") == "ai" and ai_stock.count_ready(candidate["name"]) == 0:
+                exclude.append(candidate["name"])
+        print("  -> [FALLBACK] Nouveau tirage aléatoire parmi les animations disponibles")
+        return anim_mgr.select_animation(account_name, strategy="random", exclude_animations=exclude)
+
+    return None
+
 def prepare_daily_videos(account_name="tiktok_main"):
     """
     Phase 1 : Itère sur les créneaux (slots) du compte, sélectionne l'animation,
@@ -49,6 +91,7 @@ def prepare_daily_videos(account_name="tiktok_main"):
     anim_mgr = AnimationManager()
     job_mgr = JobManager()
     pub_mgr = PublicationManager()
+    ai_stock = AIStockManager()
 
     account_cfg = pub_mgr.get_account_config(account_name)
     if not account_cfg or not account_cfg.get("enabled", False):
@@ -91,6 +134,14 @@ def prepare_daily_videos(account_name="tiktok_main"):
             print(f"[ERREUR] Impossible de satisfaire la stratégie du slot '{slot_id}'. Créneau ignoré.")
             continue
 
+        # 1.bis Animation IA : elle ne peut servir le créneau que si le studio IA a du stock prêt.
+        # Sinon -> animation de secours (fallback_animation) ou, en mode random, une autre animation.
+        anim_config = resolve_ai_animation(anim_config, slot, account_name, anim_mgr, ai_stock)
+        if not anim_config:
+            print(f"[INFO] Aucune animation disponible pour le slot '{slot_id}'. Créneau ignoré.")
+            continue
+
+        is_ai = anim_config.get("type") == "ai"
         requires_match = anim_config.get("requires_match_data", False)
         match_data = None
         
@@ -166,10 +217,36 @@ def prepare_daily_videos(account_name="tiktok_main"):
         job_id = job["job_id"]
         video_path = job.get("video_path")
 
+        # 3.bis Animation IA : réservation d'une création du stock pour ce job
+        ai_creation = None
+        if is_ai:
+            reserved = ai_stock.reserve(anim_config["name"], job_id)
+            if not reserved:
+                job_mgr.update_status(job_id, "FAILED", error="Stock IA vide au moment de la réservation")
+                print(f"[JOB FAILED] Stock IA vide pour '{anim_config['name']}'. Créneau ignoré.")
+                continue
+            ai_creation = reserved[1]
+
         # 4. Génération des métadonnées
         metadata = job.get("metadata")
         if not metadata:
-            metadata = anim_mgr.generate_job_metadata(anim_config, account_cfg, match_data if requires_match else None)
+            extra = None
+            if ai_creation:
+                extra = {
+                    "ai_title": ai_creation.get("title", ""),
+                    "ai_concept": ai_creation.get("pitch", ""),
+                }
+            metadata = anim_mgr.generate_job_metadata(
+                anim_config, account_cfg, match_data if requires_match else None, extra_placeholders=extra
+            )
+
+            if ai_creation:
+                metadata["ai_generated"] = True
+                metadata["ai_animation"] = anim_config["name"]
+                metadata["ai_creation_id"] = ai_creation.get("creation_id")
+                overrides = anim_config.get("ai", {}).get("publish_overrides")
+                if overrides:
+                    metadata["publish_overrides"] = overrides
             
             # Injection des données musicales dans les métadonnées
             if not requires_match and "song_title" in match_data:
@@ -202,6 +279,8 @@ def prepare_daily_videos(account_name="tiktok_main"):
             if not video_path:
                 job_mgr.update_status(job_id, "FAILED", error="Échec lors de la génération de la vidéo")
                 print(f"[JOB FAILED] Le job {job_id} a été déplacé dans jobs/failed/")
+                if is_ai:
+                    ai_stock.release(anim_config["name"], job_id, reason="échec de livraison de la vidéo")
             
                 # --- NOUVEAU : NETTOYAGE SI LA GÉNÉRATION PLANTE ---
                 temp_dir = Path("output/temporary") / job_id
@@ -242,7 +321,20 @@ def publish_scheduled_job(job, account_name="tiktok_main"):
     metadata = job["metadata"]
 
     pub_success = pub_mgr.publish_video(video_path, metadata, account_name)
-    
+
+    # 0. Suivi du stock IA (ne doit jamais faire échouer la publication elle-même)
+    ai_anim = metadata.get("ai_animation")
+    if ai_anim:
+        try:
+            ai_stock = AIStockManager()
+            if pub_success:
+                platform = pub_mgr.get_account_config(account_name).get("platform", "unknown")
+                ai_stock.mark_published(ai_anim, job_id, account_name, platform, url=metadata.get("published_url"))
+            else:
+                ai_stock.release(ai_anim, job_id, reason="échec de publication")
+        except Exception as e:
+            print(f"[AVERTISSEMENT] Mise à jour du stock IA impossible : {e}")
+
     # 1. GESTION DU STATUT (Succès ou Échec)
     if pub_success:
         job_mgr.update_status(job_id, "PUBLISHED")

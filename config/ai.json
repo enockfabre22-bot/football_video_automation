@@ -1,0 +1,56 @@
+{
+  "enabled": false,
+
+  "models": {
+    "design": "claude-sonnet-5-5",
+    "code": "claude-sonnet-5-5",
+    "visual_review": "claude-sonnet-5-5",
+    "history_card": "claude-haiku-5-5",
+    "escalation": null
+  },
+
+  "pricing_usd_per_mtok": {
+    "claude-sonnet-5-5": { "input": 2.00, "output": 10.00, "cache_read": 0.10, "cache_write_1h": 4.00 },
+    "claude-haiku-5-5": { "input": 0.10, "output": 0.50, "cache_read": 0.01, "cache_write_1h": 0.20 },
+    "claude-opus-5-5": { "input": 4.00, "output": 20.00, "cache_read": 0.20, "cache_write_1h": 8.00 }
+  },
+
+  "budgets_usd": {
+    "per_creation": 1.50,
+    "per_animation_monthly": 60.00,
+    "global_monthly": 150.00
+  },
+
+  "limits": {
+    "max_concept_attempts": 2,
+    "max_code_fixes": 3,
+    "max_visual_reviews": 2,
+    "max_final_renders": 1,
+    "max_creation_minutes": 180,
+    "max_same_error_repeats": 2,
+    "api_timeout_seconds": 600,
+    "api_max_retries": 2
+  },
+
+  "similarity": {
+    "reject_threshold": 0.55,
+    "history_summary_count": 15,
+    "similar_cards_count": 3
+  },
+
+  "studio": {
+    "loop_interval_minutes": 10,
+    "window": { "start": "00:00", "end": "23:59" }
+  },
+
+  "sandbox": {
+    "engine": "docker",
+    "cpus": 3,
+    "memory": "5g",
+    "pids_limit": 256,
+    "gpu": false,
+    "build_timeout_seconds": 300,
+    "preview_timeout_seconds": 600,
+    "final_timeout_seconds": 7200
+  }
+}

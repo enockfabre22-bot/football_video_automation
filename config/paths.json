@@ -11,5 +11,6 @@
   "output_videos": "output/videos/",
   "logs": "logs/",
   "animations": "animations/",
-  "accounts": "accounts/"
+  "accounts": "accounts/",
+  "ai_data": "ai_data/"
 }

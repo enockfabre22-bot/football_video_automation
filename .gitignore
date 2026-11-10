@@ -28,3 +28,7 @@ commande_VPS.txt
 client_secret.json
 token.json
 accounts/**/token.json
+
+# Studio IA : créations, historiques et grand livre des coûts (vivent sur le VPS)
+ai_data/
+output/.render.lock

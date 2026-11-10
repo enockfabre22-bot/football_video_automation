@@ -92,6 +92,12 @@ class PublicationManager:
         platform = account_cfg.get("platform", "tiktok")
         dry_run = self.app_config.get("dry_run", True)
 
+        # Surcharges de publication propres à une animation (ex. animations IA publiées
+        # en brouillon TikTok / privé YouTube pendant la phase de lancement)
+        overrides = metadata.get("publish_overrides") or {}
+        if overrides:
+            account_cfg = {**account_cfg, **overrides}
+
         # Extraction sécurisée du nouveau format V2
         title = metadata.get("title", "Vidéo automatique")
         desc = metadata.get("description", "")
@@ -106,6 +112,8 @@ class PublicationManager:
         print(f"  --> Titre    : {title}")
         print(f"  --> Légende  : {display_caption}")
         print(f"  --> Fichier  : {Path(video_path).name}")
+        if overrides:
+            print(f"  --> Surcharges de l'animation : {overrides}")
 
         if dry_run:
             print("  --> [DRY-RUN ACTIVÉ] Simulation de publication réussie (aucun envoi réseau réel).")

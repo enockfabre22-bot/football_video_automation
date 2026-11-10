@@ -90,6 +90,8 @@ def upload_youtube_video(video_path, metadata, account_name, account_cfg, base_d
         response = request.execute()
         video_id = response.get('id')
         print(f"  --> [YouTube SUCCÈS] Vidéo publiée (Statut: {privacy_status}) ! Lien: https://youtu.be/{video_id}")
+        # Remonté à l'application pour l'historique de publication
+        metadata["published_url"] = f"https://youtu.be/{video_id}"
         
     except Exception as e:
         print(f"  --> [YouTube ERREUR] Échec de l'upload vidéo : {e}")

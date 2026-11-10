@@ -48,11 +48,14 @@ class JobManager:
                 return data
         return None
 
+    @staticmethod
+    def build_job_id(date_str, home, away, anim_name):
+        """Identifiant unique d'un job (source unique de vérité pour le format)."""
+        return f"{date_str}_{home.replace(' ', '_')}_{away.replace(' ', '_')}_{anim_name}"
+
     def create_job(self, match_data, anim_name, account_name):
         """Crée un nouveau job à l'état PENDING dans jobs/pending/."""
-        clean_home = match_data['home'].replace(' ', '_')
-        clean_away = match_data['away'].replace(' ', '_')
-        job_id = f"{match_data['date']}_{clean_home}_{clean_away}_{anim_name}"
+        job_id = self.build_job_id(match_data['date'], match_data['home'], match_data['away'], anim_name)
 
         job_file = self.pending_dir / f"{job_id}.json"
         now_str = datetime.now().isoformat(timespec="seconds")

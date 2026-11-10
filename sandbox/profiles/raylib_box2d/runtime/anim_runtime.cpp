@@ -182,7 +182,9 @@ int main(int argc, char** argv) {
     if (!load_config(argv[1], cfg)) { fprintf(stderr, "Config illisible : %s\n", argv[1]); return 2; }
 
     const bool preview = (cfg.mode == "preview");
+#ifdef SIGPIPE
     std::signal(SIGPIPE, SIG_IGN);   // si ffmpeg s'arrête, on veut une erreur propre et non un crash
+#endif
 
     AnimContext ctx;
     ctx.width = cfg.logical_width;
@@ -210,7 +212,7 @@ int main(int argc, char** argv) {
         char cmd[1024];
         snprintf(cmd, sizeof(cmd),
                  "ffmpeg -y -loglevel error -f rawvideo -pix_fmt rgba -s %dx%d -r %d -i - "
-                 "-c:v libx264 -preset medium -crf %d -pix_fmt yuv420p -movflags +faststart '%s'",
+                 "-c:v libx264 -preset medium -crf %d -pix_fmt yuv420p -movflags +faststart \"%s\"",
                  cfg.render_width, cfg.render_height, cfg.fps, cfg.crf, video_only.c_str());
         ffmpeg = popen(cmd, "w");
         if (!ffmpeg) { fprintf(stderr, "Impossible de lancer ffmpeg\n"); return 3; }
@@ -293,15 +295,19 @@ int main(int argc, char** argv) {
         if (!cfg.sounds_dir.empty() && !ctx.events.empty()) mixed = mix_audio(ctx, cfg, wav);
         if (mixed < 0) { fprintf(stderr, "Écriture de audio.wav impossible\n"); return 6; }
 
-        char cmd[2048];
-        if (mixed > 0)
+        bool assembled;
+        if (mixed > 0) {
+            char cmd[2048];
             snprintf(cmd, sizeof(cmd),
-                     "ffmpeg -y -loglevel error -i '%s' -i '%s' -c:v copy -c:a aac -b:a 192k -shortest -movflags +faststart '%s'",
+                     "ffmpeg -y -loglevel error -i \"%s\" -i \"%s\" -c:v copy -c:a aac -b:a 192k -shortest -movflags +faststart \"%s\"",
                      video_only.c_str(), wav.c_str(), final_video.c_str());
-        else
-            snprintf(cmd, sizeof(cmd), "mv '%s' '%s'", video_only.c_str(), final_video.c_str());
-        if (std::system(cmd) != 0) { fprintf(stderr, "Assemblage vidéo/son impossible\n"); return 7; }
-        std::remove(video_only.c_str());
+            assembled = (std::system(cmd) == 0);
+            std::remove(video_only.c_str());
+        } else {
+            std::remove(final_video.c_str());
+            assembled = (std::rename(video_only.c_str(), final_video.c_str()) == 0);
+        }
+        if (!assembled) { fprintf(stderr, "Assemblage vidéo/son impossible\n"); return 7; }
     }
 
     // --- Métriques ---

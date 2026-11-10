@@ -73,8 +73,8 @@ public:
         b2ContactEvents ev = b2World_GetContactEvents(world);
         for (int i = 0; i < ev.hitCount; ++i) {
             float speed = ev.hitEvents[i].approachSpeed;
-            if (speed < 2.0f) continue;
-            ctx.sound(speed > 9.0f ? "hit" : "bounce", std::min(1.0f, speed / 14.0f));
+            if (speed < 4.0f) continue;
+            ctx.sound(speed > 10.0f ? "hit" : "bounce", std::min(1.0f, speed / 14.0f));
         }
 
         // Métriques de contrôle (lues par l'application)
@@ -90,6 +90,12 @@ public:
     void draw(AnimContext& ctx) override {
         DrawRectangleGradientV(0, 0, ctx.width, ctx.height, Color{14, 16, 34, 255}, Color{40, 18, 60, 255});
 
+        // Textes dessinés en premier : les billes passent par-dessus
+        const char* title = "GALTON BOARD";
+        DrawText(title, (ctx.width - MeasureText(title, 72)) / 2, 90, 72, Fade(RAYWHITE, 0.9f));
+        const char* counter = TextFormat("%d balls", (int)balls.size());
+        DrawText(counter, (ctx.width - MeasureText(counter, 44)) / 2, 180, 44, Fade(RAYWHITE, 0.7f));
+
         for (const b2Vec2& p : pegs) DrawCircleV(toScreen(p, ctx), 0.22f * PPM, Color{200, 205, 230, 255});
         for (float x : dividers)
             DrawLineEx(toScreen({x, 0.5f}, ctx), toScreen({x, 12.0f}, ctx), 4.0f, Color{120, 130, 170, 255});
@@ -101,11 +107,6 @@ public:
             DrawCircleV(s, b.radius * PPM, b.color);
             DrawCircleV(Vector2{s.x - b.radius * PPM * 0.3f, s.y - b.radius * PPM * 0.3f}, b.radius * PPM * 0.3f, Fade(WHITE, 0.35f));
         }
-
-        const char* title = "GALTON BOARD";
-        int tw = MeasureText(title, 72);
-        DrawText(title, (ctx.width - tw) / 2, 90, 72, RAYWHITE);
-        DrawText(TextFormat("%d balls", (int)balls.size()), 60, ctx.height - 90, 44, Fade(RAYWHITE, 0.8f));
     }
 
     void shutdown(AnimContext&) override { b2DestroyWorld(world); }
@@ -137,7 +138,7 @@ private:
         b2ShapeDef sd = b2DefaultShapeDef();
         sd.density = 1.0f;
         sd.material.friction = 0.1f;
-        sd.material.restitution = 0.45f;
+        sd.material.restitution = 0.25f;
         sd.enableHitEvents = true;
         b2Circle c = {b2Vec2{0.0f, 0.0f}, r};
         b2CreateCircleShape(body, &sd, &c);

@@ -24,7 +24,10 @@ RUN git clone --depth 1 --branch ${RAYLIB_VERSION} https://github.com/raysan5/ra
     && rm -rf /opt/src/raylib
 
 # Box2D v3 (API C)
+# Box2D compile avec -Werror codé en dur : GCC 13 (Ubuntu 24.04) y lève un faux positif
+# "maybe-uninitialized" dans distance.c. On désactive seulement le "avertissement = erreur".
 RUN git clone --depth 1 --branch ${BOX2D_VERSION} https://github.com/erincatto/box2d.git /opt/src/box2d \
+    && sed -i -e 's/ -Werror//g' -e 's/COMPILE_WARNING_AS_ERROR ON/COMPILE_WARNING_AS_ERROR OFF/' /opt/src/box2d/src/CMakeLists.txt \
     && cmake -S /opt/src/box2d -B /opt/src/box2d/build -DCMAKE_BUILD_TYPE=Release \
         -DBOX2D_SAMPLES=OFF -DBOX2D_BENCHMARKS=OFF -DBOX2D_UNIT_TESTS=OFF -DBOX2D_DOCS=OFF \
     && cmake --build /opt/src/box2d/build -j"$(nproc)" \

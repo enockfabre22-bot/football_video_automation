@@ -56,6 +56,7 @@ struct WatchStats {
     int dec_offscreen[10] = {0};
     double dec_moving[10] = {0};
     int dec_moving_max[10] = {0};
+    int dec_tracked_samples[10] = {0};   // échantillons ayant des corps suivis (base de la moyenne)
 };
 
 // ---------------------------------------------------------------------------
@@ -294,7 +295,10 @@ int main(int argc, char** argv) {
             watch.dec_bodies[d] = std::max(watch.dec_bodies[d], s.bodies);
             watch.dec_offscreen[d] = std::max(watch.dec_offscreen[d], s.offscreen);
             watch.dec_moving_max[d] = std::max(watch.dec_moving_max[d], s.moving);
-            watch.dec_moving[d] += s.tracked > 0 ? (double)s.moving / s.tracked : 0.0;
+            if (s.tracked > 0) {
+                watch.dec_moving[d] += (double)s.moving / s.tracked;
+                watch.dec_tracked_samples[d]++;
+            }
         }
 
         int pct = (int)(100.0 * (f + 1) / ctx.total_frames);
@@ -377,7 +381,8 @@ int main(int argc, char** argv) {
           << ",\n            \"moving_max_by_decile\": " << arr([&](int d) { return watch.dec_moving_max[d]; })
           << ",\n            \"moving_fraction_by_decile\": "
           << arr([&](int d) {
-                 double v = watch.dec_samples[d] ? watch.dec_moving[d] / watch.dec_samples[d] : 0.0;
+                 // -1 = tranche sans mesure possible (aucun corps suivi)
+                 double v = watch.dec_tracked_samples[d] ? watch.dec_moving[d] / watch.dec_tracked_samples[d] : -1.0;
                  return std::round(v * 1000.0) / 1000.0;
              })
           << "},\n"

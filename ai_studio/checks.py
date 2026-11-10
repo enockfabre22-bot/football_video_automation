@@ -54,12 +54,12 @@ def analyze_preview(out_dir, max_bodies):
         moving_max = w.get("moving_max_by_decile", [0] * 10)
         bodies_dec = w.get("bodies_by_decile", [0] * 10)
         frozen = [i for i, v in enumerate(moving[:8])
-                  if v < FROZEN_MOVING_FRACTION and moving_max[i] < FROZEN_MOVING_COUNT and bodies_dec[i] > 0]
+                  if 0 <= v < FROZEN_MOVING_FRACTION and moving_max[i] < FROZEN_MOVING_COUNT and bodies_dec[i] > 0]
         if frozen:
             failures.append("Animation figée (moins de 1 % des corps en mouvement) pendant les tranches "
                             + ", ".join(f"{i * 10}-{i * 10 + 10} %" for i in frozen)
                             + " de la vidéo : machine bloquée ou simulation terminée trop tôt.")
-        elif len(moving) == 10 and max(moving[8:]) < FROZEN_MOVING_FRACTION:
+        elif len(moving) == 10 and 0 <= max(moving[8:]) < FROZEN_MOVING_FRACTION:
             warnings.append("Plus rien ne bouge dans les 20 derniers % de la vidéo (fin statique).")
         bodies = w.get("bodies_by_decile", [])
         off = w.get("offscreen_by_decile", [])

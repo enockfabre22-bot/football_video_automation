@@ -53,6 +53,26 @@ REVIEW_SCHEMA = _obj({
     "edits": EDITS_SCHEMA,
     "notes": _STR,
 })
+def _nullable(schema):
+    return {"anyOf": [schema, {"type": "null"}]}
+
+
+# Schéma UNIQUE pour toutes les tâches Sonnet : le format de sortie fait partie du préfixe mis en
+# cache ; un schéma différent par tâche obligeait à réécrire le cache (~95 k tokens) à chaque tâche.
+SONNET_TASKS = ("concept", "code", "fix", "review")
+SONNET_SCHEMA = _obj({
+    "concept": _nullable(CONCEPT_SCHEMA),
+    "code": _nullable(CODE_SCHEMA),
+    "fix": _nullable(FIX_SCHEMA),
+    "review": _nullable(REVIEW_SCHEMA),
+})
+
+
+def answer_instruction(task):
+    return (f"FORMAT DE RÉPONSE : remplis UNIQUEMENT le champ \"{task}\" de l'objet JSON ; "
+            f"mets null à tous les autres champs.")
+
+
 CARD_SCHEMA = _obj({
     "title": _STR,
     "description": _STR,

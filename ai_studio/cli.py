@@ -6,6 +6,8 @@ Studio IA — ligne de commande (à lancer depuis la racine du projet).
         [--event "Noël" | --no-event]                    forcer / interdire un événement
   python ai_studio/cli.py resume <creation_id> [--mock]  reprend une création interrompue ou échouée
                                                          (à l'étape où elle s'est arrêtée)
+  python ai_studio/cli.py render <creation_id>           rendu final forcé (décision humaine malgré la revue)
+  python ai_studio/cli.py discard <creation_id>          écarte une création (vidéo supprimée)
   python ai_studio/cli.py history <chaîne>               fiches créatives de la chaîne
   python ai_studio/cli.py costs [--month AAAA-MM|*]      dépenses API détaillées
   python ai_studio/cli.py events <chaîne>                événements à venir
@@ -93,6 +95,23 @@ def cmd_resume(ai_cfg, args):
     return 0 if status == "READY" else 1
 
 
+def cmd_render(ai_cfg, args):
+    from pipeline import CreationPipeline
+    p = CreationPipeline.resume(args.creation_id, _client(ai_cfg, args.mock), ai_cfg)
+    p.force_render()
+    status = p.run()
+    print(f"\nRésultat : {status} — {p.dir}")
+    return 0 if status == "READY" else 1
+
+
+def cmd_discard(ai_cfg, args):
+    from claude_client import MockClaude
+    from pipeline import CreationPipeline
+    p = CreationPipeline.resume(args.creation_id, MockClaude(ai_cfg), ai_cfg)
+    p.discard()
+    print(f"Création {args.creation_id} écartée (vidéo supprimée, fiche conservée dans l'historique).")
+
+
 def cmd_history(args):
     from history import ChannelHistory
     cards = ChannelHistory(args.channel).cards()
@@ -149,6 +168,11 @@ def main():
     p = sub.add_parser("resume")
     p.add_argument("creation_id")
     p.add_argument("--mock", action="store_true")
+    p = sub.add_parser("render")
+    p.add_argument("creation_id")
+    p.add_argument("--mock", action="store_true")
+    p = sub.add_parser("discard")
+    p.add_argument("creation_id")
     p = sub.add_parser("history")
     p.add_argument("channel")
     p = sub.add_parser("costs")
@@ -167,6 +191,10 @@ def main():
         return cmd_create(ai_cfg, args)
     elif args.cmd == "resume":
         return cmd_resume(ai_cfg, args)
+    elif args.cmd == "render":
+        return cmd_render(ai_cfg, args)
+    elif args.cmd == "discard":
+        cmd_discard(ai_cfg, args)
     elif args.cmd == "history":
         cmd_history(args)
     elif args.cmd == "costs":

@@ -120,6 +120,24 @@ class CreationPipeline:
         (self.history.dir / f"{st['creation_id']}.json").unlink(missing_ok=True)
         self.save()
 
+    def force_render(self):
+        """Décision humaine : rendu final malgré le refus de la revue visuelle (aucun appel Claude
+        sauf la fiche finale). La création passe ensuite en READY comme les autres."""
+        st = self.state
+        if not (self.src_dir / "scene.cpp").exists():
+            raise RuntimeError("pas de code à rendre (la création s'est arrêtée avant l'étape code)")
+        log(f"Rendu forcé de {st['creation_id']} (statut précédent : {st['status']})")
+        st["status"] = IN_PROGRESS
+        st["step"] = "render"
+        st["human_override"] = True
+        st.pop("end_reason", None)
+        (self.history.dir / f"{st['creation_id']}.json").unlink(missing_ok=True)
+        self.save()
+
+    def discard(self, reason="écartée manuellement"):
+        self._finish(ABANDONED, reason)
+        self.save()
+
     # ------------------------------------------------------------------ #
     def save(self):
         write_json_atomic(self.dir / "state.json", self.state)
@@ -148,7 +166,11 @@ class CreationPipeline:
         models = self.ai_cfg.get("models", {})
         effort = self.ai_cfg.get("effort", {}).get(task, "medium")
         max_tokens = int(self.ai_cfg.get("max_tokens", {}).get(task, 16000))
-        return self.client.call(
+        unified = task in prompts.SONNET_TASKS
+        if unified:
+            schema = prompts.SONNET_SCHEMA
+            prompt_text = prompt_text + "\n\n" + prompts.answer_instruction(task)
+        data = self.client.call(
             task=task, model=models[model_key], system=prompts.SYSTEM,
             stable_blocks=self.stable() if stable is None else stable,
             variable_blocks=[text_block(prompt_text)] + list(extra_blocks),
@@ -156,6 +178,11 @@ class CreationPipeline:
             animation=self.name, creation_id=self.state["creation_id"],
             budget_per_creation=self.ai.get("budget_per_creation_usd"),
         )
+        if unified and task in data:   # (le faux client renvoie directement le contenu de la tâche)
+            data = data[task]
+            if not isinstance(data, dict):
+                raise ClaudeError(f"le champ \"{task}\" de la réponse est vide")
+        return data
 
     # ------------------------------------------------------------------ #
     # Boucle principale

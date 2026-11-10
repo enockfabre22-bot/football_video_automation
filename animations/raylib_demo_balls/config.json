@@ -1,0 +1,24 @@
+{
+  "name": "raylib_demo_balls",
+  "enabled": true,
+  "accounts": [],
+  "requires_match_data": false,
+  "metadata": {
+    "titles": ["Galton board physics 🎯"],
+    "descriptions": [""],
+    "hashtags": ["#physics", "#satisfying", "#simulation"],
+    "youtube_tags": ["physics", "box2d", "simulation"]
+  },
+  "min_free_disk_gb": 5,
+  "steps": [
+    {
+      "type": "sandbox",
+      "name": "Rendu Raylib + Box2D",
+      "profile": "raylib_box2d",
+      "source": "scene",
+      "sounds_dir": "../foot_ballclash/assets",
+      "seed": "random",
+      "video": { "width": 1080, "height": 1920, "fps": 60, "duration_s": 20 }
+    }
+  ]
+}

@@ -1,0 +1,8 @@
+{
+  "name": "raylib_box2d",
+  "description": "C++17 + raylib 5.5 + Box2D v3.1, rendu logiciel (Mesa) sous Xvfb, encodage ffmpeg",
+  "image": "anim-sandbox-raylib-box2d:1",
+  "source_extensions": [".cpp", ".h", ".hpp"],
+  "build_cmd": "mkdir -p /work/build && g++ -O2 -std=c++17 -I/runtime -I/src /runtime/*.cpp /src/*.cpp -o /work/build/anim -lraylib -lbox2d -lGL -lm -lpthread -ldl -lrt -lX11 2>&1",
+  "run_cmd": "xvfb-run -a -s '-screen 0 640x480x24' /work/build/anim /work/sandbox_job.txt 2>&1"
+}

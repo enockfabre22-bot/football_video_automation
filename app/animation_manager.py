@@ -260,6 +260,11 @@ class AnimationManager:
         step_type = step.get("type")
         working_dir = anim_folder
 
+        if step_type == "sandbox":
+            # Programme compilé et exécuté dans un conteneur Docker isolé (ex. Raylib + Box2D)
+            from sandbox_runner import SandboxRunner
+            return SandboxRunner().run_animation_step(step, anim_folder, job_file_path)
+
         if step_type == "python":
             script_rel_path = step.get("script")
             script_full_path = anim_folder / script_rel_path

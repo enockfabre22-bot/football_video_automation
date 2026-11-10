@@ -32,6 +32,7 @@ class SandboxRunner:
     """
 
     def __init__(self):
+        self.last_phase = None
         cfg = dict(DEFAULT_SANDBOX_CFG)
         ai_cfg_path = BASE_DIR / "config" / "ai.json"
         if ai_cfg_path.exists():
@@ -114,8 +115,9 @@ class SandboxRunner:
         """
         Compile les sources puis exécute le programme. Les sorties sont dans <work_dir>/sandbox_out/ :
         video.mp4 (mode final), frame_XXXXXX.png (images capturées), events.jsonl, metrics.json.
-        Retourne (succès, détail_erreur).
+        Retourne (succès, détail_erreur). self.last_phase indique l'étape atteinte : "setup", "build" ou "run".
         """
+        self.last_phase = "setup"
         profile = self.load_profile(profile_name)
         image = profile["image"]
         if not self.image_exists(image):
@@ -161,11 +163,13 @@ class SandboxRunner:
         tag = f"anim-{work_dir.name[-40:]}-{int(time.time())}".replace(" ", "_").lower()
         tag = "".join(c if c.isalnum() or c in "-_." else "-" for c in tag)
 
+        self.last_phase = "build"
         ok, out = self._run(self._docker_cmd(image, mounts, profile["build_cmd"], tag + "-build"),
                             tag + "-build", int(self.cfg["build_timeout_seconds"]), "Compilation")
         if not ok:
             return False, out
 
+        self.last_phase = "run"
         timeout_key = "preview_timeout_seconds" if mode == "preview" else "final_timeout_seconds"
         label = "Aperçu" if mode == "preview" else "Rendu final"
         ok, out = self._run(self._docker_cmd(image, mounts, profile["run_cmd"], tag + "-run"),

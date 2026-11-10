@@ -1,7 +1,7 @@
 // Planche de Galton : des billes tombent à travers des rangées de clous et s'empilent dans des bacs.
 // Exemple de scène écrite à la main qui respecte le contrat anim_runtime.h (Box2D 2.4, API C++).
 #include "anim_runtime.h"
-#include <box2d/box2d.h>
+#include "anim_box2d.h"
 
 #include <algorithm>
 #include <cmath>
@@ -40,6 +40,7 @@ public:
 
         world = new b2World(b2Vec2(0.0f, -12.0f));
         world->SetContactListener(&listener);
+        anim_watch_world(ctx, world, [this, &ctx](b2Vec2 p) { return toScreen(p, ctx); });
 
         b2BodyDef gd;
         ground = world->CreateBody(&gd);

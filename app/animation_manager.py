@@ -268,12 +268,16 @@ class AnimationManager:
         if step_type == "python":
             script_rel_path = step.get("script")
             script_full_path = anim_folder / script_rel_path
-            
             if not script_full_path.exists():
-                print(f"      [ERREUR] Script introuvable : {script_full_path}")
+                # Script partagé entre animations (ex. scripts/steps/add_background_music.py)
+                script_full_path = self.base_dir / script_rel_path
+
+            if not script_full_path.exists():
+                print(f"      [ERREUR] Script introuvable : {script_rel_path}")
                 return False
 
-            cmd = [sys.executable, str(script_full_path), str(job_file_path)]
+            # "args" optionnels de l'étape, ajoutés après le chemin du job.json
+            cmd = [sys.executable, str(script_full_path), str(job_file_path)] + [str(a) for a in step.get("args", [])]
 
         elif step_type == "processing":
             project_rel_path = step.get("project")

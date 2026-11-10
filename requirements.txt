@@ -8,3 +8,7 @@ requests>=2.31.0
 google-api-python-client>=2.100.0
 google-auth>=2.23.0
 google-auth-oauthlib>=1.1.0
+
+# Studio IA (ai_studio/) : API Claude + traitement d'images (aperçus, miniatures)
+anthropic==2.7.0
+pillow>=10.0.0

@@ -14,6 +14,7 @@
 #include "raylib.h"
 
 #include <cstdint>
+#include <functional>
 #include <map>
 #include <random>
 #include <string>
@@ -23,6 +24,16 @@ struct AnimSoundEvent {
     double time;          // secondes depuis le début de la vidéo
     std::string sound;    // nom du fichier son sans extension (ex. "bounce" -> bounce.mp3)
     float volume;         // 0..1
+};
+
+// Échantillon de surveillance automatique (voir anim_box2d.h : anim_watch_world)
+struct AnimWatchSample {
+    int bodies = 0;      // corps dynamiques
+    int offscreen = 0;   // corps hors du canevas visible
+    int lost = 0;        // corps très loin du canevas (sortis du monde, tombés à l'infini)
+    int invalid = 0;     // positions / vitesses NaN ou infinies
+    int tracked = 0;     // corps déjà présents à l'échantillon précédent
+    int moving = 0;      // parmi eux, ceux qui se sont réellement déplacés depuis
 };
 
 class AnimContext {
@@ -50,6 +61,9 @@ public:
     // --- Métriques personnalisées (écrites dans metrics.json) ---
     void metric(const std::string& key, double value);
 
+    // --- Surveillance automatique, installée par anim_watch_world() (anim_box2d.h) ---
+    std::function<AnimWatchSample()> watcher;
+
     // ---- Interne au runtime ----
     std::mt19937 rng;
     std::vector<AnimSoundEvent> events;
@@ -64,7 +78,9 @@ public:
     virtual ~Scene() {}
     virtual void init(AnimContext& ctx) = 0;              // création du monde (appelé une fois)
     virtual void update(AnimContext& ctx, float dt) = 0;  // avance la simulation de dt secondes
-    virtual void draw(AnimContext& ctx) = 0;              // dessine l'état courant (sans BeginDrawing)
+    virtual void draw(AnimContext& ctx) = 0;              // dessine l'état courant (sans BeginDrawing) ;
+                                                          // ne doit JAMAIS modifier l'état (en aperçu,
+                                                          // seules les images capturées sont dessinées)
     virtual void shutdown(AnimContext&) {}                // libération des ressources
 };
 

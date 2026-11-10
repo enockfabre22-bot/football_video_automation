@@ -47,6 +47,17 @@ void AnimContext::metric(const std::string& key, double value) {
     metrics[key] = value;
 }
 
+// Statistiques de surveillance (voir AnimContext::watcher), par dixième de vidéo
+struct WatchStats {
+    int samples = 0, max_bodies = 0, max_offscreen = 0, max_lost = 0, max_invalid = 0;
+    double first_lost_time = -1.0, first_invalid_time = -1.0;
+    int dec_samples[10] = {0};
+    int dec_bodies[10] = {0};
+    int dec_offscreen[10] = {0};
+    double dec_moving[10] = {0};
+    int dec_moving_max[10] = {0};
+};
+
 // ---------------------------------------------------------------------------
 // Configuration (fichier clé=valeur)
 // ---------------------------------------------------------------------------
@@ -225,24 +236,29 @@ int main(int argc, char** argv) {
     const size_t frame_bytes = (size_t)cfg.render_width * cfg.render_height * 4;
     auto t0 = std::chrono::steady_clock::now();
     int last_pct = -1, captured = 0;
+    const int watch_every = std::max(1, cfg.fps / 2);   // surveillance : 2 échantillons par seconde
+    WatchStats watch;
 
     for (int f = 0; f < ctx.total_frames; ++f) {
         ctx.frame = f;
         ctx.time = (double)f / cfg.fps;
         ctx.sounds_this_frame = 0;
 
-        BeginTextureMode(target);
-        ClearBackground(BLACK);
-        BeginMode2D(cam);
-        scene->draw(ctx);
-        EndMode2D();
-        EndTextureMode();
+        // En aperçu, seules les images capturées sont dessinées (la simulation reste identique)
+        bool need_pixels = !preview || cfg.capture_frames.count(f);
+        if (need_pixels) {
+            BeginTextureMode(target);
+            ClearBackground(BLACK);
+            BeginMode2D(cam);
+            scene->draw(ctx);
+            EndMode2D();
+            EndTextureMode();
+        }
 
         // Maintient la fenêtre (cachée) en vie
         BeginDrawing();
         EndDrawing();
 
-        bool need_pixels = !preview || cfg.capture_frames.count(f);
         if (need_pixels) {
             Image img = LoadImageFromTexture(target.texture);
             ImageFlipVertical(&img);   // les render textures OpenGL sont stockées à l'envers
@@ -263,6 +279,23 @@ int main(int argc, char** argv) {
         }
 
         scene->update(ctx, dt);
+
+        if (ctx.watcher && (f % watch_every == 0 || f == ctx.total_frames - 1)) {
+            AnimWatchSample s = ctx.watcher();
+            int d = std::min(9, (int)(10.0 * f / ctx.total_frames));
+            watch.samples++;
+            watch.max_bodies = std::max(watch.max_bodies, s.bodies);
+            watch.max_offscreen = std::max(watch.max_offscreen, s.offscreen);
+            watch.max_lost = std::max(watch.max_lost, s.lost);
+            watch.max_invalid = std::max(watch.max_invalid, s.invalid);
+            if (s.lost > 0 && watch.first_lost_time < 0) watch.first_lost_time = ctx.time;
+            if (s.invalid > 0 && watch.first_invalid_time < 0) watch.first_invalid_time = ctx.time;
+            watch.dec_samples[d]++;
+            watch.dec_bodies[d] = std::max(watch.dec_bodies[d], s.bodies);
+            watch.dec_offscreen[d] = std::max(watch.dec_offscreen[d], s.offscreen);
+            watch.dec_moving_max[d] = std::max(watch.dec_moving_max[d], s.moving);
+            watch.dec_moving[d] += s.tracked > 0 ? (double)s.moving / s.tracked : 0.0;
+        }
 
         int pct = (int)(100.0 * (f + 1) / ctx.total_frames);
         if (pct / 10 != last_pct / 10) {
@@ -323,7 +356,31 @@ int main(int argc, char** argv) {
           << "  \"captured_frames\": " << captured << ",\n"
           << "  \"sound_events\": " << ctx.events.size() << ",\n"
           << "  \"sound_events_mixed\": " << mixed << ",\n"
-          << "  \"sound_events_dropped\": " << ctx.dropped_sounds << ",\n"
+          << "  \"sound_events_dropped\": " << ctx.dropped_sounds << ",\n";
+        auto arr = [&](auto get) {
+            std::ostringstream o;
+            o << "[";
+            for (int d = 0; d < 10; ++d) o << (d ? ", " : "") << get(d);
+            o << "]";
+            return o.str();
+        };
+        m << "  \"watch\": {\"enabled\": " << (ctx.watcher ? "true" : "false")
+          << ", \"samples\": " << watch.samples
+          << ", \"max_bodies\": " << watch.max_bodies
+          << ", \"max_offscreen\": " << watch.max_offscreen
+          << ", \"max_lost\": " << watch.max_lost
+          << ", \"max_invalid\": " << watch.max_invalid
+          << ", \"first_lost_time\": " << watch.first_lost_time
+          << ", \"first_invalid_time\": " << watch.first_invalid_time
+          << ",\n            \"bodies_by_decile\": " << arr([&](int d) { return watch.dec_bodies[d]; })
+          << ",\n            \"offscreen_by_decile\": " << arr([&](int d) { return watch.dec_offscreen[d]; })
+          << ",\n            \"moving_max_by_decile\": " << arr([&](int d) { return watch.dec_moving_max[d]; })
+          << ",\n            \"moving_fraction_by_decile\": "
+          << arr([&](int d) {
+                 double v = watch.dec_samples[d] ? watch.dec_moving[d] / watch.dec_samples[d] : 0.0;
+                 return std::round(v * 1000.0) / 1000.0;
+             })
+          << "},\n"
           << "  \"scene\": {";
         bool first = true;
         for (const auto& kv : ctx.metrics) {

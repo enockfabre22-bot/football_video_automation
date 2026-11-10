@@ -242,12 +242,18 @@ def prepare_daily_videos(account_name="tiktok_main"):
                 extra = {
                     "ai_title": ai_creation.get("title", ""),
                     "ai_concept": ai_creation.get("pitch", ""),
+                    "ai_description": (ai_creation.get("metadata") or {}).get("description", ""),
                 }
             metadata = anim_mgr.generate_job_metadata(
                 anim_config, account_cfg, match_data if requires_match else None, extra_placeholders=extra
             )
 
             if ai_creation:
+                # Titre / description / tags rédigés par le studio IA pour CETTE vidéo (prioritaires)
+                ai_meta = ai_creation.get("metadata") or {}
+                for key in ("title", "description", "hashtags", "youtube_tags"):
+                    if ai_meta.get(key):
+                        metadata[key] = ai_meta[key]
                 metadata["ai_generated"] = True
                 metadata["ai_animation"] = anim_config["name"]
                 metadata["ai_creation_id"] = ai_creation.get("creation_id")

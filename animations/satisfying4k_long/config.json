@@ -1,0 +1,35 @@
+{
+  "name": "satisfying4k_long",
+  "type": "ai",
+  "enabled": true,
+  "accounts": ["youtube_25animation"],
+  "requires_match_data": false,
+  "metadata": {
+    "titles": ["{ai_title}"],
+    "descriptions": ["{ai_description}"],
+    "hashtags": [],
+    "youtube_tags": []
+  },
+  "min_free_disk_gb": 10,
+  "ai": {
+    "channel": "satisfying4k",
+    "profile": "raylib_box2d",
+    "format_label": "Vidéo longue YouTube 16:9",
+    "video": { "width": 3840, "height": 2160, "fps": 60, "duration_s": 120, "crf": 18, "preview_scale": 0.25 },
+    "max_bodies": 2000,
+    "sound": "music",
+    "audio_required": true,
+    "stock_target": 3,
+    "events": { "enabled": true, "probability": 0.5, "max_per_event": 2, "lead_days": 21 },
+    "publish_overrides": { "privacy_status": "private" }
+  },
+  "steps": [
+    { "type": "ai_generated", "name": "Rendu 4K du programme validé" },
+    {
+      "type": "python",
+      "name": "Musique de fond",
+      "script": "scripts/steps/add_background_music.py",
+      "args": ["--music-dir", "assets/music/satisfying4k", "--volume", "0.9"]
+    }
+  ]
+}

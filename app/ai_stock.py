@@ -1,12 +1,13 @@
 import json
 import os
-from datetime import datetime
+from datetime import date, datetime
 from pathlib import Path
 
 # Statuts d'une création IA (le studio IA produit les autres statuts : DRAFT, FAILED, ABANDONED...)
 READY = "READY"            # Vidéo finale validée, disponible pour un créneau
 RESERVED = "RESERVED"      # Réservée par un job (en attente de publication)
 PUBLISHED = "PUBLISHED"    # Publiée : vidéo supprimée du stock, fiche conservée
+EXPIRED = "EXPIRED"        # Création à thème (ex. Noël) dont la fenêtre de publication est passée
 
 
 class AIStockManager:
@@ -73,11 +74,47 @@ class AIStockManager:
         video = self.get_video_path(creation_dir, state)
         return bool(video and video.exists() and video.stat().st_size > 0)
 
+    def _expire_outdated(self, anim_name, today):
+        """Une création à thème dont la fenêtre est passée ne sera jamais publiée : on libère le disque."""
+        for d, s in self.list_creations(anim_name, READY):
+            before = s.get("publish_before")
+            if before and before < today:
+                video = self.get_video_path(d, s)
+                if video and video.exists():
+                    video.unlink()
+                s["status"] = EXPIRED
+                self._save_state(d, s)
+                print(f"  -> [STOCK IA] Création '{s.get('creation_id', d.name)}' expirée (fenêtre jusqu'au {before})")
+
+    def servable(self, anim_name, today=None):
+        """
+        Créations READY publiables aujourd'hui : vidéo présente et fenêtre de publication respectée.
+        Les créations à thème dont la fenêtre est ouverte passent en premier (la plus urgente d'abord),
+        puis les créations intemporelles de la plus ancienne à la plus récente.
+        """
+        today = today or date.today().isoformat()
+        self._expire_outdated(anim_name, today)
+        items = []
+        for d, s in self.list_creations(anim_name, READY):
+            if not self._is_deliverable(d, s):
+                continue
+            if s.get("mock"):
+                continue   # création de test (faux Claude) : jamais publiée
+            after, before = s.get("publish_after"), s.get("publish_before")
+            if after and after > today:
+                continue
+            if before and before < today:
+                continue
+            items.append((d, s))
+        items.sort(key=lambda it: (0, it[1]["publish_before"]) if it[1].get("publish_before")
+                   else (1, it[1].get("created_at", "")))
+        return items
+
     # ------------------------------------------------------------------ #
     # API utilisée par le scheduler
     # ------------------------------------------------------------------ #
     def count_ready(self, anim_name):
-        return sum(1 for d, s in self.list_creations(anim_name, READY) if self._is_deliverable(d, s))
+        return len(self.servable(anim_name))
 
     def get_reservation(self, anim_name, job_id):
         for d, s in self.list_creations(anim_name, RESERVED):
@@ -98,9 +135,7 @@ class AIStockManager:
         if existing:
             return existing
 
-        for d, s in self.list_creations(anim_name, READY):
-            if not self._is_deliverable(d, s):
-                continue
+        for d, s in self.servable(anim_name):
             s["status"] = RESERVED
             s["reserved_by"] = job_id
             s["reserved_at"] = datetime.now().isoformat(timespec="seconds")

@@ -106,6 +106,20 @@ class CreationPipeline:
             raise RuntimeError(f"Création introuvable : {cdir}")
         return cls(load_ai_animation(anim_name), client, cdir, ai_cfg)
 
+    def reopen(self):
+        """Remet une création FAILED/ABANDONED en cours, à l'étape où elle s'est arrêtée
+        (ex. coupure réseau) : les étapes déjà payées (concept, code...) ne sont pas refaites."""
+        st = self.state
+        if st["status"] in (IN_PROGRESS, READY):
+            return
+        log(f"Reprise de {st['creation_id']} ({st['status']} : {st.get('end_reason')}) à l'étape « {st['step']} »")
+        st["status"] = IN_PROGRESS
+        st.pop("end_reason", None)
+        st["same_problem_count"] = 0
+        st["counters"]["fixes"] = min(st["counters"]["fixes"], max(0, int(self.limits.get("max_code_fixes", 3)) - 1))
+        (self.history.dir / f"{st['creation_id']}.json").unlink(missing_ok=True)
+        self.save()
+
     # ------------------------------------------------------------------ #
     def save(self):
         write_json_atomic(self.dir / "state.json", self.state)

@@ -4,7 +4,8 @@ Studio IA — ligne de commande (à lancer depuis la racine du projet).
   python ai_studio/cli.py status                         stock, créations en cours, budgets du mois
   python ai_studio/cli.py create <animation> [--mock]    lance UNE création complète
         [--event "Noël" | --no-event]                    forcer / interdire un événement
-  python ai_studio/cli.py resume <creation_id> [--mock]  reprend une création interrompue
+  python ai_studio/cli.py resume <creation_id> [--mock]  reprend une création interrompue ou échouée
+                                                         (à l'étape où elle s'est arrêtée)
   python ai_studio/cli.py history <chaîne>               fiches créatives de la chaîne
   python ai_studio/cli.py costs [--month AAAA-MM|*]      dépenses API détaillées
   python ai_studio/cli.py events <chaîne>                événements à venir
@@ -86,6 +87,7 @@ def cmd_create(ai_cfg, args):
 def cmd_resume(ai_cfg, args):
     from pipeline import CreationPipeline
     p = CreationPipeline.resume(args.creation_id, _client(ai_cfg, args.mock), ai_cfg)
+    p.reopen()
     status = p.run()
     print(f"\nRésultat : {status} — {p.dir}")
     return 0 if status == "READY" else 1

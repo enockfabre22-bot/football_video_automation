@@ -10,6 +10,7 @@ Unique point d'appel à l'API Claude du studio.
 import json
 import os
 import random
+import time
 from pathlib import Path
 
 from ledger import BudgetExceeded, UsageLedger  # noqa: F401 (réexporté)
@@ -18,6 +19,11 @@ from studio_common import BASE_DIR
 
 class ClaudeError(Exception):
     pass
+
+
+# Erreurs qui ne disparaîtront pas en réessayant (requête invalide, clé refusée...)
+NON_RETRYABLE = {"BadRequestError", "AuthenticationError", "PermissionDeniedError", "NotFoundError",
+                 "UnprocessableEntityError", "ClaudeError"}
 
 
 def _with_cache_marker(stable_blocks):
@@ -65,12 +71,23 @@ class StudioClaude:
             "output_config": {"effort": effort, "format": {"type": "json_schema", "schema": schema}},
         }
         client = self._sdk()
-        try:
-            # Streaming : évite les délais d'attente HTTP sur les longues réponses (code)
-            with client.messages.stream(**params) as stream:
-                msg = stream.get_final_message()
-        except Exception as e:  # erreurs API / réseau après les tentatives automatiques du SDK
-            raise ClaudeError(f"Appel API '{task}' en échec : {type(e).__name__}: {e}") from e
+        attempts = int(self.ai_cfg.get("limits", {}).get("api_stream_attempts", 3))
+        for attempt in range(1, attempts + 1):
+            try:
+                # Streaming : évite les délais d'attente HTTP sur les longues réponses (code)
+                with client.messages.stream(**params) as stream:
+                    msg = stream.get_final_message()
+                break
+            except Exception as e:
+                # Le SDK retente déjà les erreurs avant la réponse ; une coupure EN COURS de flux
+                # (RemoteProtocolError, connexion fermée...) arrive ici : on retente nous-mêmes.
+                name = type(e).__name__
+                if name in NON_RETRYABLE or attempt == attempts:
+                    raise ClaudeError(f"Appel API '{task}' en échec : {name}: {e}") from e
+                wait = 20 * attempt
+                print(f"      [CLAUDE] {task} : {name} ({e}) — nouvelle tentative {attempt + 1}/{attempts} dans {wait} s")
+                time.sleep(wait)
+                self.ledger.check_budgets(animation, creation_id, budget_per_creation)
 
         u = msg.usage
         usage = {

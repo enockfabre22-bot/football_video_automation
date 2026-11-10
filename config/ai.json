@@ -19,7 +19,7 @@
   },
 
   "budgets_usd": {
-    "per_creation": 1.50,
+    "per_creation": 2.50,
     "per_animation_monthly": 60.00,
     "global_monthly": 150.00
   },

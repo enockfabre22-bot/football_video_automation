@@ -164,12 +164,22 @@ def review_prompt(*, fmt, concept, files, frame_times, metrics_summary, warnings
         f"Images fournies (dans l'ordre) aux instants : {', '.join(frame_times)}.",
         "MESURES AUTOMATIQUES :\n" + metrics_summary,
         ("AVERTISSEMENTS :\n" + "\n".join(f"- {w}" for w in warnings)) if warnings else "Aucun avertissement automatique.",
-        "Vérifie : l'idée se comprend, l'écran est bien rempli, rien d'important hors cadre, pas d'objet "
-        "bloqué / traversant / empilé de façon anormale, couleurs et netteté conformes au cahier des "
-        "charges, fin soignée, différence avec un simple changement de couleurs.",
-        f"Revue {attempt}/{max_attempts}. \"approved\" = true seulement si la vidéo est publiable telle quelle. "
-        "\"score\" de 0 à 10. Si non approuvée, donne les \"issues\" et des \"edits\" précis {file, old, new} "
-        "(\"old\" copié à l'identique du code) qui les corrigent.",
+        "COMMENT JUGER (consignes du propriétaire de la chaîne) :\n"
+        "- Tu es un contrôle QUALITÉ, pas un directeur artistique. Une idée simple mais bien exécutée est "
+        "parfaitement publiable : ne refuse jamais pour un goût personnel, une idée « trop simple » ou une "
+        "amélioration possible (mets ces suggestions dans \"notes\", pas dans \"issues\").\n"
+        "- REFUSE uniquement pour un DÉFAUT CLAIREMENT VISIBLE sur les images : objet qui traverse un mur, "
+        "objet bloqué / machine bouchée qui arrête l'animation, objets hors cadre par erreur, écran vide ou "
+        "presque, image cassée / illisible, simulation qui explose, contradiction flagrante avec le cahier "
+        "des charges (texte de debug, effets de flou/traînée...).\n"
+        "- Ce sont des images FIXES : ne déduis pas un défaut de mouvement que tu ne vois pas. Un tas "
+        "incliné pendant une rotation, un mélange de couleurs, un écoulement asymétrique ou une mise en "
+        "scène (rotation de la caméra, objet replacé) sont normaux s'ils ont l'air propres.\n"
+        "- Barème : 9-10 excellent ; 7-8 propre et publiable ; 5-6 défaut visible mais corrigible ; "
+        "0-4 cassé. \"approved\" = true dès que le score est ≥ 7.",
+        f"Revue {attempt}/{max_attempts}. Si non approuvée, liste seulement les DÉFAUTS dans \"issues\" et "
+        "donne des \"edits\" précis {file, old, new} (\"old\" copié à l'identique du code) qui les "
+        "corrigent sans changer le concept.",
         "CODE ACTUEL :\n" + files_dump(files),
     ])
 

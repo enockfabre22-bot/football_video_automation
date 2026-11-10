@@ -432,7 +432,7 @@ class CreationPipeline:
         st.setdefault("reviews", []).append({k: res.get(k) for k in ("approved", "score", "issues", "notes")})
         log(f"Revue {st['counters']['reviews']} : approuvée={res.get('approved')} score={res.get('score')} "
             f"{'; '.join(res.get('issues', [])[:3])}")
-        if res.get("approved"):
+        if res.get("approved") or int(res.get("score", 0)) >= int(self.limits.get("review_approve_score", 7)):
             st["step"] = "render"
             return
         if st["counters"]["reviews"] >= max_reviews:

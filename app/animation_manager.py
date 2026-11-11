@@ -209,6 +209,13 @@ class AnimationManager:
         # Validation de la vidéo finale
         if output_video_path.exists() and output_video_path.stat().st_size > 0:
             print(f"[SUCCÈS] Vidéo finale générée et validée : {output_video_path}")
+
+            # Les images intermédiaires (PNG de Processing : plusieurs Go par vidéo) ne servent plus.
+            # Sans ce nettoyage, les rendus successifs d'une même préparation remplissaient le disque.
+            frames_dir = job_work_dir / "frames"
+            if frames_dir.exists():
+                shutil.rmtree(frames_dir, ignore_errors=True)
+                print(f"  --> Images intermédiaires supprimées ({frames_dir})")
             
             # Bloc Miniature Facultative
             thumb_config = animation_config.get("thumbnail", {})

@@ -76,6 +76,16 @@ def cleanup_disk():
             shutil.rmtree(job_temp, ignore_errors=True)
             print(f"[MAINTENANCE] Images partielles supprimées pour le job interrompu : {job_id}")
 
+    # 2 bis. Jobs dont la vidéo est déjà prête : leurs images intermédiaires ne servent plus
+    for job in job_mgr.list_pending_jobs():
+        if job.get("status") in UNFINISHED:
+            continue
+        frames_dir = temp_dir / job["job_id"] / "frames"
+        if frames_dir.exists():
+            freed += _size_gb(frames_dir)
+            shutil.rmtree(frames_dir, ignore_errors=True)
+            print(f"[MAINTENANCE] Images intermédiaires supprimées (vidéo déjà prête) : {job['job_id']}")
+
     # 3. Fichiers orphelins
     kept_ids = {job["job_id"] for job in job_mgr.list_pending_jobs()}
 

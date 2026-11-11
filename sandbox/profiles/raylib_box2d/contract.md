@@ -45,6 +45,11 @@ Scene* create_scene() { return new MaScene(); }
   `DrawRectangleRounded`, `DrawLineEx`, `DrawTriangle`, `DrawPoly`, `DrawPolyLinesEx`,
   `DrawTriangleFan`, `ColorFromHSV`, `Fade`. Texte : police par défaut (`DrawText`, `MeasureText`).
 - Pas de shaders, pas de `RenderTexture`, pas de dessin pixel par pixel, pas de flou.
+- raylib définit déjà des MACROS de couleur : `LIGHTGRAY GRAY DARKGRAY YELLOW GOLD ORANGE PINK RED
+  MAROON GREEN LIME DARKGREEN SKYBLUE BLUE DARKBLUE PURPLE VIOLET DARKPURPLE BEIGE BROWN DARKBROWN
+  WHITE BLACK BLANK MAGENTA RAYWHITE`, ainsi que `PI DEG2RAD RAD2DEG`. Ne déclare JAMAIS une
+  constante, variable ou fonction portant un de ces noms (erreur de compilation) : préfixe tes
+  couleurs, ex. `COL_GOLD`, `COL_ORANGE`.
 - Convertis le monde physique avec une fonction `toScreen(b2Vec2)` (mètres → pixels logiques,
   inversion de y si ta gravité est vers le bas en y négatif).
 

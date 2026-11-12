@@ -2,38 +2,44 @@
   "name": "midi_falling_short",
   "enabled": true,
   "accounts": ["youtube_piano"],
-  "requires_match_data": false, 
+  "requires_match_data": false,
   "inputs": ["midi2", "jpg_portrait"],
+  "min_free_disk_gb": 3,
   "metadata": {
     "titles": [
-      "{midi} (Official Piano Tutorial)",
-      "{midi} Official Piano"
+      "{midi} 🎹 Piano Cover",
+      "{midi} | Piano",
+      "{midi} (Piano Version) 🎹"
     ],
     "descriptions": [""],
-    "hashtags": ["#tonyann", "#taurus", "#pianotutorial", "#piano"],
+    "hashtags": ["#piano", "#pianocover", "#pianotutorial", "#synthesia", "#pianomusic", "#satisfying"],
     "youtube_tags": [
-      "ClassicalMusic", "TonyAnn", "Piano", "Pianosolo", "InstrumentalPiano", "ClassicalPiano", "{midi}", "piano tuto"
+      "piano", "piano cover", "{midi}", "piano tutorial", "synthesia", "piano music", "easy piano", "pianosolo"
     ]
   },
   "thumbnail": {
-    "enabled": false,
-    "source_image": "thumbnail_source.jpg"
+    "enabled": false
   },
   "steps": [
     {
-      "type": "processing",
-      "name": "Simulation physique",
-      "project": "processing/midi_falling"
+      "type": "python",
+      "name": "Préparation piano (extrait, interprétation, son Salamander)",
+      "script": "engines/piano/prepare.py",
+      "args": ["--format", "portrait", "--max-seconds", "58", "--names", "artist_title"]
     },
     {
-      "type": "processing",
-      "name": "audio out",
-      "project": "processing/AudioPlayerTXT"
+      "type": "sandbox",
+      "name": "Rendu raylib des notes",
+      "profile": "raylib_box2d",
+      "source": "../../engines/piano/scene",
+      "seed": "random",
+      "video_from": "piano/video.json"
     },
     {
       "type": "python",
-      "name": "Mixage",
-      "script": "python/compiler.py"
+      "name": "Assemblage vidéo + piano",
+      "script": "engines/piano/finalize.py",
+      "args": ["--thumbnail"]
     }
   ]
 }

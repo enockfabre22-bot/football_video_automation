@@ -82,6 +82,9 @@ public:
                                                           // ne doit JAMAIS modifier l'état (en aperçu,
                                                           // seules les images capturées sont dessinées)
     virtual void shutdown(AnimContext&) {}                // libération des ressources
+    // Optionnel : passes de rendu hors écran (RenderTexture, shaders de flou...) exécutées juste
+    // AVANT draw(), hors de tout BeginTextureMode. Mêmes règles que draw() : ne modifie pas l'état.
+    virtual void render_offscreen(AnimContext&) {}
 };
 
 // À implémenter par la scène : retourne une nouvelle instance.

@@ -17,6 +17,7 @@ python app/scheduler.py                  # dry check: random-time draw + list de
 python app/match_manager.py              # list tomorrow's matches that have both team logos
 python test_accounts.py                  # list enabled accounts and their slot ids
 python scripts/match_planner.py          # Tkinter GUI to edit data/matches.json (run locally, then git push)
+python engines/piano/local_test.py --midi "assets/midi2/X.mid"  # piano engine test without Docker -> output/tests/
 python get_youtube_token.py              # OAuth flow -> token.json (move it to accounts/<yt_account>/token.json)
 python ai_studio/cli.py create <anim> --mock  # AI studio: one full creation with a fake Claude (needs Docker image)
 python ai_studio/cli.py daemon           # AI studio service (what scripts/ai-studio.service runs)
@@ -24,7 +25,7 @@ python ai_studio/cli.py daemon           # AI studio service (what scripts/ai-st
 
 Set `"dry_run": true` in `config/app.json` to run the full pipeline without uploading. Note it is currently `false`.
 
-External requirements: `ffmpeg` on PATH, Processing 4 (`processing-java`, or on Windows `PROCESSING_DIR` in `.env` pointing at the Processing install so the engine calls its bundled JDK + `processing.mode.java.Commander` directly). On a headless Linux box the engine wraps Processing in `xvfb-run`. 
+External requirements: `ffmpeg` on PATH, `fluidsynth` + the Salamander SF2 for the piano engine (`scripts/setup_piano.sh`), Docker for sandbox steps, Processing 4 (`processing-java`, or on Windows `PROCESSING_DIR` in `.env` pointing at the Processing install so the engine calls its bundled JDK + `processing.mode.java.Commander` directly). On a headless Linux box the engine wraps Processing in `xvfb-run`. 
 
 VPS deployment notes are in `scripts/setup_vps.sh` and `scripts/football-automation.service` (deploy = `git pull` on the VPS + `sudo systemctl restart football-automation`).
 
@@ -44,7 +45,11 @@ The **scheduler** (`app/scheduler.py`) runs Phase 1 per account once a day at *(
 ### Animation contract (engine ↔ steps)
 `AnimationManager.execute_animation` writes `output/temporary/<job_id>/job.json` (job_id, match, metadata, `resources` with absolute asset paths, `work_dir`, `output_video`) and runs every step with that path as the sole argument (`python script.py <job.json>` / `processing-java --sketch=... --run <job.json>`; Processing sketches read it via `args[0]`). Sketches render frames into `<work_dir>/frames/` and call `exit()`; the final Python step muxes frames + audio with ffmpeg into `output_video` (`output/videos/<job_id>.mp4`). A step fails on non-zero exit code; the job fails if `output_video` is missing or empty. A sketch may also drop `<work_dir>/thumbnail_source.jpg`, which is picked up as the upload thumbnail; alternatively `thumbnail.enabled` in the animation config renders one via `app/thumbnail_generator.py`.
 
-Several animations duplicate their sketches/compilers (`midi_falling_short`, `midi_falling_tkt`, `midi_falling_ytb`); a fix in one usually needs to be applied to the others.
+### Piano engine (`engines/piano/`) — `midi_falling_short` / `midi_falling_tkt` / `midi_falling_ytb`
+The three piano animations share one engine; their configs only differ by step `args` (`--format portrait|landscape`, `--max-seconds`, `--excerpt auto|full`, `--names artist_title|title_artist`). Steps: `prepare.py` (python) → `scene/` (sandbox, `video_from: piano/video.json` = duration computed from the MIDI) → `finalize.py --thumbnail` (mux + thumbnail).
+- `prepare.py` reads the MIDI (`piano_midi.py`: tempo map, hands from tracks or pitch, bars), picks the excerpt (`choose_excerpt`: most repeated + intense passage = chorus, first occurrence, starts on a bar; the first note hits at 0.12 s), recreates dynamics when velocities are flat (`humanize_velocities`) and adds a harmony-following sustain pedal when the file has none (`auto_pedal`), renders audio with FluidSynth + `assets/soundfonts/` Salamander Grand Piano SF2 (gitignored, `bash scripts/setup_piano.sh`) then convolution reverb + loudnorm −14 LUFS (`piano_audio.py`), and writes `<work_dir>/piano/{scene.txt, notes.txt (video-time), background.png, title.png, audio.wav, video.json, meta.json}` (Poppins fonts in `assets/fonts/`).
+- `scene/piano_scene.cpp` (raylib, reads `$PIANO_DIR` or `/work/piano`): SDF-shader anti-aliased notes/keys, quarter-res bloom built in `render_offscreen()` (optional Scene hook of the runtime, called before `draw()`), beams, sparks, flares, ambient pulse. No sound events: `finalize.py` muxes `audio.wav`.
+- Local test without Docker (Windows w64devkit raylib at `C:/raylib`, or Linux raylib): `python engines/piano/local_test.py --midi "assets/midi2/X.mid" [--format landscape --excerpt full]` → `output/tests/piano_<ts>/`. fluidsynth must be on PATH (or `FLUIDSYNTH_PATH`); `PIANO_SOUNDFONT` overrides the SF2.
 
 ### Job state machine (`app/job_manager.py`)
 Jobs are JSON files: `jobs/pending/` (`PENDING` → `RUNNING` → `VIDEO_READY` → `SCHEDULED`) then moved to `jobs/completed/` (`PUBLISHED`) or `jobs/failed/` (`FAILED`). `job_id = <date>_<home>_<away>_<animation_name>` (spaces → `_`). For non-match animations `home` is the slot id and `away` is `no_match`, so **slot ids must be unique across accounts**. Idempotence: a job already `PUBLISHED` for the same date/home/away/account is skipped; an existing pending job is resumed without re-rendering if its video still exists. Note the account name is not part of `job_id`, so two accounts rendering the same match with the same animation share a job filename.

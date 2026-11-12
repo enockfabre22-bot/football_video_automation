@@ -206,9 +206,19 @@ class SandboxRunner:
             seed = random.randint(1, 2**31 - 1)
         print(f"      [SANDBOX] Profil '{step.get('profile', 'raylib_box2d')}', seed {seed}")
 
+        # "video_from" : réglages vidéo calculés par une étape précédente (ex. durée du morceau MIDI)
+        video = dict(step.get("video", {}))
+        if step.get("video_from"):
+            video_file = work_dir / step["video_from"]
+            if not video_file.exists():
+                print(f"      [SANDBOX ERREUR] Réglages vidéo attendus introuvables : {video_file}")
+                return False
+            with open(video_file, "r", encoding="utf-8") as f:
+                video.update(json.load(f))
+
         ok, _ = self.build_and_run(
             step.get("profile", "raylib_box2d"), source_dir, work_dir,
-            step.get("video", {}), seed, sounds_dir=sounds_dir, mode="final",
+            video, seed, sounds_dir=sounds_dir, mode="final",
         )
         if not ok:
             return False

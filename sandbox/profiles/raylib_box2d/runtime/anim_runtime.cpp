@@ -14,6 +14,14 @@
 #include <set>
 #include <sstream>
 
+#ifdef _WIN32
+// Tests locaux sous Windows (w64devkit) : le flux vers ffmpeg doit être binaire
+#undef popen
+#undef pclose
+#define popen(cmd, mode) _popen(cmd, "wb")
+#define pclose _pclose
+#endif
+
 // ---------------------------------------------------------------------------
 // AnimContext
 // ---------------------------------------------------------------------------
@@ -248,6 +256,7 @@ int main(int argc, char** argv) {
         // En aperçu, seules les images capturées sont dessinées (la simulation reste identique)
         bool need_pixels = !preview || cfg.capture_frames.count(f);
         if (need_pixels) {
+            scene->render_offscreen(ctx);
             BeginTextureMode(target);
             ClearBackground(BLACK);
             BeginMode2D(cam);

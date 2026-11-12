@@ -1,43 +1,95 @@
 {
   "name": "midi_falling_ytb",
   "enabled": true,
-  "accounts": ["youtube_piano"],
-  "requires_match_data": false, 
-  "inputs": ["midi", "jpg"],
+  "accounts": [
+    "youtube_piano"
+  ],
+  "requires_match_data": false,
+  "inputs": [
+    "midi",
+    "jpg"
+  ],
   "metadata": {
     "titles": [
-      "{midi} (Official Piano Tutorial)",
-      "{midi} Official Piano"
+      "{midi} 🎹 Piano",
+      "{midi} | Classical Piano",
+      "{midi} (Piano Visualization)"
     ],
     "descriptions": [
       "{midi}\n\n🎹 **Welcome to the world of classical piano music!**\n\nDiscover the beauty of classical music through stunning piano performances and mesmerizing Synthesia-style animations. Watch the notes fall onto the virtual piano keyboard as beautiful melodies come to life, creating an immersive visual and musical experience.\n\nFrom timeless masterpieces to beautiful piano compositions, this channel celebrates the greatest composers in classical music history, including **Frédéric Chopin, Ludwig van Beethoven, Wolfgang Amadeus Mozart, Claude Debussy, Johann Sebastian Bach, Franz Liszt, and many more.**\n\n🎼 WHAT YOU WILL FIND ON THIS CHANNEL:\n- Beautiful classical piano music and timeless masterpieces.\n- Synthesia piano animations with falling notes.\n- Piano performances of famous classical compositions.\n- Relaxing piano music for studying, reading, working and concentration.\n- Emotional and peaceful piano melodies.\n- Iconic compositions from the greatest classical composers.\n- Visually satisfying piano animations synchronized with the music.\n\n✨ Whether you are a passionate piano lover, a classical music enthusiast, a music student, or simply looking for beautiful melodies to relax and unwind, this channel is for you.\n\n🎧 Put on your headphones, enjoy the music, and let the beauty of the piano take you on a journey.\n\n**Subscribe and join us on a musical journey through the timeless world of classical piano!**\n\nThank you for listening and supporting the channel! ❤️\n\n#ClassicalMusic #PianoMusic #Piano #Synthesia #SynthesiaPiano #ClassicalPiano #PianoAnimation #FallingNotes #Chopin #Mozart #Beethoven #Debussy #Bach #Liszt #RelaxingPiano #BeautifulMusic #InstrumentalMusic #PianoCover #ClassicalComposers #PianoPerformance"
     ],
     "hashtags": [
-      "#Beethoven", "#SynthesiaPiano", "#pianotutorial", "#piano", "#ClassicalPiano", "#Mozart", "#RelaxingPiano", "#PianoCover", "#PianoPerformance", "#PianoMusic"
+      "#Beethoven",
+      "#SynthesiaPiano",
+      "#pianotutorial",
+      "#piano",
+      "#ClassicalPiano",
+      "#Mozart",
+      "#RelaxingPiano",
+      "#PianoCover",
+      "#PianoPerformance",
+      "#PianoMusic"
     ],
     "youtube_tags": [
-      "ClassicalMusic", "TonyAnn", "Piano", "PianoSolo", "InstrumentalPiano", "ClassicalPiano", "{midi}", "PianoCover", "Synthesia", "SynthesiaPiano", "PianoAnimation", "FallingNotes", "PianoTutorial", "MIDI", "ClassicalComposers", "RelaxingPianoMusic", "Chopin", "Mozart", "Beethoven", "Debussy", "Bach", "Liszt"
+      "ClassicalMusic",
+      "TonyAnn",
+      "Piano",
+      "PianoSolo",
+      "InstrumentalPiano",
+      "ClassicalPiano",
+      "{midi}",
+      "PianoCover",
+      "Synthesia",
+      "SynthesiaPiano",
+      "PianoAnimation",
+      "FallingNotes",
+      "PianoTutorial",
+      "MIDI",
+      "ClassicalComposers",
+      "RelaxingPianoMusic",
+      "Chopin",
+      "Mozart",
+      "Beethoven",
+      "Debussy",
+      "Bach",
+      "Liszt"
     ]
   },
   "thumbnail": {
-    "enabled": true,
-    "source_image": "thumbnail_source.jpg"
+    "enabled": false
   },
   "steps": [
     {
-      "type": "processing",
-      "name": "Simulation physique",
-      "project": "processing/midi_falling_ytb"
+      "type": "python",
+      "name": "Préparation piano (morceau complet, son Salamander)",
+      "script": "engines/piano/prepare.py",
+      "args": [
+        "--format",
+        "landscape",
+        "--excerpt",
+        "full",
+        "--max-seconds",
+        "480",
+        "--names",
+        "title_artist"
+      ]
     },
     {
-      "type": "processing",
-      "name": "audio out",
-      "project": "processing/AudioPlayerTXT"
+      "type": "sandbox",
+      "name": "Rendu raylib des notes",
+      "profile": "raylib_box2d",
+      "source": "../../engines/piano/scene",
+      "seed": "random",
+      "video_from": "piano/video.json"
     },
     {
       "type": "python",
-      "name": "Mixage",
-      "script": "python/compiler.py"
+      "name": "Assemblage vidéo + piano + miniature",
+      "script": "engines/piano/finalize.py",
+      "args": [
+        "--thumbnail"
+      ]
     }
-  ]
+  ],
+  "min_free_disk_gb": 3
 }

@@ -29,6 +29,9 @@ client_secret.json
 token.json
 accounts/**/token.json
 
+# SoundFonts (Salamander Grand Piano : 1,3 Go, téléchargé par scripts/setup_piano.sh)
+assets/soundfonts/
+
 # Studio IA : créations, historiques et grand livre des coûts (vivent sur le VPS)
 ai_data/
 output/.render.lock

@@ -9,6 +9,11 @@ google-api-python-client>=2.100.0
 google-auth>=2.23.0
 google-auth-oauthlib>=1.1.0
 
+# Moteur piano (engines/piano/) : lecture MIDI, réverbération, traitement audio
+mido>=1.3.0
+numpy>=1.24
+scipy>=1.10
+
 # Studio IA (ai_studio/) : API Claude + traitement d'images (aperçus, miniatures)
 anthropic==2.7.0
 pillow>=10.0.0

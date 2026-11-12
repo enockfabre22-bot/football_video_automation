@@ -10,7 +10,13 @@ cd "$(dirname "$0")/.."
 
 echo "=== 1. FluidSynth ==="
 if ! command -v fluidsynth &> /dev/null; then
-    sudo apt update && sudo apt install -y fluidsynth
+    sudo apt update || echo "⚠️ apt update a signalé des erreurs, tentative d'installation quand même"
+    # sans les recommandations : évite qsynth (interface Qt) et une banque de sons GM de 130 Mo
+    sudo apt install -y --no-install-recommends fluidsynth
+fi
+if ! command -v fluidsynth &> /dev/null; then
+    echo "❌ fluidsynth n'est toujours pas installé : voir les erreurs apt ci-dessus."
+    exit 1
 fi
 fluidsynth --version | head -1
 

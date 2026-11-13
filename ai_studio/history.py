@@ -33,8 +33,9 @@ class ChannelHistory:
         lines = []
         for c in self.successful_cards()[-count:]:
             mech = ", ".join(c.get("mechanisms", [])[:5])
+            palette = ", ".join(c.get("palette", [])[:4])
             lines.append(f"- [{c.get('created_at', '')[:10]}] {c.get('title', '?')} — {c.get('summary', '')} "
-                         f"(mécanismes : {mech})")
+                         f"(mécanismes : {mech} ; palette : {palette or '?'})")
         return lines
 
     def event_count(self, animation, event_name):

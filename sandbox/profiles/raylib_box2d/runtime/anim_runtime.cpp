@@ -55,6 +55,10 @@ void AnimContext::metric(const std::string& key, double value) {
     metrics[key] = value;
 }
 
+void AnimContext::finish() {
+    finished = true;
+}
+
 // Statistiques de surveillance (voir AnimContext::watcher), par dixième de vidéo
 struct WatchStats {
     int samples = 0, max_bodies = 0, max_offscreen = 0, max_lost = 0, max_invalid = 0;
@@ -247,6 +251,7 @@ int main(int argc, char** argv) {
     int last_pct = -1, captured = 0;
     const int watch_every = std::max(1, cfg.fps / 2);   // surveillance : 2 échantillons par seconde
     WatchStats watch;
+    int frames_done = 0;
 
     for (int f = 0; f < ctx.total_frames; ++f) {
         ctx.frame = f;
@@ -310,11 +315,17 @@ int main(int argc, char** argv) {
             }
         }
 
+        frames_done = f + 1;
         int pct = (int)(100.0 * (f + 1) / ctx.total_frames);
         if (pct / 10 != last_pct / 10) {
             printf("[RUNTIME] %s : %d%% (%d/%d images)\n", preview ? "aperçu" : "rendu", pct, f + 1, ctx.total_frames);
             fflush(stdout);
             last_pct = pct;
+        }
+        if (ctx.finished) {   // fin naturelle décidée par la scène
+            printf("[RUNTIME] Fin de l'animation signalée par la scène à %.1f s\n", (double)frames_done / cfg.fps);
+            fflush(stdout);
+            break;
         }
     }
 
@@ -360,9 +371,11 @@ int main(int argc, char** argv) {
     {
         std::ofstream m(cfg.out_dir + "/metrics.json");
         m << "{\n  \"mode\": \"" << cfg.mode << "\",\n"
-          << "  \"frames\": " << ctx.total_frames << ",\n"
+          << "  \"frames\": " << frames_done << ",\n"
           << "  \"fps\": " << cfg.fps << ",\n"
-          << "  \"duration\": " << cfg.duration << ",\n"
+          << "  \"duration\": " << (double)frames_done / cfg.fps << ",\n"
+          << "  \"max_duration\": " << cfg.duration << ",\n"
+          << "  \"ended_by_scene\": " << (ctx.finished ? "true" : "false") << ",\n"
           << "  \"render_size\": [" << cfg.render_width << ", " << cfg.render_height << "],\n"
           << "  \"seed\": " << cfg.seed << ",\n"
           << "  \"render_seconds\": " << render_s << ",\n"
@@ -406,6 +419,6 @@ int main(int argc, char** argv) {
         m << "}\n}\n";
     }
 
-    printf("[RUNTIME] Terminé en %.1f s (%d images, %zu sons).\n", render_s, ctx.total_frames, ctx.events.size());
+    printf("[RUNTIME] Terminé en %.1f s (%d images, %zu sons).\n", render_s, frames_done, ctx.events.size());
     return 0;
 }

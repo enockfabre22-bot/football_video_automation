@@ -15,7 +15,7 @@
     "channel": "satisfying4k",
     "profile": "raylib_box2d",
     "format_label": "Vidéo longue YouTube 16:9",
-    "video": { "width": 3840, "height": 2160, "fps": 60, "duration_s": 120, "crf": 18, "preview_scale": 0.25 },
+    "video": { "width": 3840, "height": 2160, "fps": 60, "duration_s": 120, "duration_range_s": [60, 600], "crf": 18, "preview_scale": 0.25 },
     "max_bodies": 2000,
     "sound": "music",
     "audio_required": true,

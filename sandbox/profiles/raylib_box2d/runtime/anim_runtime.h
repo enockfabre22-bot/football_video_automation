@@ -61,6 +61,11 @@ public:
     // --- Métriques personnalisées (écrites dans metrics.json) ---
     void metric(const std::string& key, double value);
 
+    // --- Fin naturelle : l'animation est terminée, la vidéo s'arrête après l'image en cours ---
+    // (ctx.duration est alors une durée MAXIMALE ; sans appel à finish(), la vidéo dure ctx.duration)
+    void finish();
+    bool finished = false;
+
     // --- Surveillance automatique, installée par anim_watch_world() (anim_box2d.h) ---
     std::function<AnimWatchSample()> watcher;
 

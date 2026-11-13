@@ -64,7 +64,10 @@ def build_stable_blocks(channel, profile):
     # 3. Codes d'exemple
     examples = sorted(p for p in (brief_dir / "examples").glob("*") if p.suffix.lower() in CODE_EXTS)
     if examples:
-        parts = ["# CODES D'EXEMPLE DE LA CHAÎNE (programmes autonomes : reprendre les idées, pas la structure)"]
+        parts = ["# CODES D'EXEMPLE — RÉFÉRENCE DE QUALITÉ TECHNIQUE UNIQUEMENT\n"
+                 "Ces programmes autonomes montrent le niveau de soin attendu (netteté 4K, physique propre, "
+                 "réglages Box2D). Leurs THÈMES (billes, usines, arc-en-ciel) ne sont PAS une consigne : chaque "
+                 "création part d'une feuille blanche. Ne reprends pas non plus leur structure (main, fenêtre, ffmpeg)."]
         for p in examples:
             parts.append(f"## examples/{p.name}\n```cpp\n{_read(p)}\n```")
         blocks.append(text_block("\n\n".join(parts)))
@@ -72,7 +75,9 @@ def build_stable_blocks(channel, profile):
     # 4. Images de référence
     images = sorted(p for p in (brief_dir / "images").glob("*") if p.suffix.lower() in IMAGE_EXTS)
     if images:
-        blocks.append(text_block("# IMAGES DE RÉFÉRENCE (inspiration de style uniquement, voir le cahier des charges)"))
+        blocks.append(text_block("# IMAGES DE RÉFÉRENCE — niveau de finition visé uniquement (netteté, lisibilité, "
+                                 "densité). Ce sont des vidéos d'AUTRES chaînes : ne copie ni leurs thèmes, ni leurs "
+                                 "couleurs, ni leurs machines."))
         for p in images:
             blocks.append(text_block(f"Image : images/{p.name}"))
             blocks.append(image_block(p))

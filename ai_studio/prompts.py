@@ -38,6 +38,7 @@ CONCEPT_SCHEMA = _obj({
     "palette": _STRS,
     "tags": _STRS,
     "estimated_bodies": {"type": "integer"},
+    "duration_s": {"type": "integer"},
     "event": _STR,
 })
 
@@ -91,17 +92,33 @@ CARD_SCHEMA = _obj({
 # ---------------------------------------------------------------------- #
 def format_brief(fmt):
     v = fmt["video"]
-    return (f"FORMAT DEMANDÉ : {fmt['label']} — {v['width']}×{v['height']} à {v.get('fps', 60)} fps, "
-            f"durée exacte {v['duration_s']} s. Corps dynamiques simultanés : {fmt['max_bodies']} au maximum. "
+    lo, hi = fmt["duration_range"]
+    if fmt.get("duration_s"):
+        duration = (f"durée de CETTE vidéo : {fmt['duration_s']} s au maximum (fin naturelle possible avant "
+                    f"avec ctx.finish(), jamais avant {lo} s)")
+    else:
+        duration = (f"durée LIBRE entre {lo} et {hi} s : la vidéo dure le temps que l'animation se déroule et "
+                    "se termine naturellement — choisis la durée qui sert le mieux ton idée")
+    return (f"FORMAT DEMANDÉ : {fmt['label']} — {v['width']}×{v['height']} à {v.get('fps', 60)} fps, {duration}. "
+            f"Corps dynamiques simultanés : {fmt['max_bodies']} au maximum. "
             f"Son : {'musique de fond ajoutée après le rendu, n appelle jamais ctx.sound' if fmt['sound'] == 'music' else 'événements ctx.sound autorisés'}.")
 
 
-def concept_prompt(*, fmt, today, history_lines, event, rejected):
+def concept_prompt(*, fmt, today, history_lines, event, rejected, inspiration):
     parts = [
-        "TÂCHE : imagine UN nouveau concept d'animation pour cette chaîne.",
+        "TÂCHE : imagine UN nouveau concept d'animation pour cette chaîne, en partant d'une FEUILLE BLANCHE.",
+        "RAPPEL ESSENTIEL : le but est une simulation 2D SATISFAISANTE, RELAXANTE et de HAUTE QUALITÉ. "
+        "Tout est permis : n'importe quel phénomène physique, objet, forme, palette, composition ou "
+        "histoire. Les codes et images d'exemple ne montrent que le NIVEAU DE QUALITÉ attendu et des "
+        "techniques utiles : ce ne sont PAS des thèmes à reproduire. Ne te limite pas aux billes, aux "
+        "usines ni à l'arc-en-ciel ; surprends avec quelque chose de neuf et de beau.",
         format_brief(fmt),
         f"Date du jour : {today}.",
     ]
+    if inspiration:
+        parts.append("PISTES D'INSPIRATION TIRÉES AU HASARD POUR CETTE CRÉATION (à combiner, détourner ou "
+                     "remplacer par une meilleure idée, mais elles indiquent la direction attendue) :\n"
+                     + "\n".join(f"- {k} : {v}" for k, v in inspiration.items()))
     if event:
         parts.append(f"ÉVÉNEMENT : ce concept doit s'inspirer de « {event['name']} » "
                      f"(idées : {event.get('ideas', 'libre')}), en restant dans l'esprit de la chaîne, "
@@ -113,9 +130,13 @@ def concept_prompt(*, fmt, today, history_lines, event, rejected):
                      + "\n".join(history_lines))
     if rejected:
         parts.append("Concepts refusés car trop proches de l'existant :\n" + "\n".join(rejected))
+    lo, hi = fmt["duration_range"]
     parts.append("Le concept doit être réalisable avec le contrat technique et sans défaut physique. "
                  "\"title\" = titre de travail court ; \"pitch\" = 2 phrases ; \"scenario\" = les étapes "
-                 "dans le temps ; \"tags\" = 4 à 8 mots-clés en français décrivant le mécanisme.")
+                 "dans le temps (avec leur durée) ; \"palette\" = les couleurs précises choisies ; "
+                 "\"tags\" = 4 à 8 mots-clés en français décrivant le mécanisme ; "
+                 f"\"duration_s\" = durée totale de la vidéo en secondes, entre {lo} et {hi}, adaptée au "
+                 "déroulement de l'idée (une évolution riche peut durer longtemps, une idée simple doit être courte).")
     return "\n\n".join(parts)
 
 
@@ -126,8 +147,11 @@ def code_prompt(*, fmt, concept):
         "CONCEPT VALIDÉ :\n" + json.dumps(concept, ensure_ascii=False, indent=2),
         "Exigences : respecte le contrat (Scene, create_scene, anim_watch_world obligatoire, pas de "
         "main/fenêtre/fichiers), utilise ctx.width/ctx.height (pas de taille en dur), toute la logique dans "
-        "update(), draw() sans effet de bord, simulation stable du début à la fin de la durée demandée, "
-        "pas de corps qui se chevauchent à la création. Code clair et commenté brièvement. "
+        "update(), draw() sans effet de bord, simulation stable du début à la fin, pas de corps qui se "
+        "chevauchent à la création. Rythme le scénario sur ctx.time / ctx.duration. Quand l'animation est "
+        "vraiment terminée (image finale tenue ~2 s), appelle ctx.finish() : la vidéo s'arrête là. "
+        "Soigne le rendu : formes nettes, contours propres, palette du concept appliquée avec goût. "
+        "Code clair et commenté brièvement. "
         "Réponds avec \"files\" (au moins scene.cpp, contenu complet) et \"notes\" (1 à 3 phrases).",
     ])
 
@@ -184,11 +208,11 @@ def review_prompt(*, fmt, concept, files, frame_times, metrics_summary, warnings
     ])
 
 
-def card_prompt(*, fmt, concept, metrics_summary, music, event):
+def card_prompt(*, fmt, concept, metrics_summary, music, event, recent_titles=()):
     return "\n\n".join([
         "TÂCHE : à partir des images de la VIDÉO FINALE ci-dessous, rédige sa fiche et ses métadonnées de "
         "publication en respectant la section « Titres, descriptions et tags » du cahier des charges.",
-        f"Format : {fmt['label']} ({fmt['video']['width']}×{fmt['video']['height']}, {fmt['video']['duration_s']} s).",
+        f"Format : {fmt['label']} ({fmt['video']['width']}×{fmt['video']['height']}, {fmt.get('duration_s')} s).",
         "Concept prévu :\n" + json.dumps(concept, ensure_ascii=False),
         "Mesures :\n" + metrics_summary,
         f"Événement : {event['name']}" if event else "Pas d'événement.",
@@ -196,4 +220,8 @@ def card_prompt(*, fmt, concept, metrics_summary, music, event):
         "Décris ce qui est RÉELLEMENT visible (pas ce qui était prévu). title / description / hashtags / "
         "youtube_tags dans la langue indiquée par le cahier des charges. \"summary\" = une ligne en français "
         "pour l'historique interne ; mechanisms / objects / palette / tags en français (mots-clés courts).",
+        ("Titres déjà publiés sur la chaîne :\n" + "\n".join(f"- {t}" for t in recent_titles)
+         + "\nNe recopie PAS leur structure : varie la formulation, l'accroche, la place des mots-clés et "
+         "l'emoji (ou aucun). N'ajoute jamais systématiquement « 🌈 Satisfying 4K Physics Simulation ».")
+        if recent_titles else "",
     ])

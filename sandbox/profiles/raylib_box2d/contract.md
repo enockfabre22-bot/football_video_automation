@@ -33,6 +33,9 @@ Scene* create_scene() { return new MaScene(); }
   Toute logique (apparitions, couleurs qui évoluent, moteurs…) va dans `update()`.
 - Temps : `ctx.frame`, `ctx.time` (s), `ctx.duration` (s), `ctx.total_frames`, `ctx.fps` (60).
   Tout ce qui dépend du temps se base sur ces valeurs (jamais sur l'horloge réelle).
+- Fin naturelle : `ctx.duration` est la durée MAXIMALE de la vidéo. Quand l'animation est réellement
+  terminée (image finale satisfaisante tenue ~2 s), appelle `ctx.finish()` dans `update()` : la vidéo
+  s'arrête après l'image en cours. Sans appel, la vidéo dure exactement `ctx.duration`.
 - Aléatoire : uniquement `ctx.randf(min, max)` et `ctx.randi(min, max)` (même seed = même vidéo ;
   l'aperçu et le rendu final doivent être identiques).
 

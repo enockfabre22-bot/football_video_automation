@@ -7,6 +7,7 @@ Pipeline d'UNE création IA. Chaque étape est enregistrée dans state.json : ap
           -> READY (disponible dans le stock pour le scheduler)
 """
 import json
+import math
 import random
 import re
 import shutil
@@ -21,6 +22,7 @@ from claude_client import BudgetExceeded, ClaudeError
 from context_builder import build_stable_blocks, image_block, text_block
 from events_calendar import choose_event, event_to_state, upcoming_events
 from history import ChannelHistory
+from inspiration import pick as pick_inspiration
 from media import check_final_video, extract_frames
 from similarity import rank_similar
 from studio_common import (BASE_DIR, ai_data_dir, ai_settings, channel_dir, load_ai_animation, log,
@@ -151,7 +153,18 @@ class CreationPipeline:
             "video": self.ai["video"],
             "max_bodies": int(self.ai["max_bodies"]),
             "sound": self.ai["sound"],
+            "duration_range": self.duration_range(),
+            "duration_s": (self.state or {}).get("duration_s"),
         }
+
+    def duration_range(self):
+        """Plage de durée autorisée (ai.video.duration_range_s), sinon durée fixe historique."""
+        v = self.ai["video"]
+        if v.get("duration_range_s"):
+            lo, hi = v["duration_range_s"]
+            return int(lo), int(hi)
+        d = int(v.get("duration_s", 60))
+        return d, d
 
     @property
     def src_dir(self):
@@ -282,10 +295,13 @@ class CreationPipeline:
         history_lines = self.history.summary_lines(int(sim_cfg.get("history_summary_count", 15)))
         rejected = []
         best = None
+        if "inspiration" not in st:
+            st["inspiration"] = pick_inspiration(self.ai["channel"], cards)
+            log("Pistes d'inspiration : " + " | ".join(st["inspiration"].values()))
         for _ in range(int(self.limits.get("max_concept_attempts", 2))):
             concept = self.call("concept", "design", prompts.concept_prompt(
                 fmt=self.fmt, today=date.today().isoformat(), history_lines=history_lines,
-                event=st.get("event"), rejected=rejected), prompts.CONCEPT_SCHEMA)
+                event=st.get("event"), rejected=rejected, inspiration=st["inspiration"]), prompts.CONCEPT_SCHEMA)
             st["counters"]["concepts"] += 1
             ranked = rank_similar(concept, cards, top=int(sim_cfg.get("similar_cards_count", 3)))
             score = ranked[0][0] if ranked else 0.0
@@ -300,6 +316,12 @@ class CreationPipeline:
             raise CreationStop(ABANDONED, "tous les concepts proposés sont trop proches de l'existant")
         concept, ranked = best
         st["concept"] = concept
+        lo, hi = self.duration_range()
+        try:
+            st["duration_s"] = max(lo, min(hi, int(concept.get("duration_s") or hi)))
+        except (TypeError, ValueError):
+            st["duration_s"] = hi
+        log(f"Durée choisie : {st['duration_s']} s (plage {lo}-{hi} s)")
         st["similar_to"] = [{"creation_id": c.get("creation_id"), "title": c.get("title"), "score": s}
                             for s, c in ranked]
         st["step"] = "code"
@@ -359,6 +381,8 @@ class CreationPipeline:
     # ------------------------------------------------------------------ #
     def _video(self, preview):
         v = dict(self.ai["video"])
+        # Durée choisie par le concept ; créations antérieures : durée fixe historique (ai.video.duration_s)
+        v["duration_s"] = self.state.get("duration_s") or v.get("duration_s") or self.duration_range()[1]
         if preview:
             v["preview_scale"] = float(v.get("preview_scale", 0.25))
         return v
@@ -396,6 +420,20 @@ class CreationPipeline:
 
         out_dir = work / "sandbox_out"
         failures, warnings, metrics = analyze_preview(out_dir, self.fmt["max_bodies"])
+        # Fin naturelle (ctx.finish) bien avant la durée maximale : on recadre la durée sur la vraie fin
+        # et on relance l'aperçu (quelques secondes) pour que les images capturées couvrent toute la vidéo.
+        real = float((metrics or {}).get("duration") or 0)
+        # (une seule fois : une scène qui termine en proportion de ctx.duration raccourcirait en boucle)
+        if (metrics or {}).get("ended_by_scene") and real < float(v["duration_s"]) - 2 and not st.get("retimed"):
+            st["retimed"] = True
+            st["duration_s"] = int(math.ceil(real)) + 1
+            log(f"Fin naturelle à {real:.1f} s : durée ramenée à {st['duration_s']} s, nouvel aperçu")
+            return
+        lo = self.duration_range()[0]
+        if metrics and real < lo - 0.5:
+            failures.append(f"La vidéo se termine à {real:.1f} s (ctx.finish trop tôt ?) alors que la durée "
+                            f"minimale est {lo} s : prolonge l'animation ou appelle ctx.finish() plus tard.")
+        st["effective_duration_s"] = round(real, 2) if real else float(v["duration_s"])
         prev_dir = self.dir / "preview"
         shutil.rmtree(prev_dir, ignore_errors=True)
         prev_dir.mkdir()
@@ -518,7 +556,8 @@ class CreationPipeline:
                 else:
                     if not mgr._run_step(step, self.anim["folder_path"], job_file):
                         raise CreationStop(FAILED, f"étape « {step.get('name')} » en échec")
-        problems = check_final_video(final, self.ai["video"], audio_required=self.ai.get("audio_required", True))
+        expected = {**self.ai["video"], "duration_s": st.get("effective_duration_s") or self._video(False)["duration_s"]}
+        problems = check_final_video(final, expected, audio_required=self.ai.get("audio_required", True))
         if problems:
             raise CreationStop(FAILED, "vidéo finale non conforme : " + "; ".join(problems))
         music = read_json(render_dir / "music.json")
@@ -549,7 +588,10 @@ class CreationPipeline:
                 blocks += [text_block(f"Image de la vidéo finale à t = {t:.0f} s"), image_block(p, max_side=1024)]
             card = self.call("card", "history_card", prompts.card_prompt(
                 fmt=self.fmt, concept=st["concept"], metrics_summary=metrics_summary(metrics),
-                music=music, event=event), prompts.CARD_SCHEMA, blocks,
+                music=music, event=event,
+                recent_titles=[c.get("title") for c in self.history.successful_cards()[-12:]
+                               if c.get("title") and c.get("creation_id") != st["creation_id"]]),
+                prompts.CARD_SCHEMA, blocks,
                 stable=[text_block("# CAHIER DES CHARGES DE LA CHAÎNE\n\n" + brief)])
         except (ClaudeError, BudgetExceeded) as e:
             log(f"Fiche IA impossible ({e}) : métadonnées de secours à partir du concept")

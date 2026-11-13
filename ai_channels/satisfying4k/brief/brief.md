@@ -5,66 +5,72 @@
 
 ---
 
-## 1. Identité de la chaîne
-- **Concept** : simulations physiques 2D en 4K, satisfaisantes et relaxantes. Des machines et des
-  « usines » 2D où des centaines de billes / grains / particules colorés circulent, se mélangent,
-  se trient, se broient et se rangent. Deux ambiances : « colorful chaos » (des centaines d'objets
-  colorés qui s'entrechoquent) et « satisfying order » (le chaos qui se range, se trie, s'aligne ou
-  remplit parfaitement une forme).
-- **Public / ressenti recherché** : détente et fascination hypnotique. Le spectateur doit pouvoir
-  regarder sans rien comprendre de technique, suivre une bille des yeux, et avoir envie de voir
-  « ce qui se passe ensuite » jusqu'à la fin. Vidéos aussi utilisées en fond (étude, relaxation) :
-  le mouvement doit être continu et régulier, sans temps mort ni surprise désagréable.
-- **Références** : vidéos YouTube « satisfying physics simulation 4K », « unity 4K animation
-  factory », « physics simulation unity 4K », « Tetris Shredding Machine 4K » (captures dans `images/`).
+## 1. Identité de la chaîne — À LIRE EN PREMIER
+- **Le but, et le seul but** : des **animations / simulations 2D satisfaisantes, relaxantes et de
+  très haute qualité**, en 4K. **TOUT est permis** pour y arriver : n'importe quel phénomène
+  physique, objet, forme, palette, composition, histoire ou durée. Chaque création part d'une
+  **feuille blanche**.
+- Les machines à billes, les usines et l'arc-en-ciel ne sont qu'**UNE** possibilité parmi des
+  centaines (et elles ont déjà été beaucoup faites sur la chaîne). Exemples d'autres univers tout
+  aussi bienvenus : dominos géants, pendules, cordes et ponts suspendus, gelée / corps mous,
+  sable qui dessine, tissu qui ondule, tours qui s'empilent puis s'effondrent au ralenti,
+  horlogerie, orbites, aimants, mosaïques qui se composent, eau imitée par des milliers de grains,
+  équilibres fragiles, chaînes de réactions… et tout ce que tu peux imaginer d'autre.
+- Ressentis qui marchent : « satisfying order » (le chaos qui se range, s'aligne, se construit ou
+  remplit parfaitement une forme), « colorful chaos » maîtrisé, l'hypnotique, le contemplatif,
+  la tension puis le soulagement.
+- **Public / ressenti recherché** : détente et fascination. Le spectateur doit pouvoir regarder sans
+  rien comprendre de technique, suivre un objet des yeux, et avoir envie de voir « ce qui se passe
+  ensuite » jusqu'à la fin. Vidéos aussi utilisées en fond (étude, relaxation).
+- **Références** : vidéos YouTube « satisfying physics simulation 4K », « oddly satisfying
+  animation », « relaxing simulation » (quelques captures dans `images/` montrent le niveau de
+  finition visé, pas des thèmes à reprendre).
 
 ## 2. Formats
 | | Vidéo longue | Short |
 |---|---|---|
 | Résolution | 3840×2160 (16:9) | 2160×3840 (9:16) |
-| Durée | 1 à 10 min (actuellement ~2 min) | 30 à 60 s |
+| Durée | **libre, de 1 à 10 min** | **libre, de 15 à 60 s** |
 | FPS | 60 | 60 |
 
-- **Vidéo longue** : une simulation qui occupe bien tout l'écran 16:9 et qui garde l'intérêt sur
-  la durée. Ce peut être une usine / machine à plusieurs modules, une grande simulation de
-  particules, un remplissage géant, une évolution en plusieurs phases… Une boucle fermée est
-  pratique (la durée peut changer sans modifier le code), mais ce n'est **pas obligatoire**.
+- **La durée n'est pas fixe** : la vidéo dure le temps que l'animation se déroule et se termine.
+  Une idée riche qui évolue peut durer 6 ou 8 minutes ; une idée simple doit rester courte. Le
+  concept propose sa durée, et le programme peut terminer la vidéo de lui-même quand l'animation
+  est finie (`ctx.finish()`).
+- **Vidéo longue** : occupe bien l'écran 16:9 et garde l'intérêt sur toute la durée (phases
+  successives, évolution lente, construction progressive, montée en intensité…).
 - **Short** : un concept simple et lisible, objets plus gros, composition verticale. Accroche dans
   les 2 premières secondes, fin satisfaisante ou qui boucle avec le début.
 
-## 3. Thèmes et mécanismes autorisés
-- circuits fermés : réservoir, goulottes, tubes sinueux / en S / en spirale, retour au départ ;
-- **ascenseurs** : à godets, à courroie, roue à aubes, vis d'Archimède ;
-- **doseurs / sas** : roues en étoile rotatives, valves à engrenages, portes qui s'ouvrent ;
-- **broyeurs / transformateurs** : presse hydraulique, piston à vilebrequin, moulins, rouleaux,
-  « shredder » (une grosse pièce composée de petits blocs soudés qui se brise en morceaux) ;
-- **tri** : par couleur, par taille, par forme (filtres de collision, grilles, tamis) ;
-- remplissage progressif d'une forme ou d'une cuve qui crée des **strates colorées** ;
-- **changement de couleur** : une « porte de peinture » ou un passage qui fait évoluer la teinte
-  (Marble Hue Cycle Factory) ;
-- planches à clous / Plinko, entonnoirs, labyrinthes, pyramides de clous ;
-- tambours / anneaux / roues à bras rotatifs, engrenages, pistons, vis ;
-- courses de billes, « dernier survivant » (uniquement si le texte aide à suivre, voir §4) ;
-- machine de construction (les objets s'empilent pour former une structure) ;
-- simulations de particules (sable, grains, poudre : beaucoup de très petits corps).
+## 3. Thèmes et mécanismes
+**Aucune liste fermée.** Quelques familles possibles parmi d'autres, à mélanger librement :
+- réactions en chaîne (dominos, objets qui déclenchent des mécanismes), pendules, balanciers ;
+- cordes, chaînes, ponts, filets, tissus (joints Box2D), corps mous (ressorts entre particules) ;
+- construction / empilement / effondrement au ralenti ;
+- remplissage parfait d'une forme, d'une silhouette, d'un contenant ; strates ;
+- tri et rangement (couleur, taille, forme) ; mélange puis séparation ;
+- sable, grains, « liquides » imités par des milliers de petites particules ;
+- mécanismes : engrenages, cames, pistons, roues, convoyeurs, ascenseurs, horlogerie ;
+- champs de force, aimants, orbites, tourbillons ; rebonds qui dessinent des motifs ;
+- parcours, labyrinthes, courses (texte seulement s'il aide à suivre) ;
+- machines à billes et usines (déjà beaucoup faites : seulement avec une idée vraiment nouvelle).
 
 ## 4. Style visuel
-- **Couleurs** : billes très saturées et lumineuses (arc-en-ciel, dégradés HSV, palettes tricolores
-  franches). Les **murs et la machine sont neutres** (noir, gris, blanc, gris anthracite) pour que
-  les couleurs des billes ressortent. Au maximum 1 ou 2 couleurs d'accent sur les pièces mobiles
-  (ex. roue orange, moyeu rouge).
+- **Couleurs** : **palette choisie pour chaque vidéo**, cohérente et belle : pastels, néons sur
+  noir, monochrome, tons terre, couleurs primaires, or et noir, océan, coucher de soleil…
+  **L'arc-en-ciel n'est qu'une palette parmi d'autres** : à éviter s'il a été utilisé récemment.
+  Les couleurs doivent être lisibles et harmonieuses ; les éléments fixes (murs, structures)
+  restent généralement plus sobres que les objets en mouvement.
 - **Fond** : uni ou très léger dégradé. Deux familles qui marchent :
   - sombre : `{12,16,22}`, `{15,18,22}`, `{24,27,34}`, gris moyen `{104,106,110}` ;
   - clair : crème `{252,250,246}`, gris clair `{235,240,245}`, `{245,245,245}`.
   Jamais d'image de fond, jamais de motif chargé.
-- **Formes** : billes (cercles) surtout ; hexagones, carrés, petits polygones, débris ; pièces de
-  machine en formes pleines et nettes (tubes épais à bords arrondis, cuves rondes, triangles,
-  engrenages, étoiles, pistons, vis, godets). Un tube = un intérieur plus sombre/clair que le fond
-  + un contour net.
+- **Formes** : toutes (cercles, polygones, rectangles, formes composées, segments, cordes,
+  particules…), toujours pleines et nettes, avec des contours propres.
 - **Effets** : **aucun** ou presque. Animation SÈCHE et NETTE : pas de traînées, pas de flou, pas
   de glow, pas de particules décoratives, pas de tremblement de caméra. Un petit reflet sur les
   billes (point clair) est autorisé.
-- **Caméra** : fixe, toute la machine visible en permanence.
+- **Caméra** : fixe par défaut, toute la scène importante visible.
 - **Texte à l'écran** : aucun par défaut. Autorisé seulement s'il aide à suivre l'animation
   (course, compteur d'éliminés…), alors petit, discret, police simple. Jamais de compteur de debug
   (FPS, « BALLS 120/1800 », « ENTITIES »…).
@@ -114,8 +120,8 @@ Le scénario est **libre** et doit varier d'une vidéo à l'autre. Seuls princip
   - aléatoire uniquement via `ctx.randf()` / `ctx.randi()` (même seed = même vidéo) ;
   - coordonnées logiques (la taille de rendu peut être réduite pour l'aperçu).
 - **Les exemples de `examples/` sont des programmes autonomes** (avec `main()`, `InitWindow`,
-  export ffmpeg, `SetTargetFPS`, `DrawFPS`). Il faut en reprendre les **idées de mécanismes, de
-  dessin et de réglages physiques**, PAS la structure : pas de `main()`, pas de fenêtre, pas
+  export ffmpeg, `SetTargetFPS`, `DrawFPS`). Il faut en reprendre le **niveau de soin, les techniques
+  de dessin et les réglages physiques**, PAS les thèmes ni la structure : pas de `main()`, pas de fenêtre, pas
   d'ffmpeg, pas de `DrawFPS` — le runtime s'en charge.
 - **Limites actuelles du serveur** (rendu logiciel sur CPU, 3 cœurs) :
   - **2 000 corps Box2D dynamiques au maximum en même temps** (billes + débris) ;
@@ -128,13 +134,13 @@ Le scénario est **libre** et doit varier d'une vidéo à l'autre. Seuls princip
 
 ## 9. Critères de réussite
 - l'idée se comprend sans texte en moins de 3 secondes ;
-- l'écran est bien rempli (la machine occupe 80 % de l'image), rien d'important ne sort du cadre ;
+- la composition est soignée (écran bien occupé ou minimalisme assumé), rien d'important hors cadre ;
 - aucun objet coincé, qui tremble, qui traverse un mur ou qui sort du circuit ;
-- la machine ne se bouche jamais, le flux continue jusqu'à la dernière image ;
+- rien ne se bloque par erreur ; l'animation avance jusqu'à sa fin naturelle ;
 - les couleurs restent lisibles et belles du début à la fin ;
 - la fin est clairement satisfaisante (ordre, remplissage, strates, symétrie) ou la boucle continue ;
-- chaque vidéo est différente des précédentes par son **MÉCANISME** (modules, parcours, type
-  d'objets), pas seulement par ses couleurs.
+- chaque vidéo est différente des précédentes par son **IDÉE** (phénomène, objets, histoire),
+  sa **palette** et sa **durée**, pas seulement par ses couleurs.
 
 ## 10. À éviter absolument
 - simple changement de couleurs ou de disposition d'une animation déjà faite ;
@@ -168,9 +174,10 @@ Le scénario est **libre** et doit varier d'une vidéo à l'autre. Seuls princip
 - Générés par l'IA pour **chaque** création, en fonction de ce qui a réellement été produit.
 - **Langue : anglais** (public international des vidéos satisfying).
 - **Titre** : court et accrocheur (≤ 70 caractères), décrit ce qu'on voit, peut contenir
-  « 4K », « Satisfying », « Relaxing », 1 emoji maximum. Exemples de style :
-  « Rainbow Marble Factory 🌈 Satisfying 4K Physics Simulation »,
-  « 1,000 Marbles vs Hydraulic Press | Relaxing 4K ».
+  « 4K », « Satisfying », « Relaxing », 0 ou 1 emoji en rapport avec la vidéo. **Chaque titre a
+  sa propre structure** : jamais la même formule d'une vidéo à l'autre. Exemples de styles variés :
+  « 10,000 Dominoes Fall in Perfect Silence », « Watch This Jelly Tower Slowly Collapse | 4K »,
+  « Sand Draws a Mandala 🌀 », « Can 500 Pendulums Find Harmony? ».
   Les Shorts ont un titre plus court et peuvent finir par #shorts.
 - **Description** : 2 à 4 phrases qui décrivent la machine et invitent à se détendre, puis 3 à 5
   hashtags (#satisfying #asmr #physics #4k #relaxing…).
@@ -181,8 +188,9 @@ Le scénario est **libre** et doit varier d'une vidéo à l'autre. Seuls princip
 
 ## 13. Exemples fournis
 Tous les codes sont des créations du propriétaire de la chaîne (C++ / raylib / Box2D 2.4, export 4K
-3840×2160). Ils **illustrent des types d'animations possibles** (techniques, mécanismes, style,
-niveau de qualité) ; ce ne sont pas des modèles à reproduire. Chaque nouvelle création doit
+3840×2160). Ils montrent **le niveau de qualité et des techniques utiles** (filtres de collision, corps
+cinématiques, netteté 4K…). Ils tournent presque tous autour des billes et des usines : **ce n'est
+PAS la ligne de la chaîne**, juste ce qui a été fait au début. Chaque nouvelle création doit
 proposer son propre concept. Seul point à ne pas reprendre : les compteurs de debug affichés à
 l'écran (« BALLS x / y », `DrawFPS`).
 

@@ -59,6 +59,8 @@ public:
         if (ctx.frame % every == 0 && balls.size() < 400)
             spawnBall(ctx, worldW / 2 + ctx.randf(-2.5f, 2.5f), 46.5f, (int)balls.size());
         world->Step(dt, 8, 3);
+        // Fin naturelle (teste ctx.finish) : la vidéo s'arrête à 70 % de la durée maximale
+        if (ctx.time >= ctx.duration * 0.7) ctx.finish();
     }
 
     void draw(AnimContext& ctx) override {

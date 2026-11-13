@@ -9,7 +9,7 @@
     "escalation": null
   },
 
-  "effort": { "concept": "medium", "code": "medium", "fix": "medium", "review": "medium", "card": "low" },
+  "effort": { "concept": "high", "code": "medium", "fix": "medium", "review": "medium", "card": "low" },
   "max_tokens": { "concept": 16000, "code": 100000, "fix": 64000, "review": 32000, "card": 4000 },
 
   "pricing_usd_per_mtok": {
@@ -27,7 +27,7 @@
   "limits": {
     "max_concept_attempts": 2,
     "max_code_fixes": 3,
-    "review_enabled": false,
+    "review_enabled": true,
     "max_visual_reviews": 3,
     "review_accept_score": 6,
     "max_final_renders": 1,
@@ -60,6 +60,6 @@
     "gpu": false,
     "build_timeout_seconds": 300,
     "preview_timeout_seconds": 600,
-    "final_timeout_seconds": 7200
+    "final_timeout_seconds": 14400
   }
 }

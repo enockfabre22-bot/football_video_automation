@@ -15,7 +15,7 @@
     "channel": "satisfying4k",
     "profile": "raylib_box2d",
     "format_label": "YouTube Short vertical 9:16",
-    "video": { "width": 2160, "height": 3840, "fps": 60, "duration_s": 45, "crf": 18, "preview_scale": 0.25 },
+    "video": { "width": 2160, "height": 3840, "fps": 60, "duration_s": 45, "duration_range_s": [15, 60], "crf": 18, "preview_scale": 0.25 },
     "max_bodies": 1500,
     "sound": "music",
     "audio_required": true,

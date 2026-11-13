@@ -5,6 +5,26 @@
 
 ---
 
+## 0. RÈGLE N°1 — TENIR LE SPECTATEUR JUSQU'AU BOUT (OBLIGATOIRE)
+Les statistiques de la chaîne sont claires : les vidéos qui marchent (« Can MARBLES solve the
+maze! », « Ball Simulation: Colors Filter » : ~50 % regardés, 80 % des vues) ont **un objectif
+visible et une issue qu'on veut connaître**. Les machines qui tournent en boucle sans enjeu
+(« usines » de 3-5 min) ne sont regardées qu'à 20 % : au bout de 30 secondes, on a tout vu.
+Chaque vidéo DOIT donc avoir :
+- **une accroche dès la première seconde** : l'objectif ou la question se comprend
+  immédiatement (un labyrinthe à résoudre, une forme à remplir, des couleurs à trier, une tour
+  qui va-t-elle tenir, une course, un dernier survivant, un compteur à atteindre…) ;
+- **une issue incertaine** jusqu'à la fin : le spectateur se demande « est-ce que ça va réussir ?
+  qui va gagner ? quand ça va-t-il être plein ? » ;
+- **une progression visible** : on voit qu'on se rapproche du but (niveau qui monte, étapes
+  franchies, objets restants qui diminuent, chaos qui se range peu à peu) ;
+- **des rebondissements** réguliers (nouvelle phase, obstacle, accélération, retournement) pour
+  relancer l'attention toutes les 15-30 s dans les vidéos longues ;
+- **une récompense finale** claire et satisfaisante (but atteint, ordre parfait, victoire,
+  forme complétée) — puis la vidéo se termine (`ctx.finish()`).
+**Interdit** : une boucle qui tourne indéfiniment sans enjeu, une machine qui « fait juste
+quelque chose » sans but, une fin qui ressemble au début sans que rien n'ait été accompli.
+
 ## 1. Identité de la chaîne — À LIRE EN PREMIER
 - **Le but, et le seul but** : des **animations / simulations 2D satisfaisantes, relaxantes et de
   très haute qualité**, en 4K. **TOUT est permis** pour y arriver : n'importe quel phénomène
@@ -16,9 +36,9 @@
   sable qui dessine, tissu qui ondule, tours qui s'empilent puis s'effondrent au ralenti,
   horlogerie, orbites, aimants, mosaïques qui se composent, eau imitée par des milliers de grains,
   équilibres fragiles, chaînes de réactions… et tout ce que tu peux imaginer d'autre.
-- Ressentis qui marchent : « satisfying order » (le chaos qui se range, s'aligne, se construit ou
-  remplit parfaitement une forme), « colorful chaos » maîtrisé, l'hypnotique, le contemplatif,
-  la tension puis le soulagement.
+- Ressentis qui marchent : la **tension puis le soulagement**, « satisfying order » (le chaos qui
+  se range, s'aligne, se construit ou remplit parfaitement une forme), la compétition (course,
+  équipes de couleurs, dernier survivant), le défi réussi de justesse.
 - **Public / ressenti recherché** : détente et fascination. Le spectateur doit pouvoir regarder sans
   rien comprendre de technique, suivre un objet des yeux, et avoir envie de voir « ce qui se passe
   ensuite » jusqu'à la fin. Vidéos aussi utilisées en fond (étude, relaxation).
@@ -30,17 +50,17 @@
 | | Vidéo longue | Short |
 |---|---|---|
 | Résolution | 3840×2160 (16:9) | 2160×3840 (9:16) |
-| Durée | **libre, de 1 à 10 min** | **libre, de 15 à 60 s** |
+| Durée | **1 min 30 à 4 min** (selon l'histoire) | **15 à 35 s** |
 | FPS | 60 | 60 |
 
-- **La durée n'est pas fixe** : la vidéo dure le temps que l'animation se déroule et se termine.
-  Une idée riche qui évolue peut durer 6 ou 8 minutes ; une idée simple doit rester courte. Le
-  concept propose sa durée, et le programme peut terminer la vidéo de lui-même quand l'animation
-  est finie (`ctx.finish()`).
-- **Vidéo longue** : occupe bien l'écran 16:9 et garde l'intérêt sur toute la durée (phases
-  successives, évolution lente, construction progressive, montée en intensité…).
-- **Short** : un concept simple et lisible, objets plus gros, composition verticale. Accroche dans
-  les 2 premières secondes, fin satisfaisante ou qui boucle avec le début.
+- **La durée n'est pas fixe** : la vidéo dure le temps que l'histoire (objectif → progression →
+  récompense) se déroule, et s'arrête dès que le but est atteint (`ctx.finish()`). Jamais de
+  remplissage : une minute de trop fait chuter le pourcentage regardé.
+- **Vidéo longue** : occupe bien l'écran 16:9 ; plusieurs phases ou rebondissements vers un but
+  final (comme « Can MARBLES solve the maze! », 2 min 56, regardée en moyenne 1 min 23).
+- **Short** : un défi simple et lisible, objets plus gros, composition verticale. Accroche dans la
+  première seconde, récompense à la fin, et **dernière image qui raccorde avec la première** pour
+  que la vidéo soit revue en boucle (les Shorts de 46 s n'étaient regardés qu'à 60 %).
 
 ## 3. Thèmes et mécanismes
 **Aucune liste fermée.** Quelques familles possibles parmi d'autres, à mélanger librement :
@@ -71,8 +91,9 @@
   de glow, pas de particules décoratives, pas de tremblement de caméra. Un petit reflet sur les
   billes (point clair) est autorisé.
 - **Caméra** : fixe par défaut, toute la scène importante visible.
-- **Texte à l'écran** : aucun par défaut. Autorisé seulement s'il aide à suivre l'animation
-  (course, compteur d'éliminés…), alors petit, discret, police simple. Jamais de compteur de debug
+- **Texte à l'écran** : aucun par défaut. Autorisé — et même conseillé — s'il renforce l'enjeu
+  (compteur d'objets restants, pourcentage de remplissage, score d'une course, chronomètre),
+  alors lisible mais discret, police simple. Jamais de compteur de debug
   (FPS, « BALLS 120/1800 », « ENTITIES »…).
 
 ## 5. Mouvement, interactions et physique
@@ -99,12 +120,14 @@ Libre choix (selon le concept) :
 - Nombre d'objets : voir les limites techniques (section 8).
 
 ## 6. Déroulement (le « scénario » de la vidéo)
-Le scénario est **libre** et doit varier d'une vidéo à l'autre. Seuls principes à respecter :
-- l'idée se comprend vite (≈ 3 secondes) et il se passe quelque chose dès le début ;
-- l'intérêt se maintient jusqu'à la fin (évolution, montée en intensité, nouvelle phase,
-  remplissage, tri, couleurs qui changent…) ;
-- la fin est soignée : image finale satisfaisante, boucle avec le début, ou machine qui tourne
-  encore — jamais d'arrêt brutal ni d'écran vide.
+Le scénario est **libre** et doit varier d'une vidéo à l'autre, mais suit toujours l'arc de la
+règle n°1 (§0) :
+1. **Accroche** (0-3 s) : l'objectif est posé et ça bouge déjà.
+2. **Progression** : on se rapproche visiblement du but, avec des rebondissements réguliers
+   (nouvelle phase, obstacle, accélération, retournement de situation).
+3. **Climax** : le moment où tout se joue (dernier objet, dernière case, ligne d'arrivée).
+4. **Récompense** : le but est atteint, image finale satisfaisante tenue 2 s, puis `ctx.finish()`.
+Jamais d'arrêt brutal, d'écran vide, ni de « machine qui tourne encore » sans conclusion.
 
 ## 7. Son
 - Le programme ne produit **aucun son** (pas d'appel à `ctx.sound`). Une **musique de fond
@@ -133,7 +156,7 @@ Le scénario est **libre** et doit varier d'une vidéo à l'autre. Seuls princip
   billes de la même couleur, serrées.
 
 ## 9. Critères de réussite
-- l'idée se comprend sans texte en moins de 3 secondes ;
+- l'objectif se comprend sans texte en moins de 3 secondes, et on veut voir la fin ;
 - la composition est soignée (écran bien occupé ou minimalisme assumé), rien d'important hors cadre ;
 - aucun objet coincé, qui tremble, qui traverse un mur ou qui sort du circuit ;
 - rien ne se bloque par erreur ; l'animation avance jusqu'à sa fin naturelle ;
@@ -144,6 +167,8 @@ Le scénario est **libre** et doit varier d'une vidéo à l'autre. Seuls princip
 
 ## 10. À éviter absolument
 - simple changement de couleurs ou de disposition d'une animation déjà faite ;
+- **boucle sans enjeu** : machine ou circuit qui tourne sans objectif ni conclusion (le
+  spectateur a tout vu au bout de 30 s et quitte la vidéo) ;
 - **copier une autre chaîne** : ne jamais reproduire un nom, un filigrane (ex. « SIMULATIONGRID »,
   « Lafikobra » visibles sur certaines captures), ni une machine identique à une vidéo existante.
   Les captures servent d'inspiration de style uniquement ;
@@ -173,7 +198,8 @@ Le scénario est **libre** et doit varier d'une vidéo à l'autre. Seuls princip
 ## 12. Titres, descriptions et tags
 - Générés par l'IA pour **chaque** création, en fonction de ce qui a réellement été produit.
 - **Langue : anglais** (public international des vidéos satisfying).
-- **Titre** : court et accrocheur (≤ 70 caractères), décrit ce qu'on voit, peut contenir
+- **Titre** : court et accrocheur (≤ 70 caractères), met en avant l'enjeu ou le défi de la vidéo
+  (question, défi, chiffre, affirmation… forme libre), peut contenir
   « 4K », « Satisfying », « Relaxing », 0 ou 1 emoji en rapport avec la vidéo. **Chaque titre a
   sa propre structure** : jamais la même formule d'une vidéo à l'autre. Exemples de styles variés :
   « 10,000 Dominoes Fall in Perfect Silence », « Watch This Jelly Tower Slowly Collapse | 4K »,

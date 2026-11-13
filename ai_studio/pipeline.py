@@ -23,7 +23,7 @@ from context_builder import build_stable_blocks, image_block, text_block
 from events_calendar import choose_event, event_to_state, upcoming_events
 from history import ChannelHistory
 from inspiration import pick as pick_inspiration
-from media import check_final_video, extract_frames
+from media import best_thumbnail, check_final_video, extract_frames
 from similarity import rank_similar
 from studio_common import (BASE_DIR, ai_data_dir, ai_settings, channel_dir, load_ai_animation, log,
                            merged_limits, now_iso, read_json, write_json_atomic)
@@ -589,9 +589,9 @@ class CreationPipeline:
         final = self.dir / "final.mp4"
         frames_dir = self.dir / "frames"
         frames = extract_frames(final, [0.15, 0.5, 0.85], frames_dir, width=1024)
-        thumbs = extract_frames(final, [0.6], self.dir, prefix="thumb", width=1280)
-        if thumbs:
-            thumbs[0][0].replace(self.dir / "thumbnail.jpg")
+        t_thumb = best_thumbnail(final, self.dir / "thumbnail.jpg", frames_dir, width=1280)
+        if t_thumb is not None:
+            log(f"Miniature : image la plus attrayante à t = {t_thumb:.0f} s")
         metrics = read_json(self.dir / "preview" / "metrics.json")
         music = ", ".join(st.get("music", []))
         event = st.get("event")

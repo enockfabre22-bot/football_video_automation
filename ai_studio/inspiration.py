@@ -4,7 +4,7 @@ habitudes (billes + usine + arc-en-ciel) sans lui imposer une idée précise. Il
 les détourner ou proposer mieux. Les pistes déjà très utilisées récemment sont évitées.
 
 Pour adapter la chaîne, une liste peut être remplacée par ai_channels/<chaîne>/inspiration.json :
-  {"phenomenes": [...], "palettes": [...], "compositions": [...], "ambiances": [...]}
+  {"phenomenes": [...], "palettes": [...], "compositions": [...], "enjeux": [...]}
 """
 import random
 import unicodedata
@@ -66,13 +66,17 @@ COMPOSITIONS = [
     "vue en coupe d'un mécanisme complexe",
 ]
 
-AMBIANCES = [
-    "hypnotique et lent",
-    "chaos joyeux qui finit en ordre parfait",
-    "précision mécanique, tout s'emboîte",
-    "tension puis soulagement (va-t-il réussir ?)",
-    "contemplatif, presque méditatif",
-    "énergique et rebondissant",
+ENJEUX = [
+    "course entre plusieurs équipes de couleurs : laquelle arrive en premier ?",
+    "dernier survivant : des objets sont éliminés un à un, qui restera ?",
+    "défi de remplissage : la forme sera-t-elle remplie parfaitement, sans un vide ?",
+    "labyrinthe ou parcours piégé : les objets trouveront-ils la sortie ?",
+    "construction : la structure tiendra-t-elle jusqu'au bout ?",
+    "tri du chaos à l'ordre parfait, avec un compteur de ce qui reste à trier",
+    "compte à rebours / objectif chiffré à atteindre (1 000 objets, 100 %)",
+    "réaction en chaîne : le dernier élément sera-t-il atteint ?",
+    "équilibre : le système va-t-il basculer ou se stabiliser ?",
+    "duel : deux mécanismes ou deux couleurs s'affrontent jusqu'à la victoire",
 ]
 
 
@@ -94,7 +98,7 @@ def pick(channel, recent_cards, rng=None):
         "phénomène physique": custom.get("phenomenes") or PHENOMENES,
         "palette": custom.get("palettes") or PALETTES,
         "composition": custom.get("compositions") or COMPOSITIONS,
-        "ambiance": custom.get("ambiances") or AMBIANCES,
+        "enjeu (ce qui fait attendre la fin)": custom.get("enjeux") or ENJEUX,
     }
     recent_texts = [_norm(" ".join([c.get("title", ""), c.get("summary", ""), " ".join(c.get("mechanisms", [])),
                                     " ".join(c.get("palette", []))])) for c in recent_cards[-8:]]

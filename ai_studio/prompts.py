@@ -39,6 +39,9 @@ CONCEPT_SCHEMA = _obj({
     "tags": _STRS,
     "estimated_bodies": {"type": "integer"},
     "duration_s": {"type": "integer"},
+    "hook": _STR,
+    "progress": _STR,
+    "payoff": _STR,
     "event": _STR,
 })
 
@@ -112,6 +115,10 @@ def concept_prompt(*, fmt, today, history_lines, event, rejected, inspiration):
         "histoire. Les codes et images d'exemple ne montrent que le NIVEAU DE QUALITÉ attendu et des "
         "techniques utiles : ce ne sont PAS des thèmes à reproduire. Ne te limite pas aux billes, aux "
         "usines ni à l'arc-en-ciel ; surprends avec quelque chose de neuf et de beau.",
+        "RÈGLE N°1 (voir §0 du cahier des charges) : la vidéo doit TENIR LE SPECTATEUR JUSQU'AU BOUT. "
+        "Un objectif ou une question visible dès la première seconde, une issue incertaine, une "
+        "progression visible avec des rebondissements, et une récompense finale claire. Une machine "
+        "ou une boucle qui tourne sans enjeu est refusée : au bout de 30 s le spectateur a tout vu.",
         format_brief(fmt),
         f"Date du jour : {today}.",
     ]
@@ -137,6 +144,9 @@ def concept_prompt(*, fmt, today, history_lines, event, rejected, inspiration):
                  "\"title\" = titre de travail court ; \"pitch\" = 2 phrases ; \"scenario\" = les étapes "
                  "dans le temps (avec leur durée) ; \"palette\" = les couleurs précises choisies ; "
                  "\"tags\" = 4 à 8 mots-clés en français décrivant le mécanisme ; "
+                 "\"hook\" = l'objectif / la question que le spectateur comprend dans les 3 premières secondes ; "
+                 "\"progress\" = comment on voit qu'on se rapproche du but et quels rebondissements relancent "
+                 "l'attention ; \"payoff\" = la récompense finale qui conclut la vidéo ; "
                  f"\"duration_s\" = durée totale de la vidéo en secondes, entre {lo} et {hi}, adaptée au "
                  "déroulement de l'idée (une évolution riche peut durer longtemps, une idée simple doit être courte).")
     return "\n\n".join(parts)
@@ -154,7 +164,10 @@ def code_prompt(*, fmt, concept, previous_failure=None):
         "Exigences : respecte le contrat (Scene, create_scene, anim_watch_world obligatoire, pas de "
         "main/fenêtre/fichiers), utilise ctx.width/ctx.height (pas de taille en dur), toute la logique dans "
         "update(), draw() sans effet de bord, simulation stable du début à la fin, pas de corps qui se "
-        "chevauchent à la création. Rythme le scénario sur ctx.time / ctx.duration. Quand l'animation est "
+        "chevauchent à la création. Rythme le scénario sur ctx.time / ctx.duration. Rends l'enjeu (hook / "
+        "progress / payoff du concept) LISIBLE à l'image : objectif visible dès l'image 0, progression "
+        "perceptible (un compteur ou une jauge discrets sont permis s'ils aident), récompense finale nette. "
+        "Quand l'animation est "
         "vraiment terminée (image finale tenue ~2 s), appelle ctx.finish() : la vidéo s'arrête là. "
         "Soigne le rendu : formes nettes, contours propres, palette du concept appliquée avec goût. "
         "Code clair et commenté brièvement. "
@@ -201,7 +214,9 @@ def review_prompt(*, fmt, concept, files, frame_times, metrics_summary, warnings
         "- REFUSE uniquement pour un DÉFAUT CLAIREMENT VISIBLE sur les images : objet qui traverse un mur, "
         "objet bloqué / machine bouchée qui arrête l'animation, objets hors cadre par erreur, écran vide ou "
         "presque, image cassée / illisible, simulation qui explose, contradiction flagrante avec le cahier "
-        "des charges (texte de debug, effets de flou/traînée...).\n"
+        "des charges (texte de debug, effets de flou/traînée...), ou ABSENCE D'ENJEU : aucun objectif "
+        "lisible à l'image, aucune progression d'une image à l'autre, ou fin sans conclusion (simple "
+        "machine qui tourne en boucle) — la règle n°1 du cahier des charges.\n"
         "- Ce sont des images FIXES : ne déduis pas un défaut de mouvement que tu ne vois pas. Un tas "
         "incliné pendant une rotation, un mélange de couleurs, un écoulement asymétrique ou une mise en "
         "scène (rotation de la caméra, objet replacé) sont normaux s'ils ont l'air propres.\n"

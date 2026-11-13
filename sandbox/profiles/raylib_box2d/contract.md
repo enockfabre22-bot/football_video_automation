@@ -77,6 +77,21 @@ Scene* create_scene() { return new MaScene(); }
 - Performances : pas de boucle O(n²) sur les corps dans `update()` ; le nombre de corps dynamiques
   simultanés ne doit pas dépasser la limite donnée dans la demande.
 
+## Ce que Box2D fait VRAIMENT (à concevoir dès le concept)
+- **Grains / billes ≠ liquide** : un amas de grains forme un TAS en cône (angle de repos ~25-35°),
+  il ne se met jamais à niveau et ne « déborde » pas proprement par un déversoir. Pour faire couler
+  la matière d'un récipient à l'autre, utilise une **sortie au fond** (trou, goulotte, porte qui
+  s'ouvre, doseur rotatif) ou un récipient qui **bascule / pivote**, jamais un trop-plein par le haut.
+- **Tout ce qui tombe doit être rattrapé** : récipients fermés sur les côtés avec une marge
+  (parois plus hautes que le tas attendu + 30 %), goulottes avec rebords, sol de récupération.
+  Un objet qui saute par-dessus une paroi est un défaut visible.
+- Les tas s'élargissent : prévois la place. Les goulots doivent faire au moins 3 à 4 diamètres
+  d'objet, sinon ils se bouchent (voûte d'arc).
+- Les mécanismes à moteur (joints revolute/prismatic, corps cinématiques) sont fiables ; les
+  réactions en chaîne (dominos, pendules) le sont si les objets sont posés sans chevauchement.
+- **Fiabilité avant ambition** : une idée simple parfaitement exécutée vaut mieux qu'une idée
+  complexe qui échoue. Teste mentalement le flux de chaque objet du début à la fin.
+
 ## Surveillance automatique (OBLIGATOIRE)
 Dans `init()`, juste après avoir créé le monde :
 ```cpp

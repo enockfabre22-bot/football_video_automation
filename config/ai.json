@@ -30,6 +30,8 @@
     "review_enabled": true,
     "max_visual_reviews": 3,
     "review_accept_score": 6,
+    "review_rewrite_score": 4,
+    "max_code_rewrites": 1,
     "max_final_renders": 1,
     "max_creation_minutes": 180,
     "max_same_error_repeats": 2,

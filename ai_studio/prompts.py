@@ -131,7 +131,9 @@ def concept_prompt(*, fmt, today, history_lines, event, rejected, inspiration):
     if rejected:
         parts.append("Concepts refusés car trop proches de l'existant :\n" + "\n".join(rejected))
     lo, hi = fmt["duration_range"]
-    parts.append("Le concept doit être réalisable avec le contrat technique et sans défaut physique. "
+    parts.append("Le concept doit être réalisable PARFAITEMENT avec Box2D (relis « Ce que Box2D fait "
+                 "VRAIMENT » dans le contrat) : fiabilité avant ambition, aucun objet qui s'échappe, aucun flux "
+                 "qui dépend d'un comportement de liquide. "
                  "\"title\" = titre de travail court ; \"pitch\" = 2 phrases ; \"scenario\" = les étapes "
                  "dans le temps (avec leur durée) ; \"palette\" = les couleurs précises choisies ; "
                  "\"tags\" = 4 à 8 mots-clés en français décrivant le mécanisme ; "
@@ -140,11 +142,15 @@ def concept_prompt(*, fmt, today, history_lines, event, rejected, inspiration):
     return "\n\n".join(parts)
 
 
-def code_prompt(*, fmt, concept):
+def code_prompt(*, fmt, concept, previous_failure=None):
     return "\n\n".join([
         "TÂCHE : écris le code complet de la scène pour ce concept.",
         format_brief(fmt),
         "CONCEPT VALIDÉ :\n" + json.dumps(concept, ensure_ascii=False, indent=2),
+        ("UNE PREMIÈRE VERSION A ÉTÉ REFUSÉE après visionnage pour ces défauts :\n" + previous_failure +
+         "\nRéécris la scène en repensant la conception physique pour que ces défauts soient IMPOSSIBLES "
+         "(tu peux simplifier ou adapter le mécanisme tout en gardant l'esprit du concept).")
+        if previous_failure else "",
         "Exigences : respecte le contrat (Scene, create_scene, anim_watch_world obligatoire, pas de "
         "main/fenêtre/fichiers), utilise ctx.width/ctx.height (pas de taille en dur), toute la logique dans "
         "update(), draw() sans effet de bord, simulation stable du début à la fin, pas de corps qui se "

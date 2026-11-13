@@ -321,6 +321,7 @@ class CreationPipeline:
             st["duration_s"] = max(lo, min(hi, int(concept.get("duration_s") or hi)))
         except (TypeError, ValueError):
             st["duration_s"] = hi
+        st["planned_duration_s"] = st["duration_s"]
         log(f"Durée choisie : {st['duration_s']} s (plage {lo}-{hi} s)")
         st["similar_to"] = [{"creation_id": c.get("creation_id"), "title": c.get("title"), "score": s}
                             for s, c in ranked]
@@ -330,7 +331,8 @@ class CreationPipeline:
     # Étape 2 : code
     # ------------------------------------------------------------------ #
     def _step_code(self):
-        res = self.call("code", "code", prompts.code_prompt(fmt=self.fmt, concept=self.state["concept"]),
+        res = self.call("code", "code", prompts.code_prompt(fmt=self.fmt, concept=self.state["concept"],
+                                                            previous_failure=self.state.get("rewrite_feedback")),
                         prompts.CODE_SCHEMA)
         files = self._validate_files(res.get("files", []))
         if "scene.cpp" not in files:
@@ -503,6 +505,20 @@ class CreationPipeline:
             f"{'; '.join(res.get('issues', [])[:3])}")
         if res.get("approved") or int(res.get("score", 0)) >= int(self.limits.get("review_approve_score", 7)):
             st["step"] = "render"
+            return
+        # Défaut grave (conception physique ratée) : une réécriture complète vaut mieux que des retouches
+        score = int(res.get("score", 0))
+        if (score <= int(self.limits.get("review_rewrite_score", 4))
+                and st.get("rewrites", 0) < int(self.limits.get("max_code_rewrites", 1))):
+            st["rewrites"] = st.get("rewrites", 0) + 1
+            st["rewrite_feedback"] = "\n".join(f"- {i}" for i in res.get("issues", [])) or res.get("notes", "")
+            st["counters"]["reviews"] = 0
+            st["counters"]["fixes"] = 0
+            st["fix_notes"] = []
+            st.pop("retimed", None)
+            st["duration_s"] = st.get("planned_duration_s", st.get("duration_s"))
+            log(f"Score {score} : réécriture complète du code à partir des défauts constatés")
+            st["step"] = "code"
             return
         if st["counters"]["reviews"] >= max_reviews:
             accept = int(self.limits.get("review_accept_score", 7))

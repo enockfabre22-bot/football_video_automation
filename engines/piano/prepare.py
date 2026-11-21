@@ -110,6 +110,57 @@ def make_title_png(path, title, artist, fmt, width):
     out.save(path)
 
 
+def _with_shadow(img, blur=9, strength=0.85):
+    shadow = Image.new("RGBA", img.size, (0, 0, 0, 0))
+    shadow.putalpha(img.getchannel("A").filter(ImageFilter.GaussianBlur(blur)).point(lambda a: int(a * strength)))
+    return Image.alpha_composite(shadow, img)
+
+
+def make_guess_png(path, width):
+    """Bandeau du mode devinette : la question + la promesse de la réponse à la fin."""
+    tmp = ImageDraw.Draw(Image.new("RGBA", (10, 10)))
+    q, sub = "Can you guess the song?", "Answer at the end"
+    qf = _fit_font(tmp, q, "Poppins-Bold.ttf", 64, int(width * 0.9), 36)
+    sf = _font("Poppins-Medium.ttf", 36)
+    qh, sh = qf.getbbox("Hg")[3], sf.getbbox("Hg")[3]
+    pad = 30
+    W = int(max(tmp.textlength(q, font=qf), tmp.textlength(sub, font=sf))) + 2 * pad
+    H = qh + sh + 12 + 2 * pad
+    img = Image.new("RGBA", (W, H), (0, 0, 0, 0))
+    d = ImageDraw.Draw(img)
+    d.text((W // 2, pad), q, font=qf, fill=(255, 255, 255, 255), anchor="ma")
+    d.text((W // 2, pad + qh + 12), sub, font=sf, fill=(255, 255, 255, 190), anchor="ma")
+    _with_shadow(img).save(path)
+
+
+def make_answer_png(path, title, artist, width, palette):
+    """Carte de la réponse : étiquette, grand titre, artiste, sur un panneau sombre arrondi."""
+    tmp = ImageDraw.Draw(Image.new("RGBA", (10, 10)))
+    max_w = int(width * 0.78)
+    lf = _font("Poppins-SemiBold.ttf", 30)
+    tf = _fit_font(tmp, title, "Poppins-Bold.ttf", 82, max_w, 40)
+    af = _fit_font(tmp, artist, "Poppins-Medium.ttf", 46, max_w, 26) if artist else None
+    label = "T H E   A N S W E R"
+    lh, th = lf.getbbox("Hg")[3], tf.getbbox("Hg")[3]
+    ah = af.getbbox("Hg")[3] if af else 0
+    inner_w = max(tmp.textlength(label, font=lf), tmp.textlength(title, font=tf),
+                  tmp.textlength(artist, font=af) if af else 0)
+    padx, pady, m = 56, 40, 24
+    W = int(inner_w) + 2 * padx + 2 * m
+    H = lh + 18 + th + (ah + 14 if af else 0) + 2 * pady + 2 * m
+    img = Image.new("RGBA", (W, H), (0, 0, 0, 0))
+    d = ImageDraw.Draw(img)
+    accent = tuple(palette[0]) + (255,)
+    d.rounded_rectangle([m, m, W - m, H - m], radius=36, fill=(10, 10, 18, 215), outline=accent, width=3)
+    y = m + pady
+    d.text((W // 2, y), label, font=lf, fill=accent, anchor="ma")
+    y += lh + 18
+    d.text((W // 2, y), title, font=tf, fill=(255, 255, 255, 255), anchor="ma")
+    if af:
+        d.text((W // 2, y + th + 14), artist, font=af, fill=(255, 255, 255, 200), anchor="ma")
+    _with_shadow(img, blur=14, strength=0.9).save(path)
+
+
 def make_background(path, src, size, palette):
     """Image de fond floutée et assombrie (les notes lumineuses ressortent), ou dégradé si absente."""
     W, H = size
@@ -178,7 +229,14 @@ def main():
     ap.add_argument("--names", default="artist_title", choices=["artist_title", "title_artist"])
     ap.add_argument("--fps", type=int, default=60)
     ap.add_argument("--auto-pedal", default="on", choices=["on", "off"])
+    ap.add_argument("--style", default="falling", choices=["falling", "bounce"])
+    ap.add_argument("--guess", default="off", choices=["on", "off"],
+                    help="titre caché + 'Can you guess the song?' + réponse révélée à la fin")
+    ap.add_argument("--lead", type=float, default=None,
+                    help="secondes avant la 1re note (défaut 0.12 ; 0.6 en bounce pour voir la balle tomber)")
     a = ap.parse_args()
+    lead = a.lead if a.lead is not None else (0.6 if a.style == "bounce" else LEAD)
+    guess = a.guess == "on"
 
     t_start = time.time()
     with open(a.job, "r", encoding="utf-8") as f:
@@ -225,13 +283,14 @@ def main():
     else:
         s0, s1, reason = piano_midi.choose_excerpt(song, a.max_seconds)
         tail = 0.0
-    duration = round((s1 - s0) + LEAD + tail, 3)
+    duration = round((s1 - s0) + lead + tail, 3)
     log(f"Extrait {s0:.1f}s -> {s1:.1f}s ({duration:.1f} s vidéo) : {reason}")
 
-    offset = LEAD - s0                       # temps vidéo = temps morceau + offset
+    offset = lead - s0                       # temps vidéo = temps morceau + offset
     audio_notes = [n for n in song.notes if s0 - 0.01 <= n.start < s1]
-    # visuel : les notes à venir continuent de tomber jusqu'à la dernière image (pas d'écran vide)
-    visual_notes = [n for n in song.notes if s0 - 0.01 <= n.start < s1 + fmt["lookahead"] + 0.5]
+    # falling : les notes à venir continuent de tomber jusqu'à la dernière image (pas d'écran vide)
+    extra = fmt["lookahead"] + 0.5 if a.style == "falling" else 0.0
+    visual_notes = [n for n in song.notes if s0 - 0.01 <= n.start < s1 + extra]
     if not audio_notes:
         log("ERREUR : extrait sans notes")
         return 1
@@ -254,6 +313,10 @@ def main():
     lo, hi = key_range(visual_notes, fmt["min_whites"])
     title, artist = clean_names(meta.get("song_title") or Path(midi_path).stem, a.names)
     make_title_png(out / "title.png", title, artist, a.format, W)
+    reveal_time = round(max(duration * 0.6, duration - 3.2), 3)
+    if guess:
+        make_guess_png(out / "guess.png", W)
+        make_answer_png(out / "answer.png", title, artist, W, palette)
     make_background(out / "background.png", res.get("bg_image") or meta.get("bg_image"), (W, H), palette)
 
     with open(out / "notes.txt", "w", encoding="utf-8") as f:
@@ -261,6 +324,9 @@ def main():
             f.write(f"{n.start + offset:.4f} {n.end + offset:.4f} {n.pitch} {n.velocity} {n.hand}\n")
 
     scene = {
+        "style": a.style,
+        "guess": 1 if guess else 0,
+        "reveal_time": reveal_time,
         "layout": a.format,
         "duration": duration,
         "lookahead": fmt["lookahead"],
@@ -284,12 +350,14 @@ def main():
     # moment le plus dense (pour la miniature)
     starts = np.array([n.start + offset for n in audio_notes])
     t_min = 1.0 if a.format == "portrait" else min(10.0, duration / 2)   # après la disparition du titre
-    grid = np.arange(t_min, max(t_min + 0.5, duration - 1.0), 0.25)
+    t_max = (reveal_time - 0.6) if guess else duration - 1.0      # jamais la réponse en miniature
+    grid = np.arange(t_min, max(t_min + 0.5, t_max), 0.25)
     dens = [np.sum((starts > t) & (starts < t + fmt["lookahead"])) for t in grid]
     thumb_t = float(grid[int(np.argmax(dens))]) if len(grid) else duration / 2
 
     with open(out / "meta.json", "w", encoding="utf-8") as f:
-        json.dump({"title": title, "artist": artist, "format": a.format, "excerpt": [s0, s1], "reason": reason,
+        json.dump({"title": title, "artist": artist, "format": a.format, "style": a.style, "guess": guess,
+                   "excerpt": [s0, s1], "reason": reason,
                    "duration": duration, "thumb_time": thumb_t, "palette": palette,
                    "keys": [lo, hi], "soundfont": soundfont.name, **song.info}, f, ensure_ascii=False, indent=2)
 

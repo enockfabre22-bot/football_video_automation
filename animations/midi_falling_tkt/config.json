@@ -23,7 +23,7 @@
       "type": "python",
       "name": "Préparation piano (extrait, interprétation, son Salamander)",
       "script": "engines/piano/prepare.py",
-      "args": ["--format", "portrait", "--max-seconds", "65", "--names", "artist_title"]
+      "args": ["--format", "portrait", "--max-seconds", "30", "--names", "artist_title"]
     },
     {
       "type": "sandbox",

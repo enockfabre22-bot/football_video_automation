@@ -39,6 +39,8 @@ def main():
     ap.add_argument("--max-seconds", default="58")
     ap.add_argument("--excerpt", default="auto")
     ap.add_argument("--names", default=None)
+    ap.add_argument("--style", default="falling")
+    ap.add_argument("--guess", default="off")
     a = ap.parse_args()
 
     portrait = a.format == "portrait"
@@ -63,13 +65,13 @@ def main():
 
     py = sys.executable
     run([py, ENGINE / "prepare.py", job_file, "--format", a.format, "--max-seconds", a.max_seconds,
-         "--excerpt", a.excerpt, "--names", names])
+         "--excerpt", a.excerpt, "--names", names, "--style", a.style, "--guess", a.guess])
 
     exe = work / ("anim.exe" if os.name == "nt" else "anim")
     libs = ["-lraylib", "-lopengl32", "-lgdi32", "-lwinmm"] if os.name == "nt" else \
            ["-lraylib", "-lGL", "-lm", "-lpthread", "-ldl", "-lrt", "-lX11"]
     run(["g++", "-O2", "-std=c++17", f"-I{RUNTIME}", f"-I{RAYLIB_SRC}", RUNTIME / "anim_runtime.cpp",
-         ENGINE / "scene" / "piano_scene.cpp", "-o", exe, f"-L{RAYLIB_SRC}"] + libs)
+         *sorted((ENGINE / "scene").glob("*.cpp")), "-o", exe, f"-L{RAYLIB_SRC}"] + libs)
 
     video = json.loads((work / "piano" / "video.json").read_text(encoding="utf-8"))
     out_dir = work / "sandbox_out"

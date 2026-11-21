@@ -11,7 +11,7 @@
       "id": "short_01_matin_youtube_piano",
       "window": {"start": "08:00", "end": "10:00"},
       "animation_strategy": "fixed",
-      "target_animation": "piano_reveal_guess"
+      "target_animation": "piano_highway_guess"
     },
     {
       "id": "short_02_apresmidi_youtube_piano",

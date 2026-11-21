@@ -30,6 +30,7 @@ class Song:
     has_pedal: bool = False
     flat_velocity: bool = False
     info: dict = field(default_factory=dict)
+    beats: list = field(default_factory=list)   # temps (pulsations) en secondes
 
 
 # --------------------------------------------------------------------------- #
@@ -101,26 +102,31 @@ def load_song(path):
         raise ValueError(f"Aucune note dans {path}")
 
     length = max(n.end for n in out)
-    bars = _bar_starts(time_sigs, tmap, length)
+    bars, beats = _bar_starts(time_sigs, tmap, length)
     _assign_hands(out)
     pedal.sort()
     distinct = len({n.velocity for n in out})
     return Song(notes=out, pedal=pedal, bars=bars, length=length,
                 has_pedal=any(v >= 64 for _, v in pedal),
                 flat_velocity=distinct <= 3,
-                info={"tracks": len(mid.tracks), "distinct_velocities": distinct})
+                info={"tracks": len(mid.tracks), "distinct_velocities": distinct},
+                beats=beats)
 
 
 def _bar_starts(time_sigs, tmap, length):
+    """Débuts de mesure et temps (pulsations), en secondes."""
     sigs = sorted(time_sigs.items()) or [(0, (4, 4))]
     if sigs[0][0] != 0:
         sigs.insert(0, (0, (4, 4)))
-    bars, tick, i = [], 0, 0
+    bars, beats, tick, i = [], [], 0, 0
     while True:
         while i + 1 < len(sigs) and sigs[i + 1][0] <= tick:
             i += 1
         num, den = sigs[i][1]
         bar_ticks = max(1, int(num * tmap.tpb * 4 / den))
+        beat_ticks = max(1, int(tmap.tpb * 4 / den))
+        if den == 8 and num % 3 == 0:              # 6/8, 9/8, 12/8 : pulsation à la noire pointée
+            beat_ticks *= 3
         sec = tmap.sec(tick)
         if sec > length + 0.01:
             break
@@ -128,10 +134,12 @@ def _bar_starts(time_sigs, tmap, length):
         nxt = tick + bar_ticks
         if i + 1 < len(sigs) and sigs[i + 1][0] < nxt:
             nxt = sigs[i + 1][0]
+        for bt in range(tick, nxt, beat_ticks):
+            beats.append(tmap.sec(bt))
         tick = nxt
         if len(bars) > 5000:
             break
-    return bars
+    return bars, beats
 
 
 def _assign_hands(notes):

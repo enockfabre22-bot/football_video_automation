@@ -302,15 +302,15 @@ def main():
     ap.add_argument("--names", default="artist_title", choices=["artist_title", "title_artist"])
     ap.add_argument("--fps", type=int, default=60)
     ap.add_argument("--auto-pedal", default="on", choices=["on", "off"])
-    ap.add_argument("--style", default="falling", choices=["falling", "bounce", "reveal"])
+    ap.add_argument("--style", default="falling", choices=["falling", "bounce", "reveal", "highway"])
     ap.add_argument("--guess", default="off", choices=["on", "off"],
                     help="titre caché + 'Can you guess the song?' + réponse révélée à la fin")
     ap.add_argument("--lead", type=float, default=None,
                     help="secondes avant la 1re note (défaut 0.12 ; 0.6 en bounce pour voir la balle tomber)")
     a = ap.parse_args()
     lead = a.lead if a.lead is not None else (0.6 if a.style == "bounce" else LEAD)
-    if a.style == "reveal":
-        a.guess = "on"                       # le style reveal EST une devinette
+    if a.style in ("reveal", "highway"):
+        a.guess = "on"                       # ces styles SONT une devinette
     guess = a.guess == "on"
 
     t_start = time.time()
@@ -364,7 +364,7 @@ def main():
     offset = lead - s0                       # temps vidéo = temps morceau + offset
     audio_notes = [n for n in song.notes if s0 - 0.01 <= n.start < s1]
     # falling : les notes à venir continuent de tomber jusqu'à la dernière image (pas d'écran vide)
-    extra = fmt["lookahead"] + 0.5 if a.style == "falling" else 0.0
+    extra = fmt["lookahead"] + 0.5 if a.style in ("falling", "highway") else 0.0
     visual_notes = [n for n in song.notes if s0 - 0.01 <= n.start < s1 + extra]
     if not audio_notes:
         log("ERREUR : extrait sans notes")
@@ -393,6 +393,17 @@ def main():
         make_guess_png(out / "guess.png", W)
         make_answer_png(out / "answer.png", title, artist, W, palette)
     reveal_extra = {}
+    if a.style == "highway":
+        # pulsations (grille qui défile au tempo) : "temps 1_si_début_de_mesure"
+        bar_set = {round(b, 3) for b in song.bars}
+        with open(out / "beats.txt", "w", encoding="utf-8") as f:
+            for b in song.beats:
+                vt = b + offset
+                if -0.5 <= vt <= duration + 3.0:
+                    f.write(f"{vt:.4f} {1 if round(b, 3) in bar_set else 0}\n")
+        shutil.copy2(FONT_DIR / "Poppins-Bold.ttf", out / "font.ttf")
+        clean = lambda s: re.sub(r"[\r\n=]", " ", s).strip()
+        reveal_extra = {"title": clean(title).upper(), "artist": clean(artist), "lookahead": 2.2}
     if a.style == "reveal":
         flight = 0.9
         emitters = [n for n in audio_notes if n.start + offset < reveal_time - flight]

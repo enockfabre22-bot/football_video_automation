@@ -34,6 +34,19 @@ float sdRB(vec2 p, vec2 b, float r) {
 }
 void main() {
     vec2 uv = fragTexCoord;
+    if (style == 4) {
+        // trapèze en perspective (note de la piste) : bords nets via les dérivées, bout proche plus lumineux
+        vec2 fw = max(fwidth(uv), vec2(1e-5));
+        float ex = min(uv.x, 1.0 - uv.x) / fw.x;
+        float ey = min(uv.y, 1.0 - uv.y) / fw.y;
+        float aa4 = clamp(min(ex, ey) + 0.5, 0.0, 1.0);
+        vec3 b4 = fragColor.rgb;
+        vec3 c4 = b4 * mix(0.45, 1.15, uv.y);
+        float rim4 = 1.0 - smoothstep(0.0, 3.0, min(ex, ey));
+        c4 = mix(c4, min(b4 * 1.3 + 0.35, vec3(1.0)), rim4 * 0.85);
+        finalColor = vec4(c4, fragColor.a * aa4);
+        return;
+    }
     vec2 size = 1.0 / max(fwidth(uv), vec2(1e-5));
     vec2 p = (uv - 0.5) * size;
     float r = min(radius, 0.5 * min(size.x, size.y));
@@ -509,3 +522,4 @@ static inline Texture2D load_tex_opt(const std::string& path, bool& ok) {
 Scene* make_falling_scene();
 Scene* make_bounce_scene();
 Scene* make_reveal_scene();
+Scene* make_highway_scene();

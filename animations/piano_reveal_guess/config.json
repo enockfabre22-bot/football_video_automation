@@ -1,0 +1,52 @@
+{
+  "name": "piano_reveal_guess",
+  "enabled": true,
+  "accounts": ["youtube_piano", "tiktok_ItPiano"],
+  "requires_match_data": false,
+  "inputs": ["midi2", "jpg_portrait"],
+  "min_free_disk_gb": 3,
+  "metadata": {
+    "titles": [
+      "Can you guess this song? 🎹",
+      "Guess the song 🎹 (answer at the end)",
+      "Only real fans can guess this song 🎹",
+      "90% can't guess this song 🎹",
+      "Name this song in 10 seconds 🎹"
+    ],
+    "descriptions": [
+      "Comment your guess before the answer! 👇🎹",
+      "Did you get it? Tell me in the comments 👇"
+    ],
+    "hashtags": ["#guessthesong", "#piano", "#satisfying", "#pianocover", "#music", "#quiz", "#synthesia"],
+    "youtube_tags": [
+      "guess the song", "piano", "satisfying", "piano cover", "{midi}", "music quiz", "guess the song piano",
+      "synthesia", "piano music"
+    ]
+  },
+  "thumbnail": {
+    "enabled": false
+  },
+  "steps": [
+    {
+      "type": "python",
+      "name": "Préparation piano (refrain, son Salamander, devinette)",
+      "script": "engines/piano/prepare.py",
+      "args": ["--format", "portrait", "--max-seconds", "30", "--names", "artist_title",
+               "--style", "reveal", "--guess", "on"]
+    },
+    {
+      "type": "sandbox",
+      "name": "Rendu raylib (les notes construisent le titre)",
+      "profile": "raylib_box2d",
+      "source": "../../engines/piano/scene",
+      "seed": "random",
+      "video_from": "piano/video.json"
+    },
+    {
+      "type": "python",
+      "name": "Assemblage vidéo + piano",
+      "script": "engines/piano/finalize.py",
+      "args": ["--thumbnail"]
+    }
+  ]
+}

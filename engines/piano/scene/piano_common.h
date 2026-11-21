@@ -508,3 +508,4 @@ static inline Texture2D load_tex_opt(const std::string& path, bool& ok) {
 // Fabriques des scènes (une seule par binaire : create_scene() choisit selon scene.txt "style")
 Scene* make_falling_scene();
 Scene* make_bounce_scene();
+Scene* make_reveal_scene();

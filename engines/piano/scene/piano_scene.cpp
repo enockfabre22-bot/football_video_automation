@@ -227,6 +227,8 @@ Scene* make_falling_scene() { return new FallingScene(); }
 Scene* create_scene() {
     Settings s;
     s.load(piano_dir() + "/scene.txt");
-    if (s.str("style", "falling") == "bounce") return make_bounce_scene();
+    std::string style = s.str("style", "falling");
+    if (style == "bounce") return make_bounce_scene();
+    if (style == "reveal") return make_reveal_scene();
     return make_falling_scene();
 }

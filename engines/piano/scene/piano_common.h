@@ -1,8 +1,7 @@
 // ============================================================================
 //  piano_common.h — Briques partagées par les scènes piano (raylib) :
-//  shaders anticrénelés, halo lumineux (bloom), clavier réaliste, notes, réglages,
-//  étincelles et poussières. Utilisé par piano_scene.cpp (notes qui tombent)
-//  et bounce_scene.cpp (balles qui rebondissent sur les touches).
+//  shaders anticrénelés, halo lumineux (bloom), clavier, notes, réglages, étincelles et
+//  poussières. Utilisé par piano_scene.cpp (falling + create_scene), premium_scene.cpp et neon_scene.cpp.
 // ============================================================================
 #pragma once
 
@@ -21,7 +20,8 @@
 // Shaders
 // ---------------------------------------------------------------------------
 // Formes arrondies anticrénelées (champ de distance) :
-// 0 note lumineuse, 1 touche blanche, 2 touche noire laquée, 3 sphère brillante.
+// 0 note lumineuse, 1 touche blanche, 2 touche noire laquée, 5 note en verre (premium),
+// 9 note néon pleine, 10 touche jouée colorée, 11 touche 2D plate, 12 touche noire 2D plate.
 static const char* SHAPE_FS = R"(#version 330
 in vec2 fragTexCoord;
 in vec4 fragColor;
@@ -34,19 +34,6 @@ float sdRB(vec2 p, vec2 b, float r) {
 }
 void main() {
     vec2 uv = fragTexCoord;
-    if (style == 4) {
-        // trapèze en perspective (note de la piste) : bords nets via les dérivées, bout proche plus lumineux
-        vec2 fw = max(fwidth(uv), vec2(1e-5));
-        float ex = min(uv.x, 1.0 - uv.x) / fw.x;
-        float ey = min(uv.y, 1.0 - uv.y) / fw.y;
-        float aa4 = clamp(min(ex, ey) + 0.5, 0.0, 1.0);
-        vec3 b4 = fragColor.rgb;
-        vec3 c4 = b4 * mix(0.45, 1.15, uv.y);
-        float rim4 = 1.0 - smoothstep(0.0, 3.0, min(ex, ey));
-        c4 = mix(c4, min(b4 * 1.3 + 0.35, vec3(1.0)), rim4 * 0.85);
-        finalColor = vec4(c4, fragColor.a * aa4);
-        return;
-    }
     vec2 size = 1.0 / max(fwidth(uv), vec2(1e-5));
     vec2 p = (uv - 0.5) * size;
     float r = min(radius, 0.5 * min(size.x, size.y));
@@ -54,6 +41,7 @@ void main() {
     float aa = clamp(0.5 - d, 0.0, 1.0);
     vec3 base = fragColor.rgb;
     vec3 col;
+    float extra_a = 1.0;
     if (style == 0) {
         col = base * mix(0.58, 1.10, smoothstep(0.0, 1.0, uv.y));
         float rim = smoothstep(-3.2, -1.0, d);
@@ -81,15 +69,29 @@ void main() {
         float core = smoothstep(0.10, 0.16, uv.x) * (1.0 - smoothstep(0.16, 0.25, uv.x));
         col += vec3(0.20) * core * (0.35 + 0.65 * uv.y);
         col = mix(col, rimc, smoothstep(0.80, 1.0, uv.y) * 0.35);
+    } else if (style == 9) {
+        // note néon pleine : couleur saturée, liseré clair net, léger dégradé, reflet en haut
+        float rim = smoothstep(-3.2, -1.1, d);
+        col = base * mix(0.90, 1.06, uv.y);
+        col = mix(col, min(base * 0.55 + 0.50, vec3(1.0)), rim * 0.9);
+        col += vec3(0.10) * (1.0 - smoothstep(0.0, 0.10, uv.y)) * (1.0 - rim);
+    } else if (style == 10) {
+        // touche jouée : couleur vive qui s'éclaircit vers la ligne de frappe (lumière qui entre)
+        col = mix(min(base * 1.1 + 0.25, vec3(1.0)), base * 0.85, smoothstep(0.0, 0.7, uv.y));
+        float side = smoothstep(-2.0, -0.4, d);
+        col = mix(col, min(base + 0.45, vec3(1.0)), side * 0.6);
+    } else if (style == 11) {
+        // touche 2D plate : dégradé très léger, liseré fin (aucun relief)
+        col = base * mix(0.92, 1.0, smoothstep(0.0, 0.4, uv.y));
+        col = mix(col, base * 0.80, smoothstep(-1.6, -0.3, d) * 0.45);
+    } else if (style == 12) {
+        // touche noire 2D plate : légèrement plus claire vers le bas
+        col = base + vec3(0.07) * smoothstep(0.55, 1.0, uv.y);
+        col = mix(col, base * 0.6, smoothstep(-1.4, -0.3, d) * 0.5);
     } else {
-        // sphère : éclairage doux en haut à gauche, cœur incandescent, liseré clair
-        vec2 q = (uv - 0.5) * 2.0;
-        float l = clamp(1.0 - length(q - vec2(-0.35, -0.40)) * 0.9, 0.0, 1.0);
-        col = base * (0.55 + 0.65 * l) + vec3(1.0) * pow(l, 6.0) * 0.9;
-        float rim = smoothstep(-2.5, -0.5, d);
-        col = mix(col, min(base * 1.4 + 0.35, vec3(1.0)), rim * 0.6);
+        col = base;
     }
-    finalColor = vec4(col, fragColor.a * aa);
+    finalColor = vec4(col, fragColor.a * aa * extra_a);
 }
 )";
 
@@ -213,6 +215,7 @@ struct Gfx {
     int loc_style = -1, loc_radius = -1, loc_dir = -1;
     RenderTexture2D glowA{}, glowB{};
     int gw = 270, gh = 480;
+    std::vector<float> spreads = {1.0f, 2.2f};   // passes de flou du halo ; ajouter 4.5 = bloom multi-échelle
     float W = 1080, H = 1920;
 
     static Texture2D make_glow_texture(int n) {
@@ -323,8 +326,7 @@ struct Gfx {
         EndBlendMode();
         EndMode2D();
         EndTextureMode();
-        float spread[2] = {1.0f, 2.2f};
-        for (float sp : spread) {
+        for (float sp : spreads) {
             blur_pass(glowA, glowB, sp / gw, 0);
             blur_pass(glowB, glowA, 0, sp / gh);
         }
@@ -456,7 +458,8 @@ struct Spark { float x, y, vx, vy, life, max_life, size; Color col; };
 
 struct SparkSystem {
     std::vector<Spark> sparks;
-    float gravity = 1500;
+    float gravity = 1500;      // négatif = les étincelles « tombent » vers le haut (monde inversé)
+    float size_scale = 1.0f;
 
     void burst(AnimContext& ctx, float x, float y, float spread_x, Color col, int count, float speed,
                float advance, float ang_min = -2.6f, float ang_max = -0.55f) {
@@ -470,7 +473,7 @@ struct SparkSystem {
             s.vx = std::cos(ang) * spd;
             s.vy = std::sin(ang) * spd;
             s.max_life = s.life = ctx.randf(0.30f, 0.85f);
-            s.size = ctx.randf(2.0f, 4.0f) * (gravity / 1500.0f);
+            s.size = ctx.randf(2.0f, 4.0f) * (std::fabs(gravity) / 1500.0f) * size_scale;
             s.col = col;
             s.x += s.vx * advance;
             s.y += s.vy * advance;
@@ -489,7 +492,7 @@ struct SparkSystem {
             s.life -= dt;
         }
         sparks.erase(std::remove_if(sparks.begin(), sparks.end(),
-                                    [&](const Spark& s) { return s.life <= 0 || s.y > H; }),
+                                    [&](const Spark& s) { return s.life <= 0 || s.y > H + 50 || s.y < -50; }),
                      sparks.end());
     }
 
@@ -546,12 +549,11 @@ static inline Texture2D load_tex_opt(const std::string& path, bool& ok) {
 
 // Fabriques des scènes (une seule par binaire : create_scene() choisit selon scene.txt "style")
 Scene* make_falling_scene();
-Scene* make_bounce_scene();
-Scene* make_reveal_scene();
-Scene* make_highway_scene();
 Scene* make_premium_scene();
+Scene* make_neon_scene();
 
 static const char* NOTE_NAMES[12] = {"C", "C#", "D", "D#", "E", "F", "F#", "G", "G#", "A", "A#", "B"};
+static const char* NOTE_NAMES_FLAT[12] = {"C", "Db", "D", "Eb", "E", "F", "Gb", "G", "Ab", "A", "Bb", "B"};
 
 // Police (font.ttf copiée par prepare.py) avec les caractères latins
 static inline Font load_font_opt(const std::string& path, int size, bool& ok) {

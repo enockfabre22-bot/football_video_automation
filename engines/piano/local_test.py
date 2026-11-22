@@ -40,7 +40,8 @@ def main():
     ap.add_argument("--excerpt", default="auto")
     ap.add_argument("--names", default=None)
     ap.add_argument("--style", default="falling")
-    ap.add_argument("--guess", default="off")
+    ap.add_argument("--scale", type=float, default=1.0, help="2 = rendu 4K d'une vidéo 1920x1080")
+    ap.add_argument("--lead", default=None, help="secondes avant la 1re note (défaut : selon le style)")
     a = ap.parse_args()
 
     portrait = a.format == "portrait"
@@ -65,7 +66,8 @@ def main():
 
     py = sys.executable
     run([py, ENGINE / "prepare.py", job_file, "--format", a.format, "--max-seconds", a.max_seconds,
-         "--excerpt", a.excerpt, "--names", names, "--style", a.style, "--guess", a.guess])
+         "--excerpt", a.excerpt, "--names", names, "--style", a.style]
+        + (["--lead", a.lead] if a.lead else []))
 
     exe = work / ("anim.exe" if os.name == "nt" else "anim")
     libs = ["-lraylib", "-lopengl32", "-lgdi32", "-lwinmm"] if os.name == "nt" else \
@@ -77,7 +79,7 @@ def main():
     out_dir = work / "sandbox_out"
     out_dir.mkdir()
     cfg = {
-        "mode": "final", "render_width": video["width"], "render_height": video["height"],
+        "mode": "final", "render_width": int(video["width"] * a.scale), "render_height": int(video["height"] * a.scale),
         "logical_width": video["width"], "logical_height": video["height"], "fps": video["fps"],
         "duration": video["duration_s"], "seed": 42, "crf": 18,
         "out_dir": out_dir.as_posix(), "sounds_dir": "",

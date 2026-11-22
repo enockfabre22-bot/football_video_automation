@@ -1,9 +1,14 @@
 {
   "name": "midi_falling_tkt",
   "enabled": true,
-  "accounts": ["tiktok_ItPiano"],
+  "accounts": [
+    "tiktok_ItPiano"
+  ],
   "requires_match_data": false,
-  "inputs": ["midi2", "jpg_portrait"],
+  "inputs": [
+    "midi2",
+    "jpg_portrait"
+  ],
   "min_free_disk_gb": 3,
   "metadata": {
     "titles": [
@@ -11,8 +16,18 @@
       "{midi} on piano 🎹",
       "{midi} | Piano Cover"
     ],
-    "descriptions": [""],
-    "hashtags": ["#piano", "#pianocover", "#pianotutorial", "#synthesia", "#pianomusic", "#satisfying", "#fyp"],
+    "descriptions": [
+      ""
+    ],
+    "hashtags": [
+      "#piano",
+      "#pianocover",
+      "#pianotutorial",
+      "#synthesia",
+      "#pianomusic",
+      "#satisfying",
+      "#fyp"
+    ],
     "youtube_tags": []
   },
   "thumbnail": {
@@ -21,9 +36,18 @@
   "steps": [
     {
       "type": "python",
-      "name": "Préparation piano (extrait, interprétation, son Salamander)",
+      "name": "Préparation piano (style premium « Aurora Keys », son Salamander)",
       "script": "engines/piano/prepare.py",
-      "args": ["--format", "portrait", "--max-seconds", "30", "--names", "artist_title"]
+      "args": [
+        "--format",
+        "portrait",
+        "--max-seconds",
+        "30",
+        "--names",
+        "artist_title",
+        "--style",
+        "premium"
+      ]
     },
     {
       "type": "sandbox",
@@ -37,7 +61,9 @@
       "type": "python",
       "name": "Assemblage vidéo + piano",
       "script": "engines/piano/finalize.py",
-      "args": ["--thumbnail"]
+      "args": [
+        "--thumbnail"
+      ]
     }
   ]
 }

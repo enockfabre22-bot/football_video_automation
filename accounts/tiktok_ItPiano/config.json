@@ -16,7 +16,7 @@
       "id": "tiktok_ItPiano_matin",
       "window": {"start": "08:00", "end": "10:00"},
       "animation_strategy": "fixed",
-      "target_animation": "piano_highway_guess"
+      "target_animation": "midi_falling_tkt"
     },
     {
       "id": "tiktok_ItPiano_apresmidi",

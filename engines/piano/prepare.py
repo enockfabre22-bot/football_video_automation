@@ -42,6 +42,14 @@ PALETTES = [
     ((170, 255, 90), (0, 190, 255)),     # citron vert / azur
 ]
 
+# Style premium : couleurs plus douces et élégantes (verre lumineux, pas néon criard)
+PREMIUM_PALETTES = [
+    ((110, 210, 255), (255, 150, 120)),   # ciel / corail
+    ((140, 235, 200), (185, 150, 255)),   # menthe / lilas
+    ((255, 200, 120), (120, 170, 255)),   # ambre / bleu
+    ((120, 225, 255), (255, 130, 190)),   # glace / rose
+]
+
 LEAD = 0.12          # la première note frappe 0,12 s après le début : aucun temps mort
 
 
@@ -302,7 +310,7 @@ def main():
     ap.add_argument("--names", default="artist_title", choices=["artist_title", "title_artist"])
     ap.add_argument("--fps", type=int, default=60)
     ap.add_argument("--auto-pedal", default="on", choices=["on", "off"])
-    ap.add_argument("--style", default="falling", choices=["falling", "bounce", "reveal", "highway"])
+    ap.add_argument("--style", default="falling", choices=["falling", "bounce", "reveal", "highway", "premium"])
     ap.add_argument("--guess", default="off", choices=["on", "off"],
                     help="titre caché + 'Can you guess the song?' + réponse révélée à la fin")
     ap.add_argument("--lead", type=float, default=None,
@@ -364,7 +372,7 @@ def main():
     offset = lead - s0                       # temps vidéo = temps morceau + offset
     audio_notes = [n for n in song.notes if s0 - 0.01 <= n.start < s1]
     # falling : les notes à venir continuent de tomber jusqu'à la dernière image (pas d'écran vide)
-    extra = fmt["lookahead"] + 0.5 if a.style in ("falling", "highway") else 0.0
+    extra = fmt["lookahead"] + 0.5 if a.style in ("falling", "highway", "premium") else 0.0
     visual_notes = [n for n in song.notes if s0 - 0.01 <= n.start < s1 + extra]
     if not audio_notes:
         log("ERREUR : extrait sans notes")
@@ -384,7 +392,8 @@ def main():
     log(f"Audio piano rendu ({soundfont.name}, réverbération de salle, -14 LUFS)")
 
     # --- Visuel ---
-    palette = PALETTES[int(rng.integers(len(PALETTES)))]
+    pals = PREMIUM_PALETTES if a.style == "premium" else PALETTES
+    palette = pals[int(rng.integers(len(pals)))]
     lo, hi = key_range(visual_notes, fmt["min_whites"])
     title, artist = clean_names(meta.get("song_title") or Path(midi_path).stem, a.names)
     make_title_png(out / "title.png", title, artist, a.format, W)
@@ -393,6 +402,11 @@ def main():
         make_guess_png(out / "guess.png", W)
         make_answer_png(out / "answer.png", title, artist, W, palette)
     reveal_extra = {}
+    if a.style == "premium":
+        # fond propre (pas de photo floue) + police pour les noms des notes et des touches
+        make_background(out / "background.png", None, (W, H), palette)
+        shutil.copy2(FONT_DIR / "Poppins-SemiBold.ttf", out / "font.ttf")
+        reveal_extra = {"lookahead": 2.4}
     if a.style == "highway":
         # pulsations (grille qui défile au tempo) : "temps 1_si_début_de_mesure"
         bar_set = {round(b, 3) for b in song.bars}
@@ -423,7 +437,8 @@ def main():
         reveal_extra = {"flight": flight, "region_top": int(H * 0.215), "artist_y": int(artist_y),
                         "particles": len(pts)}
         log(f"Révélation : {len(pts)} particules lancées par {len(emitters)} notes ({per_note}/note)")
-    make_background(out / "background.png", res.get("bg_image") or meta.get("bg_image"), (W, H), palette)
+    if a.style != "premium":                 # premium : fond propre déjà généré, sans photo
+        make_background(out / "background.png", res.get("bg_image") or meta.get("bg_image"), (W, H), palette)
 
     with open(out / "notes.txt", "w", encoding="utf-8") as f:
         for n in visual_notes:

@@ -72,6 +72,15 @@ void main() {
         col += vec3(0.11) * hl * (1.0 - uv.y * 0.7);
         float rim = smoothstep(-2.0, -0.3, d);
         col = mix(col, vec3(0.0), rim * 0.55);
+    } else if (style == 5) {
+        // note en verre : corps sombre teinté, contour lumineux, fin reflet, extrémité basse plus claire
+        float inner = smoothstep(-7.0, -0.8, d);
+        vec3 glass = base * mix(0.20, 0.42, uv.y);
+        vec3 rimc = min(base * 1.2 + 0.28, vec3(1.0));
+        col = mix(glass, rimc, inner * 0.92);
+        float core = smoothstep(0.10, 0.16, uv.x) * (1.0 - smoothstep(0.16, 0.25, uv.x));
+        col += vec3(0.20) * core * (0.35 + 0.65 * uv.y);
+        col = mix(col, rimc, smoothstep(0.80, 1.0, uv.y) * 0.35);
     } else {
         // sphère : éclairage doux en haut à gauche, cœur incandescent, liseré clair
         vec2 q = (uv - 0.5) * 2.0;
@@ -230,6 +239,23 @@ struct Gfx {
             px[y] = Color{255, 255, 255, (unsigned char)(255 * a * a)};
         }
         Image img = {px, 1, n, 1, PIXELFORMAT_UNCOMPRESSED_R8G8B8A8};
+        Texture2D t = LoadTextureFromImage(img);
+        UnloadImage(img);
+        SetTextureFilter(t, TEXTURE_FILTER_BILINEAR);
+        return t;
+    }
+
+    // anneau fin (onde de choc), alpha en gaussienne autour du rayon 0.82
+    static Texture2D make_ring_texture(int n) {
+        Color* px = (Color*)MemAlloc(n * n * sizeof(Color));
+        for (int y = 0; y < n; ++y)
+            for (int x = 0; x < n; ++x) {
+                float dx = (x + 0.5f) / n * 2 - 1, dy = (y + 0.5f) / n * 2 - 1;
+                float r = std::sqrt(dx * dx + dy * dy);
+                float a = std::exp(-std::pow((r - 0.82f) / 0.09f, 2.0f));
+                px[y * n + x] = Color{255, 255, 255, (unsigned char)(255 * a)};
+            }
+        Image img = {px, n, n, 1, PIXELFORMAT_UNCOMPRESSED_R8G8B8A8};
         Texture2D t = LoadTextureFromImage(img);
         UnloadImage(img);
         SetTextureFilter(t, TEXTURE_FILTER_BILINEAR);
@@ -523,3 +549,19 @@ Scene* make_falling_scene();
 Scene* make_bounce_scene();
 Scene* make_reveal_scene();
 Scene* make_highway_scene();
+Scene* make_premium_scene();
+
+static const char* NOTE_NAMES[12] = {"C", "C#", "D", "D#", "E", "F", "F#", "G", "G#", "A", "A#", "B"};
+
+// Police (font.ttf copiée par prepare.py) avec les caractères latins
+static inline Font load_font_opt(const std::string& path, int size, bool& ok) {
+    ok = false;
+    Font f{};
+    if (!FileExists(path.c_str())) return f;
+    std::vector<int> cps;
+    for (int c = 32; c < 256; ++c) cps.push_back(c);
+    f = LoadFontEx(path.c_str(), size, cps.data(), (int)cps.size());
+    ok = f.texture.id != 0;
+    if (ok) SetTextureFilter(f.texture, TEXTURE_FILTER_BILINEAR);
+    return f;
+}

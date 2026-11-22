@@ -1,9 +1,14 @@
 {
   "name": "midi_falling_short",
   "enabled": true,
-  "accounts": ["youtube_piano"],
+  "accounts": [
+    "youtube_piano"
+  ],
   "requires_match_data": false,
-  "inputs": ["midi2", "jpg_portrait"],
+  "inputs": [
+    "midi2",
+    "jpg_portrait"
+  ],
   "min_free_disk_gb": 3,
   "metadata": {
     "titles": [
@@ -11,10 +16,26 @@
       "{midi} | Piano",
       "{midi} (Piano Version) 🎹"
     ],
-    "descriptions": [""],
-    "hashtags": ["#piano", "#pianocover", "#pianotutorial", "#synthesia", "#pianomusic", "#satisfying"],
+    "descriptions": [
+      ""
+    ],
+    "hashtags": [
+      "#piano",
+      "#pianocover",
+      "#pianotutorial",
+      "#synthesia",
+      "#pianomusic",
+      "#satisfying"
+    ],
     "youtube_tags": [
-      "piano", "piano cover", "{midi}", "piano tutorial", "synthesia", "piano music", "easy piano", "pianosolo"
+      "piano",
+      "piano cover",
+      "{midi}",
+      "piano tutorial",
+      "synthesia",
+      "piano music",
+      "easy piano",
+      "pianosolo"
     ]
   },
   "thumbnail": {
@@ -23,9 +44,18 @@
   "steps": [
     {
       "type": "python",
-      "name": "Préparation piano (extrait, interprétation, son Salamander)",
+      "name": "Préparation piano (style premium « Aurora Keys », son Salamander)",
       "script": "engines/piano/prepare.py",
-      "args": ["--format", "portrait", "--max-seconds", "30", "--names", "artist_title"]
+      "args": [
+        "--format",
+        "portrait",
+        "--max-seconds",
+        "30",
+        "--names",
+        "artist_title",
+        "--style",
+        "premium"
+      ]
     },
     {
       "type": "sandbox",
@@ -39,7 +69,9 @@
       "type": "python",
       "name": "Assemblage vidéo + piano",
       "script": "engines/piano/finalize.py",
-      "args": ["--thumbnail"]
+      "args": [
+        "--thumbnail"
+      ]
     }
   ]
 }

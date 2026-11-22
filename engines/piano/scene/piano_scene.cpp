@@ -231,5 +231,6 @@ Scene* create_scene() {
     if (style == "bounce") return make_bounce_scene();
     if (style == "reveal") return make_reveal_scene();
     if (style == "highway") return make_highway_scene();
+    if (style == "premium") return make_premium_scene();
     return make_falling_scene();
 }

@@ -61,7 +61,7 @@
   "steps": [
     {
       "type": "python",
-      "name": "Préparation piano (morceau complet, son Salamander)",
+      "name": "Préparation piano (style premium « Aurora Keys », son Salamander)",
       "script": "engines/piano/prepare.py",
       "args": [
         "--format",
@@ -71,7 +71,9 @@
         "--max-seconds",
         "480",
         "--names",
-        "title_artist"
+        "title_artist",
+        "--style",
+        "premium"
       ]
     },
     {

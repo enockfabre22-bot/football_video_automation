@@ -1,10 +1,7 @@
 {
   "name": "piano_highway_guess",
   "enabled": true,
-  "accounts": [
-    "youtube_piano",
-    "tiktok_ItPiano"
-  ],
+  "accounts": [],
   "requires_match_data": false,
   "inputs": [
     "midi2",

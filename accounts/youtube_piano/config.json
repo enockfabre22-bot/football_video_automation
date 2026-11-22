@@ -2,6 +2,8 @@
   "platform": "youtube",
   "enabled": true,
   "privacy_status": "public",
+  "category_id": "10",
+  "default_language": "en",
   "metadata_rules": {
     "hashtag_count": 4,
     "youtube_tag_count": 20

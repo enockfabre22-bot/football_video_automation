@@ -106,15 +106,18 @@ class AnimationManager:
                         chosen_title = chosen_title.replace(f"{{{res_key}}}", file_name_without_ext)
                         chosen_desc = chosen_desc.replace(f"{{{res_key}}}", file_name_without_ext)
             
-        hashtags_pool = anim_meta.get("hashtags", [])
-        nb_hashtags = acc_rules.get("hashtag_count", 3)
-        nb_hashtags = min(nb_hashtags, len(hashtags_pool))
-        chosen_hashtags = random.sample(hashtags_pool, nb_hashtags) if nb_hashtags > 0 else []
-        
-        yt_tags_pool = anim_meta.get("youtube_tags", [])
-        nb_yt_tags = acc_rules.get("youtube_tag_count", 0)
-        nb_yt_tags = min(nb_yt_tags, len(yt_tags_pool))
-        chosen_yt_tags = random.sample(yt_tags_pool, nb_yt_tags) if nb_yt_tags > 0 else []
+        # Les entrées propres à la vidéo (avec un repère comme {title}, {artist}, {home}) sont TOUJOURS
+        # gardées (référencement) ; le reste du quota est tiré au hasard parmi les entrées génériques.
+        def pick(pool, count):
+            if count <= 0:
+                return []
+            specific = [x for x in pool if "{" in x]
+            generic = [x for x in pool if "{" not in x]
+            n = max(0, min(count - len(specific), len(generic)))
+            return specific + random.sample(generic, n)
+
+        chosen_hashtags = pick(anim_meta.get("hashtags", []), acc_rules.get("hashtag_count", 3))
+        chosen_yt_tags = pick(anim_meta.get("youtube_tags", []), acc_rules.get("youtube_tag_count", 0))
 
         # Remplacement dynamique dans les tags générés
         if match_data:
@@ -136,9 +139,11 @@ class AnimationManager:
                 for t in chosen_yt_tags
             ]
 
-        # --- NOUVEAUTÉ : Ajout sécurisé des hashtags dans le titre ---
+        # Hashtags dans le titre : utile sur TikTok (le titre = la légende). Sur YouTube ils restent dans
+        # la description (ajoutés par l'uploader) : un titre propre se lit et se référence mieux.
         titre_final = chosen_title
-        for hashtag in chosen_hashtags:
+        hashtags_in_title = [] if account_config.get("platform") == "youtube" else chosen_hashtags
+        for hashtag in hashtags_in_title:
             # On vérifie si l'ajout du hashtag (+1 pour l'espace) dépasse 100 caractères
             if len(titre_final) + len(hashtag) + 1 <= 100:
                 titre_final += f" {hashtag}"

@@ -50,7 +50,7 @@ def upload_youtube_video(video_path, metadata, account_name, account_cfg, base_d
     hashtags_str = " ".join(metadata.get("hashtags", []))
     full_desc = f"{desc}\n\n{hashtags_str}".strip()
         
-    category_id = account_cfg.get("category_id", "17") # 17 = Sports
+    category_id = str(account_cfg.get("category_id", "17"))  # 17 = Sports, 10 = Musique (à régler par compte)
     privacy_status = account_cfg.get("privacy_status", "private") # private par sécurité
     
     # On privilégie les tags YouTube dédiés, sinon on nettoie les hashtags (sans le #)
@@ -58,13 +58,27 @@ def upload_youtube_video(video_path, metadata, account_name, account_cfg, base_d
     if not tags:
         tags = [t.replace("#", "") for t in metadata.get("hashtags", [])]
 
+    # YouTube refuse plus de 500 caractères de tags au total (virgules comprises) : on garde les
+    # premiers (les tags propres au morceau sont en tête) tant que le budget le permet.
+    kept, used = [], 0
+    for tag in tags:
+        tag = str(tag).replace("<", "").replace(">", "").strip()
+        cost = len(tag) + (2 if " " in tag else 0) + (1 if kept else 0)
+        if tag and used + cost <= 480:
+            kept.append(tag)
+            used += cost
+
+    snippet = {
+        'title': title,
+        'description': full_desc[:4900],
+        'tags': kept,
+        'categoryId': category_id
+    }
+    if account_cfg.get("default_language"):            # ex. "en" : aide YouTube à cibler le bon public
+        snippet['defaultLanguage'] = account_cfg["default_language"]
+
     request_body = {
-        'snippet': {
-            'title': title,
-            'description': full_desc,
-            'tags': tags[:15], # YouTube recommande max 15 tags
-            'categoryId': category_id
-        },
+        'snippet': snippet,
         'status': {
             'privacyStatus': privacy_status,
             'selfDeclaredMadeForKids': False

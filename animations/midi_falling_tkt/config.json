@@ -12,20 +12,20 @@
   "min_free_disk_gb": 3,
   "metadata": {
     "titles": [
-      "{midi} 🎹",
-      "{midi} on piano 🎹",
-      "{midi} | Piano Cover"
+      "{title} - {artist} 🎹",
+      "{title} on piano 🎹 ({artist})",
+      "{title} - {artist} | Piano Cover"
     ],
     "descriptions": [
       ""
     ],
     "hashtags": [
+      "#{artist_tag}",
       "#piano",
       "#pianocover",
       "#pianotutorial",
       "#synthesia",
       "#pianomusic",
-      "#satisfying",
       "#fyp"
     ],
     "youtube_tags": []

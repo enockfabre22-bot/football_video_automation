@@ -12,30 +12,44 @@
   "min_free_disk_gb": 3,
   "metadata": {
     "titles": [
-      "{midi} 🎹 Piano Cover",
-      "{midi} | Piano",
-      "{midi} (Piano Version) 🎹"
+      "{title} - {artist} | Piano Cover 🎹",
+      "{title} - {artist} | {easy}Piano Tutorial 🎹",
+      "{title} ({artist}) on Piano 🎹",
+      "How to Play {title} on Piano - {artist} 🎹"
     ],
     "descriptions": [
-      ""
+      "{title} by {artist} — {easy}piano tutorial with falling notes 🎹\nLearn how to play {title} on piano: follow the notes as they fall onto the keys.\n\n🔔 Subscribe for a new piano cover every day!",
+      "🎹 {title} - {artist} | Piano Cover\nA piano version of {title} by {artist}, with every note falling onto the keyboard (Synthesia style).\n\n🔔 Subscribe for piano covers of your favourite songs!"
     ],
     "hashtags": [
+      "#{artist_tag}",
       "#piano",
       "#pianocover",
       "#pianotutorial",
+      "#shorts",
       "#synthesia",
-      "#pianomusic",
-      "#satisfying"
+      "#pianomusic"
     ],
     "youtube_tags": [
+      "{title}",
+      "{artist}",
+      "{title} {artist}",
+      "{title} piano",
+      "{title} piano tutorial",
+      "{title} piano cover",
+      "{artist} piano",
+      "how to play {title} on piano",
+      "{title} {easy}piano",
       "piano",
       "piano cover",
-      "{midi}",
       "piano tutorial",
-      "synthesia",
-      "piano music",
       "easy piano",
-      "pianosolo"
+      "piano music",
+      "synthesia",
+      "falling notes",
+      "piano shorts",
+      "piano song",
+      "relaxing piano"
     ]
   },
   "thumbnail": {

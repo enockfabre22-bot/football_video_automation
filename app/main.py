@@ -7,6 +7,7 @@ from animation_manager import AnimationManager
 from job_manager import JobManager
 from publication_manager import PublicationManager
 from ai_stock import AIStockManager
+import song_meta
 import time
 import os
 
@@ -183,16 +184,13 @@ def prepare_daily_videos(account_name="tiktok_main"):
                 chosen_midi = random.choice(midis)
                 match_data["resources"]["midi_file"] = str(chosen_midi)
                 
-                # Extraction du nom du fichier
+                # Titre / artiste propres (référencement) : midi2 = "Artiste - Titre", midi = "Titre - Compositeur"
                 stem = chosen_midi.stem
-                match_data["song_title"] = stem
-                if " - " in stem:
-                    parts = stem.split(" - ", 1)
-                    match_data["song_author"] = parts[1].strip()
-                else:
-                    match_data["song_author"] = "Unknown"
-                    
-                print(f"  -> Audio sélectionné : {match_data['song_title']} (Dossier: {midi_key})")
+                match_data["song_title"] = stem                 # nom brut : le moteur piano le relit lui-même
+                match_data["song"] = song_meta.parse_song_name(stem, midi_key)
+                match_data["song_author"] = match_data["song"]["artist"] or "Unknown"
+
+                print(f"  -> Audio sélectionné : {match_data['song']['title']} — {match_data['song_author']} (Dossier: {midi_key})")
 
             # --- GESTION DES FONDS D'ÉCRAN (JPG) ---
             # Détecte si l'animation demande "jpg" (horizontal) ou "jpg_portrait" (vertical)
@@ -272,13 +270,17 @@ def prepare_daily_videos(account_name="tiktok_main"):
                     metadata["midi_file"] = match_data["resources"].get("midi_file", "")
                     metadata["bg_image"] = match_data["resources"].get("bg_image", "")
                 
-                # Remplacement de {midi} dans les textes configurés
+                # Repères {midi} {title} {artist} {artist_tag} {easy} dans les textes configurés (voir song_meta.py)
+                song = match_data.get("song") or song_meta.parse_song_name(song_title)
+                metadata["song_name"], metadata["song_artist"] = song["title"], song["artist"]
                 if "title" in metadata:
-                    metadata["title"] = metadata["title"].replace("{midi}", song_title)
+                    metadata["title"] = song_meta.fill(metadata["title"], song)
                 if "description" in metadata:
-                    metadata["description"] = metadata["description"].replace("{midi}", song_title)
+                    metadata["description"] = song_meta.fill(metadata["description"], song)
+                if "hashtags" in metadata:
+                    metadata["hashtags"] = song_meta.fill_list(metadata["hashtags"], song, prefix="#")
                 if "youtube_tags" in metadata:
-                    metadata["youtube_tags"] = [tag.replace("{midi}", song_title) for tag in metadata["youtube_tags"]]
+                    metadata["youtube_tags"] = song_meta.fill_list(metadata["youtube_tags"], song)
             
             job["metadata"] = metadata
 

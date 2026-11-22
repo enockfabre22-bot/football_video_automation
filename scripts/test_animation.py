@@ -55,9 +55,12 @@ def main():
 
     # Ressources tirées au hasard comme le fait main.py (MIDI, fond) ; MIDI imposable en 2e argument
     inputs = cfg.get("inputs", [])
-    midi_key = "midi2" if "midi2" in inputs else "midi" if "midi" in inputs else None
-    if midi_key:
-        midi = Path(sys.argv[2]) if len(sys.argv) > 2 else random.choice(list((BASE_DIR / "assets" / midi_key).glob("*.mid")))
+    if "library" in inputs:
+        import midi_library
+        if len(sys.argv) > 2:
+            midi = Path(sys.argv[2])
+        else:   # même tirage qu'en production (catégorie + notoriété), sans l'enregistrer dans l'historique
+            midi = Path(midi_library.choose_song("test", cfg.get("library", {}))["path"])
         match_data["resources"]["midi_file"] = str(midi.resolve())
         metadata["song_title"] = midi.stem
         print(f"MIDI : {midi.name}")

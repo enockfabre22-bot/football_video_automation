@@ -6,7 +6,7 @@
   ],
   "requires_match_data": false,
   "inputs": [
-    "midi2",
+    "library",
     "jpg"
   ],
   "metadata": {
@@ -87,5 +87,9 @@
       ]
     }
   ],
-  "min_free_disk_gb": 3
+  "min_free_disk_gb": 3,
+  "library": {
+    "min_duration": 100,
+    "repeat_days": 60
+  }
 }

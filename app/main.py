@@ -8,6 +8,7 @@ from job_manager import JobManager
 from publication_manager import PublicationManager
 from ai_stock import AIStockManager
 import song_meta
+import midi_library
 import time
 import os
 
@@ -84,6 +85,35 @@ def resolve_ai_animation(anim_config, slot, account_name, anim_mgr, ai_stock):
         return anim_mgr.select_animation(account_name, strategy="random", exclude_animations=exclude)
 
     return None
+
+def apply_song_metadata(metadata, match_data):
+    """
+    Données du morceau dans les métadonnées : chemins (relus par le moteur) et remplacement des repères
+    {midi} {title} {artist} {artist_tag} {easy} dans titre / description / hashtags / tags (voir song_meta.py).
+    Partagé par la préparation quotidienne et scripts/publish_now.py.
+    """
+    if "song_title" not in match_data:
+        return metadata
+    song_title = match_data["song_title"]
+    metadata["song_title"] = song_title
+    metadata["song_author"] = match_data.get("song_author", "")
+    if "resources" in match_data:
+        metadata["midi_file"] = match_data["resources"].get("midi_file", "")
+        metadata["bg_image"] = match_data["resources"].get("bg_image", "")
+    song = match_data.get("song") or song_meta.parse_song_name(song_title)
+    metadata["song_name"], metadata["song_artist"] = song["title"], song["artist"]
+    if "title" in metadata:
+        metadata["title"] = song_meta.fill(metadata["title"], song)
+    if "description" in metadata:
+        metadata["description"] = song_meta.fill(metadata["description"], song)
+        if song.get("credit"):
+            metadata["description"] = (metadata["description"] + "\n\n" + song["credit"]).strip()
+    if "hashtags" in metadata:
+        metadata["hashtags"] = song_meta.fill_list(metadata["hashtags"], song, prefix="#")
+    if "youtube_tags" in metadata:
+        metadata["youtube_tags"] = song_meta.fill_list(metadata["youtube_tags"], song)
+    return metadata
+
 
 def prepare_daily_videos(account_name="tiktok_main"):
     """
@@ -171,26 +201,21 @@ def prepare_daily_videos(account_name="tiktok_main"):
             # SÉLECTION DYNAMIQUE DES FICHIERS (MIDI, JPG, etc.)
             inputs = anim_config.get("inputs", [])
             
-            # --- GESTION DES FICHIERS MIDI ---
-            # Détecte si l'animation demande "midi" (classique) ou "midi2" (vertical)
-            midi_key = "midi2" if "midi2" in inputs else "midi" if "midi" in inputs else None
-            
-            if midi_key:
-                midi_dir = base_dir / "assets" / midi_key
-                midis = list(midi_dir.glob("*.mid"))
-                if not midis:
-                    print(f"[ERREUR] Aucun fichier .mid trouvé dans assets/{midi_key}/")
+            # --- BIBLIOTHÈQUE MIDI (assets/library, voir app/midi_library.py) ---
+            # Morceau choisi par catégorie et notoriété, sans répétition récente sur ce compte.
+            if "library" in inputs:
+                entry = midi_library.choose_song(account_name, anim_config.get("library", {}))
+                if not entry:
+                    print("[ERREUR] Aucun morceau disponible dans la bibliothèque MIDI pour ce créneau.")
                     continue
-                chosen_midi = random.choice(midis)
-                match_data["resources"]["midi_file"] = str(chosen_midi)
-                
-                # Titre / artiste propres (référencement) : midi2 = "Artiste - Titre", midi = "Titre - Compositeur"
-                stem = chosen_midi.stem
-                match_data["song_title"] = stem                 # nom brut : le moteur piano le relit lui-même
-                match_data["song"] = song_meta.parse_song_name(stem, midi_key)
-                match_data["song_author"] = match_data["song"]["artist"] or "Unknown"
-
-                print(f"  -> Audio sélectionné : {match_data['song']['title']} — {match_data['song_author']} (Dossier: {midi_key})")
+                midi_library.remember(account_name, entry, date_str)
+                match_data["resources"]["midi_file"] = entry["path"]
+                match_data["song_title"] = Path(entry["path"]).stem      # "Artiste - Titre[ - EASY]" (relu par le moteur)
+                match_data["song"] = {"title": entry["title"], "artist": entry["artist"],
+                                      "easy": entry.get("easy", False), "credit": entry.get("credit", "")}
+                match_data["song_author"] = entry["artist"] or "Unknown"
+                print(f"  -> Morceau : {entry['title']} — {entry['artist']} "
+                      f"[{entry['category']}, notoriété {entry['popularity']}]")
 
             # --- GESTION DES FONDS D'ÉCRAN (JPG) ---
             # Détecte si l'animation demande "jpg" (horizontal) ou "jpg_portrait" (vertical)
@@ -259,29 +284,10 @@ def prepare_daily_videos(account_name="tiktok_main"):
                 if overrides:
                     metadata["publish_overrides"] = overrides
             
-            # Injection des données musicales dans les métadonnées
-            if not requires_match and "song_title" in match_data:
-                song_title = match_data["song_title"]
-                metadata["song_title"] = song_title
-                metadata["song_author"] = match_data["song_author"]
-                
-                # AJOUT : On glisse les fichiers dans les métadonnées pour être sûr que Processing les lise !
-                if "resources" in match_data:
-                    metadata["midi_file"] = match_data["resources"].get("midi_file", "")
-                    metadata["bg_image"] = match_data["resources"].get("bg_image", "")
-                
-                # Repères {midi} {title} {artist} {artist_tag} {easy} dans les textes configurés (voir song_meta.py)
-                song = match_data.get("song") or song_meta.parse_song_name(song_title)
-                metadata["song_name"], metadata["song_artist"] = song["title"], song["artist"]
-                if "title" in metadata:
-                    metadata["title"] = song_meta.fill(metadata["title"], song)
-                if "description" in metadata:
-                    metadata["description"] = song_meta.fill(metadata["description"], song)
-                if "hashtags" in metadata:
-                    metadata["hashtags"] = song_meta.fill_list(metadata["hashtags"], song, prefix="#")
-                if "youtube_tags" in metadata:
-                    metadata["youtube_tags"] = song_meta.fill_list(metadata["youtube_tags"], song)
-            
+            # Injection des données musicales (titre, artiste, repères des textes)
+            if not requires_match:
+                apply_song_metadata(metadata, match_data)
+
             job["metadata"] = metadata
 
         # 5. Exécution de l'animation

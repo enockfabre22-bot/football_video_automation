@@ -6,7 +6,7 @@
   ],
   "requires_match_data": false,
   "inputs": [
-    "midi2",
+    "library",
     "jpg"
   ],
   "min_free_disk_gb": 3,
@@ -87,5 +87,9 @@
         "--thumbnail"
       ]
     }
-  ]
+  ],
+  "library": {
+    "min_duration": 100,
+    "repeat_days": 60
+  }
 }

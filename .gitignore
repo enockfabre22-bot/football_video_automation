@@ -35,3 +35,6 @@ assets/soundfonts/
 # Studio IA : créations, historiques et grand livre des coûts (vivent sur le VPS)
 ai_data/
 output/.render.lock
+
+# Historique des morceaux publiés par compte (état du VPS, pas de conflit au git pull)
+data/song_history.json

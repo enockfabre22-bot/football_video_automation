@@ -2,9 +2,8 @@
 song_meta.py — Titre / artiste d'un morceau à partir du nom du fichier MIDI, et remplacement des
 repères dans les titres, descriptions, hashtags et tags (référencement YouTube / TikTok).
 
-Conventions des dossiers :
-  - assets/midi2 : "Artiste - Titre[ - EASY][ (2)].mid"   (morceaux modernes)
-  - assets/midi  : "Titre - Compositeur.mid"               (classique)
+Avec la bibliothèque (assets/library, app/midi_library.py), titre et artiste viennent du catalogue ;
+parse_song_name() sert de secours pour un fichier "Artiste - Titre[ - EASY].mid" (convention de la bibliothèque).
 
 Repères disponibles dans les configs d'animation (metadata) :
   {midi}       "Titre - Artiste" (nom propre, sans EASY ni (2))

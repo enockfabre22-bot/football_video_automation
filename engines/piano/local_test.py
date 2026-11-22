@@ -3,7 +3,7 @@ local_test.py — Teste le moteur piano en local, SANS Docker ni publication
 (Windows avec w64devkit/raylib, ou Linux avec raylib installé).
 
 Usage (depuis la racine du projet) :
-    python engines/piano/local_test.py [--midi "assets/midi2/Adele - Skyfall.mid"]
+    python engines/piano/local_test.py [--midi "assets/library/pop/Adele - Skyfall.mid"]
         [--format portrait|landscape] [--max-seconds 58] [--excerpt auto|full] [--names artist_title]
 
 Résultat : output/tests/piano_<horodatage>/ (vidéo finale, miniature, fichiers intermédiaires).
@@ -45,7 +45,7 @@ def main():
     a = ap.parse_args()
 
     portrait = a.format == "portrait"
-    midi = Path(a.midi) if a.midi else random.choice(list((BASE_DIR / "assets" / ("midi2" if portrait else "midi")).glob("*.mid")))
+    midi = Path(a.midi) if a.midi else random.choice(list((BASE_DIR / "assets" / "library").rglob("*.mid")))
     bg_dir = BASE_DIR / "assets" / ("jpg_portrait" if portrait else "jpg")
     bg = Path(a.bg) if a.bg else random.choice(list(bg_dir.glob("*.jpg")))
     names = a.names or ("artist_title" if portrait else "title_artist")

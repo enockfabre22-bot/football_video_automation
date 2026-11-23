@@ -1,0 +1,83 @@
+{
+  "name": "fb_duel",
+  "enabled": true,
+  "accounts": [
+    "youtube_avantfoot",
+    "tiktok_main"
+  ],
+  "requires_match_data": true,
+  "inputs": [
+    "home_logo",
+    "away_logo"
+  ],
+  "min_free_disk_gb": 3,
+  "metadata": {
+    "titles": [
+      "{home} vs {away}: who wins? ⚔️",
+      "{home} vs {away} prediction 🔮",
+      "{home} or {away}? Comment your score 👇",
+      "Simulating {home} vs {away} before kick-off ⚽",
+      "{home} vs {away} ⚔️ Who takes it?"
+    ],
+    "descriptions": [
+      "{home} vs {away}: we simulated the match before kick-off. Power-ups, comebacks, a final KO... who wins for real? Drop your score prediction 👇\n\n🔔 Subscribe for a new football simulation every day!"
+    ],
+    "hashtags": [
+      "#{home}",
+      "#{away}",
+      "#{competition_tag}",
+      "#football",
+      "#soccer",
+      "#footballshorts",
+      "#prediction"
+    ],
+    "youtube_tags": [
+      "{home} vs {away}",
+      "{home}",
+      "{away}",
+      "{home} vs {away} prediction",
+      "{competition}",
+      "{home} {away}",
+      "match prediction",
+      "football",
+      "soccer",
+      "football simulation",
+      "simulation",
+      "football shorts",
+      "satisfying",
+      "ball battle",
+      "who will win",
+      "football prediction",
+      "marble race",
+      "physics simulation"
+    ]
+  },
+  "thumbnail": {
+    "enabled": false
+  },
+  "steps": [
+    {
+      "type": "python",
+      "name": "Préparation (duel : équipes, écussons, fond, textes)",
+      "script": "engines/football/prepare.py",
+      "args": [
+        "--format",
+        "duel"
+      ]
+    },
+    {
+      "type": "sandbox",
+      "name": "Rendu raylib (moteur foot)",
+      "profile": "raylib_box2d",
+      "source": "../../engines/football/scene",
+      "sounds_dir": "../../assets/sounds/football",
+      "seed": "random",
+      "video_from": "football/video.json"
+    },
+    {
+      "type": "python",
+      "name": "Ambiance de stade, mixage -14 LUFS, miniature",
+      "script": "engines/football/finalize.py"
+    }
+  ]
+}

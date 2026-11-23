@@ -220,9 +220,15 @@ class MatchPlannerApp:
         self.comp_var = tk.StringVar(value="Ligue 1")
         comp_combo = ttk.Combobox(
             opts_frame, textvariable=self.comp_var, width=18,
-            values=["Ligue 1", "Premier League", "La Liga", "Serie A", "Bundesliga", "Champions League", "Football"]
+            values=["Ligue 1", "Premier League", "LaLiga", "Serie A", "Bundesliga", "Champions League",
+                    "Europa League", "World Cup Qualifiers", "Nations League", "Friendly"]
         )
         comp_combo.pack(side=tk.LEFT, padx=(5, 15))
+
+        # Gros match : publié en priorité par l'animation « Big Match Duel » (fb_duel)
+        self.big_var = tk.BooleanVar(value=True)
+        tk.Checkbutton(opts_frame, text="⭐ Gros match", variable=self.big_var, bg="#252538", fg="#f9e2af",
+                       selectcolor="#1e1e2e", activebackground="#252538").pack(side=tk.LEFT, padx=(0, 15))
 
         tk.Label(opts_frame, text="Animation :", bg="#252538", fg="#cdd6f4").pack(side=tk.LEFT)
         self.anim_var = tk.StringVar(value=self.animations[0])
@@ -362,7 +368,8 @@ class MatchPlannerApp:
                 comp = m.get(comp_k, "")
                 anim = m.get(anim_k, "animation_01")
                 comp_str = f" | 🏆 {comp}" if comp else ""
-                self.day_matches_listbox.insert(tk.END, f"⚽ {t1}  VS  {t2}{comp_str}  ({anim})")
+                star = "⭐" if m.get("big_match") else "⚽"
+                self.day_matches_listbox.insert(tk.END, f"{star} {t1}  VS  {t2}{comp_str}  ({anim})")
 
     def add_match(self):
         t1 = self.team1_combo.get().strip()
@@ -393,6 +400,7 @@ class MatchPlannerApp:
         new_match[anim_k] = self.anim_var.get()
         if comp_k in new_match or self.comp_var.get():
             new_match[comp_k] = self.comp_var.get()
+        new_match["big_match"] = bool(self.big_var.get())
 
         # Si le template contient un ID ou des chemins de logos, on les met à jour proprement
         if "id" in new_match:

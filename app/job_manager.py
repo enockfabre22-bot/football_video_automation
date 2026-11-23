@@ -69,13 +69,18 @@ class JobManager:
         return jobs
 
     @staticmethod
-    def build_job_id(date_str, home, away, anim_name):
-        """Identifiant unique d'un job (source unique de vérité pour le format)."""
-        return f"{date_str}_{home.replace(' ', '_')}_{away.replace(' ', '_')}_{anim_name}"
+    def build_job_id(date_str, home, away, anim_name, account_name=None):
+        """
+        Identifiant unique d'un job (source unique de vérité pour le format).
+        Le compte est ajouté à la fin : deux comptes qui rendent le même match avec la même animation
+        n'écrivent plus dans le même fichier (les recherches par préfixe date_domicile_extérieur_ restent valables).
+        """
+        job_id = f"{date_str}_{home.replace(' ', '_')}_{away.replace(' ', '_')}_{anim_name}"
+        return f"{job_id}_{account_name}" if account_name else job_id
 
     def create_job(self, match_data, anim_name, account_name):
         """Crée un nouveau job à l'état PENDING dans jobs/pending/."""
-        job_id = self.build_job_id(match_data['date'], match_data['home'], match_data['away'], anim_name)
+        job_id = self.build_job_id(match_data['date'], match_data['home'], match_data['away'], anim_name, account_name)
 
         job_file = self.pending_dir / f"{job_id}.json"
         now_str = datetime.now().isoformat(timespec="seconds")

@@ -1,0 +1,56 @@
+# Sons du moteur foot
+
+Tous les sons proviennent de [Freesound](https://freesound.org) sous licence **CC0 1.0** (domaine public, aucune attribution requise). Générés par `scripts/fetch_football_sounds.py`.
+
+| Fichier | Son Freesound |
+|---|---|
+| `crowd_roar` | https://freesound.org/s/528799/ |
+| `crowd_goal` | https://freesound.org/s/241630/ |
+| `crowd_cheer` | https://freesound.org/s/397434/ |
+| `crowd_cheer_small` | https://freesound.org/s/365132/ |
+| `crowd_ooh` | https://freesound.org/s/619007/ |
+| `whistle_short` | https://freesound.org/s/538422/ |
+| `whistle_long` | https://freesound.org/s/218318/ |
+| `kick` | https://freesound.org/s/261267/ |
+| `kick_hard` | https://freesound.org/s/555042/ |
+| `bounce` | https://freesound.org/s/505628/ |
+| `bounce_soft` | https://freesound.org/s/319785/ |
+| `hit` | https://freesound.org/s/348242/ |
+| `hit_heavy` | https://freesound.org/s/348243/ |
+| `hit_impact` | https://freesound.org/s/369711/ |
+| `hit_soft` | https://freesound.org/s/458867/ |
+| `clang` | https://freesound.org/s/406562/ |
+| `explode` | https://freesound.org/s/435695/ |
+| `explode_fire` | https://freesound.org/s/431174/ |
+| `explode_big` | https://freesound.org/s/587184/ |
+| `impact_bass` | https://freesound.org/s/512389/ |
+| `glass` | https://freesound.org/s/244238/ |
+| `glass_break` | https://freesound.org/s/221528/ |
+| `glass_small` | https://freesound.org/s/267889/ |
+| `pop` | https://freesound.org/s/202230/ |
+| `confetti` | https://freesound.org/s/458398/ |
+| `plop` | https://freesound.org/s/447910/ |
+| `whoosh` | https://freesound.org/s/60013/ |
+| `whoosh_long` | https://freesound.org/s/683096/ |
+| `whoosh_low` | https://freesound.org/s/243400/ |
+| `whoosh_heavy` | https://freesound.org/s/877977/ |
+| `coin` | https://freesound.org/s/146723/ |
+| `pickup` | https://freesound.org/s/253172/ |
+| `powerup` | https://freesound.org/s/368651/ |
+| `powerup_space` | https://freesound.org/s/220173/ |
+| `freeze` | https://freesound.org/s/683180/ |
+| `ice_break` | https://freesound.org/s/719973/ |
+| `marble` | https://freesound.org/s/240313/ |
+| `marble_roll` | https://freesound.org/s/334222/ |
+| `splat` | https://freesound.org/s/445109/ |
+| `splat_small` | https://freesound.org/s/232135/ |
+| `splat_big` | https://freesound.org/s/87535/ |
+| `drumroll` | https://freesound.org/s/191718/ |
+| `airhorn` | https://freesound.org/s/414208/ |
+| `airhorn_hype` | https://freesound.org/s/581334/ |
+| `tick` | https://freesound.org/s/534094/ |
+| `fanfare` | https://freesound.org/s/456966/ |
+| `victory` | https://freesound.org/s/249524/ |
+| `beds/stadium_norway` | https://freesound.org/s/206003/ |
+| `beds/stadium_schalke` | https://freesound.org/s/63587/ |
+| `beds/stadium_mexico` | https://freesound.org/s/241630/ |

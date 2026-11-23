@@ -3,6 +3,7 @@ Rend une animation SANS la publier, pour la tester (n'importe quelle animation, 
 
 Usage (depuis la racine du projet) :
     python scripts/test_animation.py <nom_animation> [fichier.mid]
+    python scripts/test_animation.py fb_duel ["real madrid" barcelona]   # animations foot
 
 Les animations qui demandent des "inputs" (midi, jpg...) reçoivent un fichier tiré au hasard,
 comme en production ; un MIDI précis peut être imposé en 2e argument.
@@ -45,8 +46,6 @@ def main():
     if cfg.get("type") == "ai":
         print("[ERREUR] Une animation IA se teste avec le studio IA, pas avec ce script.")
         sys.exit(1)
-    if cfg.get("requires_match_data"):
-        print("[AVERTISSEMENT] Cette animation attend des données de match : le test peut échouer.")
 
     job_id = f"test_{name}_{datetime.now():%Y%m%d_%H%M%S}"
     date_str = (datetime.now() + timedelta(days=1)).strftime("%Y-%m-%d")
@@ -64,6 +63,21 @@ def main():
         match_data["resources"]["midi_file"] = str(midi.resolve())
         metadata["song_title"] = midi.stem
         print(f"MIDI : {midi.name}")
+    # Animations foot : composition d'équipes tirée comme en production (sans historique),
+    # ou un match d'exemple pour le duel (2e et 3e arguments : équipes, ex. "real madrid" barcelona)
+    if "football_pack" in inputs:
+        import football_data
+        lineup = football_data.choose_lineup("test", cfg)
+        match_data["resources"]["football_lineup"] = lineup
+        print(f"Équipes : {lineup['competition']} ({lineup['count']})")
+    if cfg.get("requires_match_data"):
+        import football_data
+        h = football_data.team_info(sys.argv[2] if len(sys.argv) > 2 else "paris saint germain")
+        a = football_data.team_info(sys.argv[3] if len(sys.argv) > 3 else "marseille")
+        match_data.update({"home": h["name"], "away": a["name"]})
+        match_data["resources"] = {"home_logo": h["logo"], "away_logo": a["logo"], "home_key": h["key"],
+                                   "away_key": a["key"], "competition": "Ligue 1"}
+        print(f"Match : {h['name']} - {a['name']}")
     jpg_key = "jpg_portrait" if "jpg_portrait" in inputs else "jpg" if "jpg" in inputs else None
     if jpg_key:
         jpg = random.choice(list((BASE_DIR / "assets" / jpg_key).glob("*.jpg")))

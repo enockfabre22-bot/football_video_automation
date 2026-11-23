@@ -38,3 +38,6 @@ output/.render.lock
 
 # Historique des morceaux publiés par compte (état du VPS, pas de conflit au git pull)
 data/song_history.json
+data/football_history.json
+data/matches_api.json
+data/football_packs_live.json

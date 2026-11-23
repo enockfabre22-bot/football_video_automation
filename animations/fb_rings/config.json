@@ -1,0 +1,90 @@
+{
+  "name": "fb_rings",
+  "enabled": true,
+  "accounts": [
+    "youtube_avantfoot",
+    "tiktok_main"
+  ],
+  "requires_match_data": false,
+  "inputs": [
+    "football_pack"
+  ],
+  "football": {
+    "format": "rings",
+    "packs": "all",
+    "team_counts": [
+      8,
+      10
+    ],
+    "popular_bias": 0.5,
+    "repeat_days": 4,
+    "prefer_full_pack": false
+  },
+  "min_free_disk_gb": 3,
+  "metadata": {
+    "titles": [
+      "Escape the rings: {competition} edition ⭕",
+      "First {single} out wins! ⭕ {competition}",
+      "Can your {single} escape the rings? 🔥",
+      "{count} {competition} {noun} vs the rings ⭕"
+    ],
+    "descriptions": [
+      "{count} {competition} {noun} trapped inside spinning rings. The first one to break through every ring wins. Who escapes first? 👇\n\n🔔 Subscribe for a new football simulation every day!"
+    ],
+    "hashtags": [
+      "#{competition_tag}",
+      "#football",
+      "#soccer",
+      "#satisfying",
+      "#footballshorts",
+      "#escape",
+      "#fyp"
+    ],
+    "youtube_tags": [
+      "{competition}",
+      "escape the rings",
+      "ball escape",
+      "spinning rings",
+      "{competition} simulation",
+      "football",
+      "soccer",
+      "football simulation",
+      "simulation",
+      "football shorts",
+      "satisfying",
+      "ball battle",
+      "who will win",
+      "football prediction",
+      "marble race",
+      "physics simulation"
+    ]
+  },
+  "thumbnail": {
+    "enabled": false
+  },
+  "steps": [
+    {
+      "type": "python",
+      "name": "Préparation (rings : équipes, écussons, fond, textes)",
+      "script": "engines/football/prepare.py",
+      "args": [
+        "--format",
+        "rings"
+      ]
+    },
+    {
+      "type": "sandbox",
+      "name": "Rendu raylib (moteur foot)",
+      "profile": "raylib_box2d",
+      "source": "../../engines/football/scene",
+      "sounds_dir": "../../assets/sounds/football",
+      "seed": "random",
+      "video_from": "football/video.json"
+    },
+    {
+      "type": "python",
+      "name": "Ambiance de stade, mixage -14 LUFS, miniature",
+      "script": "engines/football/finalize.py"
+    }
+  ]
+}

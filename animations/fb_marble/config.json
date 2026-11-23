@@ -1,0 +1,113 @@
+{
+  "name": "fb_marble",
+  "enabled": true,
+  "accounts": [
+    "youtube_avantfoot",
+    "tiktok_main"
+  ],
+  "requires_match_data": false,
+  "inputs": [
+    "football_pack"
+  ],
+  "football": {
+    "format": "marble",
+    "packs": [
+      "premier_league",
+      "laliga",
+      "serie_a",
+      "bundesliga",
+      "ligue_1",
+      "champions_league",
+      "world_nations",
+      "euro_nations"
+    ],
+    "team_counts": [
+      4,
+      6,
+      8,
+      10,
+      12,
+      16,
+      18,
+      20
+    ],
+    "popular_bias": 0.6,
+    "repeat_days": 4,
+    "prefer_full_pack": true,
+    "full_pack_chance": 0.5
+  },
+  "min_free_disk_gb": 3,
+  "metadata": {
+    "titles": [
+      "{competition} marble race 🏁 Who finishes first?",
+      "{count} {competition} {noun} marble race 🏆",
+      "Marble race: {count} {competition} {noun} 🏁 Who wins?",
+      "Which {competition} {single} wins the marble race? 🏁"
+    ],
+    "descriptions": [
+      "{count} {competition} {noun} race to the finish line. Pegs, spinners, bumpers... who crosses first? Where did yours finish? 👇\n\n🔔 Subscribe for a new football simulation every day!"
+    ],
+    "hashtags": [
+      "#{competition_tag}",
+      "#football",
+      "#soccer",
+      "#marblerace",
+      "#footballshorts",
+      "#prediction",
+      "#fyp"
+    ],
+    "youtube_tags": [
+      "{competition}",
+      "{competition} marble race",
+      "{competition} prediction",
+      "{competition} table prediction",
+      "marble race",
+      "football",
+      "soccer",
+      "football simulation",
+      "simulation",
+      "football shorts",
+      "satisfying",
+      "ball battle",
+      "who will win",
+      "football prediction",
+      "marble race",
+      "physics simulation"
+    ],
+    "titles_full_pack": [
+      "Predicting the {competition} table with a marble race 🏁",
+      "Marble race decides the {competition} 🏁"
+    ],
+    "descriptions_full_pack": [
+      "All {count} {competition} {noun} race to the finish line. The finishing order is our prediction for the season... where did yours finish? 👇\n\n🔔 Subscribe for a new football simulation every day!"
+    ]
+  },
+  "thumbnail": {
+    "enabled": false
+  },
+  "steps": [
+    {
+      "type": "python",
+      "name": "Préparation (marble : équipes, écussons, fond, textes)",
+      "script": "engines/football/prepare.py",
+      "args": [
+        "--format",
+        "marble"
+      ]
+    },
+    {
+      "type": "sandbox",
+      "name": "Rendu raylib (moteur foot)",
+      "profile": "raylib_box2d",
+      "source": "../../engines/football/scene",
+      "sounds_dir": "../../assets/sounds/football",
+      "seed": "random",
+      "video_from": "football/video.json"
+    },
+    {
+      "type": "python",
+      "name": "Ambiance de stade, mixage -14 LUFS, miniature",
+      "script": "engines/football/finalize.py"
+    }
+  ]
+}

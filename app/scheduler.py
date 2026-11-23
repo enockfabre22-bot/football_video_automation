@@ -47,6 +47,17 @@ class AutomationScheduler:
         return datetime.combine(day, datetime.strptime(hhmm, "%H:%M").time())
 
     @staticmethod
+    def _deadline(job):
+        """Coup d'envoi d'un duel (publish_deadline, heure locale) ou None."""
+        raw = (job.get("metadata") or {}).get("publish_deadline")
+        if not raw:
+            return None
+        try:
+            return datetime.fromisoformat(raw).astimezone().replace(tzinfo=None)
+        except ValueError:
+            return None
+
+    @staticmethod
     def _window(job):
         window = (job.get("metadata") or {}).get("publish_window", {"start": "08:00", "end": "10:00"})
         return window.get("start", "08:00"), window.get("end", "10:00")
@@ -71,10 +82,19 @@ class AutomationScheduler:
             # Tirage d'une seule heure pour ce job spécifique
             pub_time = self.pick_random_times_in_window(start_win, end_win, 1)[0]
 
-            # Comme avant : si l'heure est déjà passée aujourd'hui, la publication a lieu demain
+            # Comme avant : si l'heure est déjà passée aujourd'hui, la publication a lieu demain...
             planned_dt = self._at(datetime.now().date(), pub_time)
+            deadline = self._deadline(job)
             if planned_dt <= datetime.now():
-                planned_dt += timedelta(days=1)
+                if deadline is None:
+                    planned_dt += timedelta(days=1)
+                elif datetime.now() < deadline - timedelta(minutes=30):
+                    # ...sauf pour un pronostic de match (rendu plus long que prévu) : tout de suite
+                    planned_dt = datetime.now() + timedelta(minutes=2)
+                else:
+                    print(f"⏰ [SCHEDULER] '{job_id}' : le match a déjà commencé, pronostic abandonné.")
+                    discard_job(job, reason="Coup d'envoi passé avant la publication")
+                    continue
 
             # L'heure prévue est enregistrée dans le job : elle survit à un redémarrage du service
             metadata = job.get("metadata") or {}
@@ -140,6 +160,12 @@ class AutomationScheduler:
             if not video_path or not os.path.exists(video_path):
                 print(f"   [REPRISE] '{job_id}' : vidéo introuvable ({video_path}) -> job abandonné")
                 discard_job(job, reason="Vidéo introuvable lors de la reprise après redémarrage")
+                continue
+
+            deadline = self._deadline(job)
+            if deadline and now >= deadline - timedelta(minutes=15):
+                print(f"   [REPRISE] '{job_id}' : le match a commencé -> pronostic abandonné")
+                discard_job(job, reason="Coup d'envoi passé (service arrêté)")
                 continue
 
             start_win, end_win = self._window(job)

@@ -9,6 +9,8 @@ from publication_manager import PublicationManager
 from ai_stock import AIStockManager
 import song_meta
 import midi_library
+import football_data
+import football_fixtures
 import time
 import os
 
@@ -57,7 +59,7 @@ def resolve_ai_animation(anim_config, slot, account_name, anim_mgr, ai_stock):
     anim_name = anim_config["name"]
     slot_id = slot.get("id", "unknown_slot")
     date_str = (datetime.now() + timedelta(days=1)).strftime("%Y-%m-%d")
-    expected_job_id = JobManager.build_job_id(date_str, slot_id, "no_match", anim_name)
+    expected_job_id = JobManager.build_job_id(date_str, slot_id, "no_match", anim_name, account_name)
 
     if ai_stock.can_serve(anim_name, expected_job_id):
         print(f"  -> Animation IA '{anim_name}' : {ai_stock.count_ready(anim_name)} création(s) prête(s) en stock")
@@ -85,6 +87,58 @@ def resolve_ai_animation(anim_config, slot, account_name, anim_mgr, ai_stock):
         return anim_mgr.select_animation(account_name, strategy="random", exclude_animations=exclude)
 
     return None
+
+def expand_match_slots(slots):
+    """
+    Un créneau de match avec "max_matches": N devient N créneaux (id, id_2, ...). Seul le premier tire une
+    autre animation s'il n'y a pas de match ; les suivants sont simplement sautés.
+    """
+    out = []
+    for slot in slots:
+        out.append(slot)
+        for k in range(2, int(slot.get("max_matches", 1)) + 1):
+            extra = dict(slot)
+            extra["id"] = f"{slot['id']}_{k}"
+            extra["skip_without_match"] = True
+            out.append(extra)
+    return out
+
+
+def kickoff_window(match, minutes_before, margin=10):
+    """
+    Fenêtre de publication {start, end} centrée sur (coup d'envoi - minutes_before).
+    None : pas d'heure connue (on garde la fenêtre du créneau). False : trop tard pour publier avant le match.
+    """
+    if not minutes_before or not match:
+        return None
+    kick = None
+    if match.get("kickoff"):
+        try:
+            kick = datetime.fromisoformat(match["kickoff"]).astimezone().replace(tzinfo=None)
+        except ValueError:
+            kick = None
+    elif match.get("time") and match.get("date"):
+        try:
+            kick = datetime.strptime(f"{match['date']} {match['time']}", "%Y-%m-%d %H:%M")
+        except ValueError:
+            kick = None
+    if kick is None:
+        return None
+    target = kick - timedelta(minutes=minutes_before)
+    now = datetime.now()
+    if target.date() != now.date() and target < now:
+        return False
+    # préparation tardive : on publie dès que possible, tant qu'il reste au moins 45 min avant le match
+    earliest = now + timedelta(minutes=25)
+    if target - timedelta(minutes=margin) < earliest:
+        if kick - earliest < timedelta(minutes=45):
+            return False
+        target = earliest + timedelta(minutes=margin)
+    start, end = target - timedelta(minutes=margin), target + timedelta(minutes=margin)
+    if end.date() != start.date():      # pas de fenêtre à cheval sur minuit
+        end = start.replace(hour=23, minute=59)
+    return {"start": start.strftime("%H:%M"), "end": end.strftime("%H:%M")}
+
 
 def apply_song_metadata(metadata, match_data):
     """
@@ -136,10 +190,6 @@ def prepare_daily_videos(account_name="tiktok_main"):
         print(f"[INFO] Le compte '{account_name}' est introuvable ou désactivé. Arrêt.")
         return []
 
-    # Chargement global des matchs pour demain
-    valid_matches = match_mgr.get_valid_matches_for_tomorrow()
-    match_index = 0
-
     schedule_slots = account_cfg.get("schedule_slots", [])
     if not schedule_slots:
         default_window = account_cfg.get("publication_window", {"start": "08:00", "end": "10:00"})
@@ -148,6 +198,21 @@ def prepare_daily_videos(account_name="tiktok_main"):
             "animation_strategy": "random",
             "window": default_window
         }]
+    schedule_slots = expand_match_slots(schedule_slots)
+
+    # Matchs du JOUR (le duel est publié le jour même, avant le coup d'envoi) : calendrier automatique
+    # (API football-data.org, mis en cache) + calendrier manuel data/matches.json (prioritaire)
+    football_fixtures.sync()
+    valid_matches = match_mgr.get_valid_matches(datetime.now().strftime("%Y-%m-%d"))
+    # les gros matchs passent en premier ; ceux dont l'heure de publication est déjà dépassée sont écartés
+    lead = max([s.get("publish_before_kickoff_min", 0) for s in schedule_slots] or [0])
+    valid_matches = [m for m in valid_matches if kickoff_window(m, lead) is not False]
+    valid_matches.sort(key=lambda m: not m.get("big_match", False))
+    if valid_matches:
+        print("[MATCHS] " + " | ".join(f"{m['home']} - {m['away']} {m.get('time', '')}".strip() for m in valid_matches))
+    match_index = 0
+    duel_kickoffs = []
+    used_today = []      # animations déjà tirées dans cette préparation
 
     ready_jobs = []
     base_dir = Path(__file__).resolve().parent.parent
@@ -160,13 +225,18 @@ def prepare_daily_videos(account_name="tiktok_main"):
         target_anim = slot.get("target_animation")
         exclude_anims = slot.get("exclude_animations", [])
 
-        # 1. Sélection de l'animation
-        anim_config = anim_mgr.select_animation(
-            account_name=account_name, 
-            strategy=strategy, 
-            target_animation=target_anim, 
-            exclude_animations=exclude_anims
-        )
+        # 1. Sélection de l'animation (tirage : pas deux fois le même format le même jour sur ce compte)
+        anim_config = None
+        if strategy == "random" and used_today:
+            anim_config = anim_mgr.select_animation(account_name=account_name, strategy="random",
+                                                    exclude_animations=list(exclude_anims) + used_today)
+        if not anim_config:
+            anim_config = anim_mgr.select_animation(
+                account_name=account_name,
+                strategy=strategy,
+                target_animation=target_anim,
+                exclude_animations=exclude_anims
+            )
         
         if not anim_config:
             print(f"[ERREUR] Impossible de satisfaire la stratégie du slot '{slot_id}'. Créneau ignoré.")
@@ -183,6 +253,23 @@ def prepare_daily_videos(account_name="tiktok_main"):
         requires_match = anim_config.get("requires_match_data", False)
         match_data = None
         
+        # 1.ter Animation de match sans match disponible : on tire une animation qui n'en demande pas
+        # (sauf si le créneau l'interdit avec "skip_without_match": true)
+        if requires_match and match_index >= len(valid_matches) and not slot.get("skip_without_match"):
+            no_match = [a["name"] for a in anim_mgr.discover_animations(account_name) if a.get("requires_match_data")]
+            print(f"  -> [FALLBACK] Plus de match pour '{anim_config['name']}' : tirage d'une autre animation")
+            anim_config = anim_mgr.select_animation(account_name, strategy="random",
+                                                    exclude_animations=list(exclude_anims) + no_match + used_today) \
+                or anim_mgr.select_animation(account_name, strategy="random",
+                                             exclude_animations=list(exclude_anims) + no_match)
+            anim_config = resolve_ai_animation(anim_config, slot, account_name, anim_mgr, ai_stock) if anim_config else None
+            if not anim_config:
+                print(f"[INFO] Aucune animation sans match disponible pour le slot '{slot_id}'. Créneau ignoré.")
+                continue
+            is_ai = anim_config.get("type") == "ai"
+            requires_match = anim_config.get("requires_match_data", False)
+
+        extra_meta = {}
         # 2. Gestion de la dépendance au calendrier ou aux fichiers externes (Piano)
         if requires_match:
             if match_index >= len(valid_matches):
@@ -192,6 +279,7 @@ def prepare_daily_videos(account_name="tiktok_main"):
             match_index += 1
             home, away, date_str = match_data["home"], match_data["away"], match_data["date"]
             print(f"  -> Match assigné : {home} VS {away} ({date_str})")
+            extra_meta = football_data.match_placeholders(match_data)
         else:
             print(f"  -> Animation '{anim_config['name']}' sélectionnée (Ne requiert aucun match)")
             date_str = (datetime.now() + timedelta(days=1)).strftime("%Y-%m-%d")
@@ -200,7 +288,19 @@ def prepare_daily_videos(account_name="tiktok_main"):
 
             # SÉLECTION DYNAMIQUE DES FICHIERS (MIDI, JPG, etc.)
             inputs = anim_config.get("inputs", [])
-            
+
+            # --- ÉQUIPES DES ANIMATIONS FOOT À N ÉQUIPES (data/football_packs.json, app/football_data.py) ---
+            if "football_pack" in inputs:
+                lineup = football_data.choose_lineup(account_name, anim_config, date_str)
+                if not lineup:
+                    print("[ERREUR] Aucune composition d'équipes possible pour ce créneau.")
+                    continue
+                football_data.remember(account_name, anim_config["name"], lineup["pack"], date_str)
+                match_data["resources"]["football_lineup"] = lineup
+                extra_meta = football_data.lineup_placeholders(lineup)
+                print(f"  -> Équipes : {lineup['competition']} ({lineup['count']}) : "
+                      f"{', '.join(t['name'] for t in lineup['teams'])}")
+
             # --- BIBLIOTHÈQUE MIDI (assets/library, voir app/midi_library.py) ---
             # Morceau choisi par catégorie et notoriété, sans répétition récente sur ce compte.
             if "library" in inputs:
@@ -231,6 +331,8 @@ def prepare_daily_videos(account_name="tiktok_main"):
                 match_data["resources"]["bg_image"] = str(chosen_jpg)
                 print(f"  -> Fond sélectionné : {chosen_jpg.name} (Dossier: {jpg_key})")
 
+        used_today.append(anim_config["name"])
+
         # 3. Création ou récupération du Job (Anti-doublons)
         if job_mgr.is_match_already_completed(date_str, home, away, account_name):
             print(f"[SKIP] La tâche '{home}_VS_{away}' a déjà été complétée sur '{account_name}'. Ignorée.")
@@ -243,6 +345,15 @@ def prepare_daily_videos(account_name="tiktok_main"):
             print(f"[JOB] Nouveau job créé : {job['job_id']}")
         else:
             print(f"[JOB] Reprise du job existant : {job['job_id']} (Statut : {job['status']})")
+            # le job repris garde SON animation et SES équipes (titres déjà rédigés pour elles)
+            if job.get("animation") and job["animation"] != anim_config["name"]:
+                same = anim_mgr.select_animation(account_name, strategy="fixed", target_animation=job["animation"])
+                if same:
+                    anim_config = same
+                    is_ai = anim_config.get("type") == "ai"
+            old_lineup = ((job.get("match") or {}).get("resources") or {}).get("football_lineup")
+            if old_lineup:
+                match_data["resources"]["football_lineup"] = old_lineup
 
         job_id = job["job_id"]
         video_path = job.get("video_path")
@@ -260,15 +371,24 @@ def prepare_daily_videos(account_name="tiktok_main"):
         # 4. Génération des métadonnées
         metadata = job.get("metadata")
         if not metadata:
-            extra = None
+            extra = dict(extra_meta) or None    # repères foot : {competition} {count} {noun}...
             if ai_creation:
                 extra = {
                     "ai_title": ai_creation.get("title", ""),
                     "ai_concept": ai_creation.get("pitch", ""),
                     "ai_description": (ai_creation.get("metadata") or {}).get("description", ""),
                 }
+            meta_config = anim_config
+            lineup = (match_data.get("resources") or {}).get("football_lineup")
+            if lineup and lineup.get("full_pack"):
+                # championnat entier : on ajoute les titres « classement prédit » (titles_full_pack...)
+                pools = dict(anim_config.get("metadata", {}))
+                for key in ("titles", "descriptions"):
+                    if pools.get(f"{key}_full_pack"):
+                        pools[key] = pools[f"{key}_full_pack"] + list(pools.get(key, []))
+                meta_config = dict(anim_config, metadata=pools)
             metadata = anim_mgr.generate_job_metadata(
-                anim_config, account_cfg, match_data if requires_match else None, extra_placeholders=extra
+                meta_config, account_cfg, match_data if requires_match else None, extra_placeholders=extra
             )
 
             if ai_creation:
@@ -324,8 +444,17 @@ def prepare_daily_videos(account_name="tiktok_main"):
             metadata["thumbnail_path"] = str(possible_thumbnail)
             print(f" [INFO] Miniature détectée et associée pour le job : {job_id}")
 
-        # 6. Planification finale
-        metadata["publish_window"] = slot.get("window", {"start": "08:00", "end": "20:00"})
+        # 6. Planification finale (duel : X minutes avant le coup d'envoi, ± 10 min)
+        window = None
+        if requires_match and slot.get("publish_before_kickoff_min"):
+            # deux affiches au même coup d'envoi : la 2e sort 40 min plus tôt (pas deux duels d'affilée)
+            same_kick = sum(1 for k in duel_kickoffs if k and k == match_data.get("kickoff"))
+            window = kickoff_window(match_data, slot["publish_before_kickoff_min"] + 40 * same_kick)
+            duel_kickoffs.append(match_data.get("kickoff"))
+        metadata["publish_window"] = window or slot.get("window", {"start": "08:00", "end": "20:00"})
+        if window and match_data.get("kickoff"):
+            # au-delà, la vidéo de pronostic n'a plus de sens (voir scheduler.py)
+            metadata["publish_deadline"] = match_data["kickoff"]
         updated_job = job_mgr.update_status(job_id, "SCHEDULED", video_path=video_path, metadata=metadata)
         ready_jobs.append(updated_job)
 

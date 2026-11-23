@@ -1,9 +1,15 @@
 {
   "name": "animation_01",
-  "enabled": true,
-  "accounts": ["tiktok_main", "youtube_avantfoot"],
-  "requires_match_data": true, 
-  "inputs": ["home_logo", "away_logo"],
+  "enabled": false,
+  "accounts": [
+    "tiktok_main",
+    "youtube_avantfoot"
+  ],
+  "requires_match_data": true,
+  "inputs": [
+    "home_logo",
+    "away_logo"
+  ],
   "metadata": {
     "titles": [
       "Simulation : {home} vs {away} ⚽",
@@ -20,9 +26,29 @@
       "Comment Your Winner! 🏆",
       "What's Your Score Prediction? ⚽"
     ],
-    "descriptions": ["Drop your prediction in the comments!"],
-    "hashtags": ["#football", "#pronostic", "#simulation", "#match", "#{home}", "#{away}","#foot","#footballtiktok"],
-    "youtube_tags": ["football", "pes", "fifa", "simulation", "foot", "matchfoot","{home}","{away}"]
+    "descriptions": [
+      "Drop your prediction in the comments!"
+    ],
+    "hashtags": [
+      "#football",
+      "#pronostic",
+      "#simulation",
+      "#match",
+      "#{home}",
+      "#{away}",
+      "#foot",
+      "#footballtiktok"
+    ],
+    "youtube_tags": [
+      "football",
+      "pes",
+      "fifa",
+      "simulation",
+      "foot",
+      "matchfoot",
+      "{home}",
+      "{away}"
+    ]
   },
   "thumbnail": {
     "enabled": false,

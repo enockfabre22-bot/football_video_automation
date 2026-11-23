@@ -1,0 +1,104 @@
+{
+  "name": "fb_royale",
+  "enabled": true,
+  "accounts": [
+    "youtube_avantfoot",
+    "tiktok_main"
+  ],
+  "requires_match_data": false,
+  "inputs": [
+    "football_pack"
+  ],
+  "football": {
+    "format": "royale",
+    "packs": [
+      "premier_league",
+      "laliga",
+      "serie_a",
+      "bundesliga",
+      "ligue_1",
+      "champions_league",
+      "europe_giants",
+      "world_nations",
+      "euro_nations",
+      "africa_nations"
+    ],
+    "team_counts": [
+      12,
+      16,
+      18,
+      20
+    ],
+    "popular_bias": 0.0,
+    "repeat_days": 4,
+    "prefer_full_pack": true
+  },
+  "min_free_disk_gb": 3,
+  "metadata": {
+    "titles": [
+      "{count} {competition} {noun}. Only 1 survives 🏆",
+      "Last {single} standing: {competition} edition ⚔️",
+      "{count} {noun} enter, only 1 leaves 🔥",
+      "{competition} battle royale: who survives? 💥",
+      "Which {competition} {single} survives? 🤔"
+    ],
+    "descriptions": [
+      "{count} {competition} {noun} in one arena. Every hit costs health and the arena keeps shrinking... only one survives. Who did you pick? 👇\n\n🔔 Subscribe for a new football simulation every day!"
+    ],
+    "hashtags": [
+      "#{competition_tag}",
+      "#football",
+      "#soccer",
+      "#battleroyale",
+      "#footballshorts",
+      "#simulation",
+      "#fyp"
+    ],
+    "youtube_tags": [
+      "{competition}",
+      "{competition} battle royale",
+      "{competition} simulation",
+      "last {single} standing",
+      "battle royale",
+      "football",
+      "soccer",
+      "football simulation",
+      "simulation",
+      "football shorts",
+      "satisfying",
+      "ball battle",
+      "who will win",
+      "football prediction",
+      "marble race",
+      "physics simulation"
+    ]
+  },
+  "thumbnail": {
+    "enabled": false
+  },
+  "steps": [
+    {
+      "type": "python",
+      "name": "Préparation (royale : équipes, écussons, fond, textes)",
+      "script": "engines/football/prepare.py",
+      "args": [
+        "--format",
+        "royale"
+      ]
+    },
+    {
+      "type": "sandbox",
+      "name": "Rendu raylib (moteur foot)",
+      "profile": "raylib_box2d",
+      "source": "../../engines/football/scene",
+      "sounds_dir": "../../assets/sounds/football",
+      "seed": "random",
+      "video_from": "football/video.json"
+    },
+    {
+      "type": "python",
+      "name": "Ambiance de stade, mixage -14 LUFS, miniature",
+      "script": "engines/football/finalize.py"
+    }
+  ]
+}

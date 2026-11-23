@@ -2,6 +2,9 @@ import json
 from datetime import datetime, timedelta
 from pathlib import Path
 
+import football_data
+import football_fixtures
+
 class MatchManager:
     def __init__(self):
         self.base_dir = Path(__file__).resolve().parent.parent
@@ -22,16 +25,21 @@ class MatchManager:
         return tomorrow.strftime("%Y-%m-%d")
 
     def get_matches_for_tomorrow(self):
-        """Filtre et retourne la liste brute des matchs prévus pour demain."""
-        if not self.matches_file.exists():
-            print(f"[ERREUR] Le fichier {self.matches_file} est introuvable.")
-            return []
+        """Matchs bruts de demain (calendrier manuel + automatique)."""
+        return self.get_matches_for_date(self.get_tomorrow_date_str())
 
-        matches = self._load_json(self.matches_file)
-        tomorrow_str = self.get_tomorrow_date_str()
-        print(f"[INFO] Recherche des matchs pour le : {tomorrow_str}")
-
-        return [m for m in matches if m.get("date") == tomorrow_str]
+    def get_matches_for_date(self, date_str):
+        """
+        Matchs bruts d'une date : calendrier manuel data/matches.json (prioritaire, dans l'ordre saisi)
+        puis gros matchs du calendrier automatique data/matches_api.json (football_fixtures.py), par note.
+        """
+        print(f"[INFO] Recherche des matchs pour le : {date_str}")
+        manual = []
+        if self.matches_file.exists():
+            manual = [m for m in self._load_json(self.matches_file) if m.get("date") == date_str]
+        auto = [m for m in football_fixtures.load_api_matches() if m.get("date") == date_str]
+        auto.sort(key=lambda m: -m.get("score", 0))
+        return manual + auto
 
     def get_team_logo_path(self, team_name):
         """
@@ -41,18 +49,26 @@ class MatchManager:
         # Nettoyage des espaces inutiles au début et à la fin
         clean_name = team_name.strip()
         logo_path = self.logos_dir / f"{clean_name}.png"
-        
+
         if logo_path.exists():
             return logo_path
+        # Nom saisi autrement (casse, accents, nom anglais « Bayern Munich »...) : registre des équipes
+        key = football_data.resolve_key(clean_name)
+        if key and (self.logos_dir / f"{key}.png").exists():
+            return self.logos_dir / f"{key}.png"
         return None
 
     def get_valid_matches_for_tomorrow(self):
+        return self.get_valid_matches(self.get_tomorrow_date_str())
+
+    def get_valid_matches(self, date_str):
         """
-        Récupère les matchs de demain et vérifie la présence des logos.
-        Retourne uniquement les matchs complets avec les chemins des ressources.
+        Matchs d'une date dont les deux logos existent, enrichis (noms anglais, hashtags, coup d'envoi).
+        Un même match présent dans les deux calendriers n'est gardé qu'une fois.
         """
-        raw_matches = self.get_matches_for_tomorrow()
+        raw_matches = self.get_matches_for_date(date_str)
         valid_matches = []
+        seen = set()
 
         for match in raw_matches:
             home = match.get("home", "")
@@ -72,14 +88,31 @@ class MatchManager:
                 print(f"[AVERTISSEMENT] Match ignoré ({home} VS {away}) -> Logo(s) manquant(s) : {', '.join(missing)}")
                 continue
 
-            # Si tout est bon, on enrichit le dictionnaire du match pour la suite du pipeline
+            # Si tout est bon, on enrichit le dictionnaire du match pour la suite du pipeline.
+            # Noms affichés (anglais, bien écrits) et hashtags viennent du registre data/teams.json.
+            h_info = football_data.team_info(home_logo.stem)
+            a_info = football_data.team_info(away_logo.stem)
+            pair = frozenset((h_info["key"], a_info["key"]))
+            if pair in seen:
+                continue
+            seen.add(pair)
             match_ready = {
                 "date": match["date"],
-                "home": home.strip(),
-                "away": away.strip(),
+                "home": h_info["name"],
+                "away": a_info["name"],
+                "home_tag": h_info["tag"],
+                "away_tag": a_info["tag"],
+                "competition": match.get("competition", ""),
+                "big_match": bool(match.get("big_match", False)),
+                "kickoff": match.get("kickoff", ""),          # ISO, heure locale (calendrier automatique)
+                "time": match.get("time", ""),                # HH:MM si connu
+                "source": match.get("source", "manual"),
                 "resources": {
                     "home_logo": str(home_logo),
-                    "away_logo": str(away_logo)
+                    "away_logo": str(away_logo),
+                    "home_key": h_info["key"],
+                    "away_key": a_info["key"],
+                    "competition": match.get("competition", ""),
                 }
             }
             valid_matches.append(match_ready)

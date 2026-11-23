@@ -1,0 +1,101 @@
+{
+  "name": "fb_knockout",
+  "enabled": true,
+  "accounts": [
+    "youtube_avantfoot",
+    "tiktok_main"
+  ],
+  "requires_match_data": false,
+  "inputs": [
+    "football_pack"
+  ],
+  "football": {
+    "format": "knockout",
+    "packs": [
+      "premier_league",
+      "laliga",
+      "serie_a",
+      "bundesliga",
+      "ligue_1",
+      "champions_league",
+      "europe_giants",
+      "world_nations",
+      "euro_nations",
+      "africa_nations",
+      "south_america"
+    ],
+    "team_counts": [
+      8
+    ],
+    "popular_bias": 0.9,
+    "repeat_days": 4,
+    "prefer_full_pack": false
+  },
+  "min_free_disk_gb": 3,
+  "metadata": {
+    "titles": [
+      "{competition} knockout: only 1 lifts the trophy 🏆",
+      "8 {noun}, 1 trophy 🏆 {competition}",
+      "{competition} tournament simulation 🏆 Who wins it all?",
+      "Who wins the {competition} knockout? 🏆"
+    ],
+    "descriptions": [
+      "8 {competition} {noun}, quarter-finals, semi-finals and a final. Only one lifts the trophy. Who's your champion? 👇\n\n🔔 Subscribe for a new football simulation every day!"
+    ],
+    "hashtags": [
+      "#{competition_tag}",
+      "#football",
+      "#soccer",
+      "#knockout",
+      "#footballshorts",
+      "#tournament",
+      "#fyp"
+    ],
+    "youtube_tags": [
+      "{competition}",
+      "{competition} knockout",
+      "{competition} tournament",
+      "{competition} prediction",
+      "tournament simulation",
+      "football",
+      "soccer",
+      "football simulation",
+      "simulation",
+      "football shorts",
+      "satisfying",
+      "ball battle",
+      "who will win",
+      "football prediction",
+      "marble race",
+      "physics simulation"
+    ]
+  },
+  "thumbnail": {
+    "enabled": false
+  },
+  "steps": [
+    {
+      "type": "python",
+      "name": "Préparation (knockout : équipes, écussons, fond, textes)",
+      "script": "engines/football/prepare.py",
+      "args": [
+        "--format",
+        "knockout"
+      ]
+    },
+    {
+      "type": "sandbox",
+      "name": "Rendu raylib (moteur foot)",
+      "profile": "raylib_box2d",
+      "source": "../../engines/football/scene",
+      "sounds_dir": "../../assets/sounds/football",
+      "seed": "random",
+      "video_from": "football/video.json"
+    },
+    {
+      "type": "python",
+      "name": "Ambiance de stade, mixage -14 LUFS, miniature",
+      "script": "engines/football/finalize.py"
+    }
+  ]
+}

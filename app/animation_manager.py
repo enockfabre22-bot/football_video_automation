@@ -124,10 +124,10 @@ class AnimationManager:
             home_nom = match_data.get("home", "Domicile")
             away_nom = match_data.get("away", "Extérieur")
             
-            # Hashtags (on retire les espaces pour que #Real Madrid devienne #RealMadrid)
-            home_ht = home_nom.replace(" ", "")
-            away_ht = away_nom.replace(" ", "")
-            
+            # Hashtags : celui du registre des équipes (#PSG) s'il existe, sinon le nom sans espaces
+            home_ht = match_data.get("home_tag") or home_nom.replace(" ", "")
+            away_ht = match_data.get("away_tag") or away_nom.replace(" ", "")
+
             chosen_hashtags = [
                 h.replace("{home}", home_ht).replace("{away}", away_ht) 
                 for h in chosen_hashtags
@@ -135,9 +135,18 @@ class AnimationManager:
             
             # YouTube Tags (les espaces sont autorisés nativement)
             chosen_yt_tags = [
-                t.replace("{home}", home_nom).replace("{away}", away_nom) 
+                t.replace("{home}", home_nom).replace("{away}", away_nom)
                 for t in chosen_yt_tags
             ]
+
+        # Repères supplémentaires dans les hashtags (sans espaces) et les tags YouTube
+        for key, value in (extra_placeholders or {}).items():
+            value = str(value)
+            chosen_hashtags = [h.replace(f"{{{key}}}", value.replace(" ", "")) for h in chosen_hashtags]
+            chosen_yt_tags = [t.replace(f"{{{key}}}", value) for t in chosen_yt_tags]
+        # un repère vide laisse « # » ou un tag vide : on les retire (et les doublons)
+        chosen_hashtags = list(dict.fromkeys(h for h in chosen_hashtags if len(h.strip("# ")) > 0))
+        chosen_yt_tags = list(dict.fromkeys(t.strip() for t in chosen_yt_tags if t.strip()))
 
         # Hashtags dans le titre : utile sur TikTok (le titre = la légende). Sur YouTube ils restent dans
         # la description (ajoutés par l'uploader) : un titre propre se lit et se référence mieux.

@@ -88,6 +88,21 @@ def resolve_ai_animation(anim_config, slot, account_name, anim_mgr, ai_stock):
 
     return None
 
+def metadata_config(anim_config, match_data):
+    """
+    Animation foot avec le championnat ENTIER : on ajoute les titres / descriptions « classement prédit »
+    (titles_full_pack, descriptions_full_pack) aux pools habituels. Sinon la config est rendue telle quelle.
+    """
+    lineup = ((match_data or {}).get("resources") or {}).get("football_lineup")
+    if not (lineup and lineup.get("full_pack")):
+        return anim_config
+    pools = dict(anim_config.get("metadata", {}))
+    for key in ("titles", "descriptions"):
+        if pools.get(f"{key}_full_pack"):
+            pools[key] = pools[f"{key}_full_pack"] + list(pools.get(key, []))
+    return dict(anim_config, metadata=pools)
+
+
 def expand_match_slots(slots):
     """
     Un créneau de match avec "max_matches": N devient N créneaux (id, id_2, ...). Seul le premier tire une
@@ -378,17 +393,9 @@ def prepare_daily_videos(account_name="tiktok_main"):
                     "ai_concept": ai_creation.get("pitch", ""),
                     "ai_description": (ai_creation.get("metadata") or {}).get("description", ""),
                 }
-            meta_config = anim_config
-            lineup = (match_data.get("resources") or {}).get("football_lineup")
-            if lineup and lineup.get("full_pack"):
-                # championnat entier : on ajoute les titres « classement prédit » (titles_full_pack...)
-                pools = dict(anim_config.get("metadata", {}))
-                for key in ("titles", "descriptions"):
-                    if pools.get(f"{key}_full_pack"):
-                        pools[key] = pools[f"{key}_full_pack"] + list(pools.get(key, []))
-                meta_config = dict(anim_config, metadata=pools)
             metadata = anim_mgr.generate_job_metadata(
-                meta_config, account_cfg, match_data if requires_match else None, extra_placeholders=extra
+                metadata_config(anim_config, match_data), account_cfg, match_data if requires_match else None,
+                extra_placeholders=extra
             )
 
             if ai_creation:

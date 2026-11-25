@@ -16,6 +16,23 @@ def _load_app_config():
         return json.load(f)
 
 
+# Rendus lancés à la main (scripts/test_animation.py -> test_*, scripts/publish_now.py -> manual_*) : ils n'ont pas
+# de job en attente, mais le démon (redémarré juste avant, ou préparation quotidienne) ne doit pas effacer leur
+# dossier en plein rendu. Ils ne sont supprimés qu'après MANUAL_MAX_AGE_H heures (rendu planté et abandonné).
+MANUAL_PREFIXES = ("test_", "manual_")
+MANUAL_MAX_AGE_H = 12
+
+
+def _is_recent_manual(path):
+    if not path.name.startswith(MANUAL_PREFIXES):
+        return False
+    try:
+        age_h = (datetime.now().timestamp() - path.stat().st_mtime) / 3600
+    except OSError:
+        return False
+    return age_h < MANUAL_MAX_AGE_H
+
+
 def _size_gb(path):
     if path.is_file():
         return path.stat().st_size / 1024**3
@@ -91,7 +108,7 @@ def cleanup_disk():
 
     if temp_dir.exists():
         for d in temp_dir.iterdir():
-            if d.name not in kept_ids:
+            if d.name not in kept_ids and not _is_recent_manual(d):
                 freed += _size_gb(d)
                 if d.is_dir():
                     shutil.rmtree(d, ignore_errors=True)
@@ -101,7 +118,7 @@ def cleanup_disk():
 
     if videos_dir.exists():
         for f in videos_dir.iterdir():
-            if f.is_file() and f.stem not in kept_ids:
+            if f.is_file() and f.stem not in kept_ids and not _is_recent_manual(f):
                 freed += _size_gb(f)
                 f.unlink(missing_ok=True)
                 print(f"[MAINTENANCE] Vidéo orpheline supprimée : {f.name}")

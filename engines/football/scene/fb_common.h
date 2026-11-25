@@ -25,8 +25,8 @@
 #include <string>
 #include <vector>
 
-static const float DW = 1080.0f;   // largeur de conception
-static const float DH = 1920.0f;   // hauteur de conception
+inline float DW = 1080.0f;   // largeur de conception (1920 pour les vidéos longues 16:9, voir fb_main.cpp)
+inline float DH = 1920.0f;   // hauteur de conception (1080 en 16:9)
 static const float PI_F = 3.14159265358979f;
 static const float SIM_DT = 1.0f / 240.0f;   // pas fixe de la physique (4 pas par image à 60 i/s)
 
@@ -160,7 +160,8 @@ static std::vector<Team> load_teams(const std::string& dir) {
     while (std::getline(in, line)) {
         while (!line.empty() && (line.back() == '\r' || line.back() == '\n')) line.pop_back();
         auto f = split(line, '|');
-        if (f.size() < 6) continue;
+        if (f.size() < 5) continue;                 // le logo (6e champ) est facultatif
+        if (f.size() < 6) f.push_back("");
         Team t;
         t.name = f[0];
         t.short_name = f[1];
@@ -168,7 +169,7 @@ static std::vector<Team> load_teams(const std::string& dir) {
         t.c2 = parse_color(f[3]);
         t.glow = parse_color(f[4]);
         std::string path = dir + "/" + f[5];
-        if (FileExists(path.c_str())) {
+        if (!f[5].empty() && FileExists(path.c_str())) {
             t.logo = LoadTexture(path.c_str());
             if (t.logo.id) {
                 GenTextureMipmaps(&t.logo);
@@ -449,7 +450,8 @@ struct Fonts {
 
     void load(const std::string& dir, float S) {
         std::vector<int> cps;
-        for (int c = 32; c < 256; ++c) cps.push_back(c);
+        // latin de base + latin-1 + latin étendu A (ć č š ž ł ğ ş ő... : Modrić, Krkić, Türkiye...)
+        for (int c = 32; c < 384; ++c) if (c < 127 || c >= 160) cps.push_back(c);
         auto add = [&](const char* file, FontKind kind, int design) {
             std::string p = dir + "/" + file;
             if (!FileExists(p.c_str())) return;
@@ -521,14 +523,31 @@ static inline void draw_text(const Fonts& fonts, const std::string& s, float x, 
     DrawTextEx(f, s.c_str(), Vector2{ox, oy}, st.size, st.spacing, mulA(st.color, alpha));
 }
 
-static inline std::string upper(std::string s) {
-    for (auto& c : s) if (c >= 'a' && c <= 'z') c = (char)(c - 32);
-    // lettres accentuées en UTF-8 (é -> É, ø -> Ø...) : 0xC3 0xA0..0xBE -> 0xC3 0x80..0x9E
-    for (size_t i = 0; i + 1 < s.size(); ++i)
-        if ((unsigned char)s[i] == 0xC3 && (unsigned char)s[i + 1] >= 0xA0 && (unsigned char)s[i + 1] <= 0xBE &&
-            (unsigned char)s[i + 1] != 0xB7)
-            s[i + 1] = (char)((unsigned char)s[i + 1] - 0x20);
-    return s;
+// Majuscules UTF-8 pour le latin de base, latin-1 et latin étendu A (é -> É, ć -> Ć, ş -> Ş, ı -> I...)
+static inline int upper_cp(int c) {
+    if (c >= 'a' && c <= 'z') return c - 32;
+    if (c >= 0xE0 && c <= 0xFE && c != 0xF7) return c - 0x20;
+    if (c == 0xFF) return 0x178;
+    if (c == 0x131) return 'I';
+    if (c == 0x17F) return 'S';
+    if ((c >= 0x100 && c <= 0x137) || (c >= 0x14A && c <= 0x177)) return (c % 2) ? c - 1 : c;
+    if ((c >= 0x139 && c <= 0x148) || (c >= 0x179 && c <= 0x17E)) return (c % 2) ? c : c - 1;
+    return c;
+}
+
+static inline std::string upper(const std::string& s) {
+    std::string out;
+    const char* p = s.c_str();
+    while (*p) {
+        int n = 0;
+        int cp = GetCodepointNext(p, &n);
+        if (n <= 0) break;
+        int sz = 0;
+        const char* u = CodepointToUTF8(upper_cp(cp), &sz);
+        out.append(u, sz);
+        p += n;
+    }
+    return out;
 }
 
 // ---------------------------------------------------------------------------

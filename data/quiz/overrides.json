@@ -1,0 +1,72 @@
+{
+  "_doc": "Corrections manuelles de la base du quiz (data/quiz/players_db.json, construite depuis Wikidata), appliquées par engines/football/quiz_prepare.py. Clé = nom du joueur (comme dans players.json). Champs possibles : exclude (true = jamais utilisé), difficulty, name (nom affiché), position, birth, nation + iso (drapeau, ex. « ma »), remove_clubs (libellés Wikidata ou identifiants Q...), career (carrière complète : [{club, from, to, key?}], key = nom du logo dans assets/logos).",
+  "players": {
+    "Kevin De Bruyne": {
+      "career": [
+        {
+          "club": "KRC Genk",
+          "from": 2008,
+          "to": 2012
+        },
+        {
+          "club": "Chelsea F.C.",
+          "key": "chelsea",
+          "from": 2012,
+          "to": 2014
+        },
+        {
+          "club": "SV Werder Bremen",
+          "key": "werder bremen",
+          "from": 2012,
+          "to": 2013
+        },
+        {
+          "club": "VfL Wolfsburg",
+          "key": "vfl wolfsburg",
+          "from": 2014,
+          "to": 2015
+        },
+        {
+          "club": "Manchester City F.C.",
+          "key": "manchester city",
+          "from": 2015,
+          "to": 2025
+        },
+        {
+          "club": "SSC Napoli",
+          "key": "napoli",
+          "from": 2025,
+          "to": null
+        }
+      ]
+    },
+    "Roberto Firmino": {
+      "remove_clubs": [
+        "India"
+      ]
+    },
+    "Klaas-Jan Huntelaar": {
+      "remove_clubs": [
+        "Hessen Combinatie"
+      ]
+    },
+    "Royston Drenthe": {
+      "position": "Midfielder"
+    },
+    "Adel Taarabt": {
+      "nation": "Morocco",
+      "iso": "ma",
+      "remove_clubs": [
+        "Alshariqa"
+      ]
+    },
+    "Mohamed Sissoko": {
+      "exclude": true
+    },
+    "Lassana Diarra": {
+      "remove_clubs": [
+        "Red Star"
+      ]
+    }
+  }
+}

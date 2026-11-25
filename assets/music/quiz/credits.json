@@ -1,0 +1,9 @@
+{
+  "_doc": "Musiques de fond du quiz (finalize.py en tire une au hasard). Licence CC BY 4.0 : le crédit est ajouté automatiquement à la description.",
+  "tracks": {
+    "Funkorama.mp3": "\"Funkorama\" Kevin MacLeod (incompetech.com) — Licensed under Creative Commons: By Attribution 4.0 — http://creativecommons.org/licenses/by/4.0/",
+    "Movement Proposition.mp3": "\"Movement Proposition\" Kevin MacLeod (incompetech.com) — Licensed under Creative Commons: By Attribution 4.0 — http://creativecommons.org/licenses/by/4.0/",
+    "Hitman.mp3": "\"Hitman\" Kevin MacLeod (incompetech.com) — Licensed under Creative Commons: By Attribution 4.0 — http://creativecommons.org/licenses/by/4.0/",
+    "Investigations.mp3": "\"Investigations\" Kevin MacLeod (incompetech.com) — Licensed under Creative Commons: By Attribution 4.0 — http://creativecommons.org/licenses/by/4.0/"
+  }
+}

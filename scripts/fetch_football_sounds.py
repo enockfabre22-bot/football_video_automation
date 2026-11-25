@@ -85,6 +85,11 @@ SFX = {
     "tick":            (534094, 0.02, 0.16, 0.03, [1.0, 1.25]),
     "fanfare":         (456966, 0.0, 3.40, 0.60, None),
     "victory":         (249524, 0.0, 1.15, 0.20, None),
+    # --- Quiz (vidéos longues) ---
+    "clock_tick":      (450509, 0.12, 5.30, 0.25, None),
+    "correct":         (528957, 0.04, 0.70, 0.10, None),
+    "correct_bell":    (538147, 0.0, 1.57, 0.40, None),
+    "win_bell":        (97980, 0.0, 1.60, 0.40, None),
 }
 
 # Ambiances de stade (fond sonore continu, en stéréo)

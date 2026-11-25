@@ -50,6 +50,18 @@
       "exclude_animations": [
         "fb_duel"
       ]
+    },
+    {
+      "id": "avantfoot_quiz_dimanche",
+      "window": {
+        "start": "16:00",
+        "end": "16:30"
+      },
+      "animation_strategy": "fixed",
+      "target_animation": "quiz_guess_player",
+      "days": [
+        "sun"
+      ]
     }
   ],
   "timezone": "Europe/Paris"

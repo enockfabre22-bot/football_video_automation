@@ -41,3 +41,7 @@ data/song_history.json
 data/football_history.json
 data/matches_api.json
 data/football_packs_live.json
+
+# Quiz : cache Wikidata/Commons (local) et joueurs déjà utilisés (état du VPS)
+data/quiz/cache/
+data/quiz_history.json

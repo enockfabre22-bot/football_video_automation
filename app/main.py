@@ -232,8 +232,12 @@ def prepare_daily_videos(account_name="tiktok_main"):
     ready_jobs = []
     base_dir = Path(__file__).resolve().parent.parent
 
+    weekday = ["mon", "tue", "wed", "thu", "fri", "sat", "sun"][datetime.now().weekday()]
     for slot in schedule_slots:
         slot_id = slot.get("id", "unknown_slot")
+        # "days": ["sun"] = créneau hebdomadaire (ex. quiz long le dimanche)
+        if slot.get("days") and weekday not in slot["days"]:
+            continue
         print(f"\n--- Évaluation du créneau : [{slot_id}] ---")
 
         strategy = slot.get("animation_strategy", "random")

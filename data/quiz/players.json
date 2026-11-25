@@ -1,0 +1,793 @@
+{
+ "_doc": "Joueurs du quiz « Guess the Player » (vidéos longues). name = nom recherché sur Wikidata (search = nom recherché si différent, hint = mot attendu dans la description Wikidata (homonymes, ex. « uruguayan »), qid = identifiant imposé). difficulty : 1 EASY, 2 MEDIUM, 3 HARD, 4 IMPOSSIBLE. Les carrières, nationalités, postes et photos (licence libre) sont récupérés par scripts/quiz_build_players.py dans data/quiz/players_db.json + assets/quiz/players/.",
+ "players": [
+  {
+   "name": "Lionel Messi",
+   "difficulty": 1
+  },
+  {
+   "name": "Cristiano Ronaldo",
+   "difficulty": 1
+  },
+  {
+   "name": "Neymar",
+   "difficulty": 1
+  },
+  {
+   "name": "Kylian Mbappé",
+   "difficulty": 1
+  },
+  {
+   "name": "Erling Haaland",
+   "difficulty": 1
+  },
+  {
+   "name": "Robert Lewandowski",
+   "difficulty": 1
+  },
+  {
+   "name": "Zlatan Ibrahimović",
+   "difficulty": 1
+  },
+  {
+   "name": "Luka Modrić",
+   "difficulty": 1
+  },
+  {
+   "name": "Kevin De Bruyne",
+   "difficulty": 1
+  },
+  {
+   "name": "Mohamed Salah",
+   "difficulty": 1
+  },
+  {
+   "name": "Karim Benzema",
+   "difficulty": 1
+  },
+  {
+   "name": "Antoine Griezmann",
+   "difficulty": 1
+  },
+  {
+   "name": "Harry Kane",
+   "difficulty": 1
+  },
+  {
+   "name": "Vinícius Júnior",
+   "difficulty": 1
+  },
+  {
+   "name": "Jude Bellingham",
+   "difficulty": 1
+  },
+  {
+   "name": "Sergio Ramos",
+   "difficulty": 1
+  },
+  {
+   "name": "Eden Hazard",
+   "difficulty": 1
+  },
+  {
+   "name": "Paul Pogba",
+   "difficulty": 1
+  },
+  {
+   "name": "Luis Suárez",
+   "search": "Luis Suárez",
+   "difficulty": 1,
+   "hint": "uruguayan"
+  },
+  {
+   "name": "Gareth Bale",
+   "difficulty": 1
+  },
+  {
+   "name": "Wayne Rooney",
+   "difficulty": 1
+  },
+  {
+   "name": "Thierry Henry",
+   "difficulty": 1
+  },
+  {
+   "name": "Ronaldinho",
+   "difficulty": 1,
+   "qid": "Q39444"
+  },
+  {
+   "name": "David Beckham",
+   "difficulty": 1
+  },
+  {
+   "name": "Virgil van Dijk",
+   "difficulty": 1
+  },
+  {
+   "name": "Manuel Neuer",
+   "difficulty": 1
+  },
+  {
+   "name": "Toni Kroos",
+   "difficulty": 1
+  },
+  {
+   "name": "Andrés Iniesta",
+   "difficulty": 1
+  },
+  {
+   "name": "Didier Drogba",
+   "difficulty": 1
+  },
+  {
+   "name": "Zinedine Zidane",
+   "difficulty": 1
+  },
+  {
+   "name": "Kaká",
+   "difficulty": 1
+  },
+  {
+   "name": "Ronaldo",
+   "search": "Ronaldo",
+   "difficulty": 1,
+   "hint": "1976"
+  },
+  {
+   "name": "Lamine Yamal",
+   "difficulty": 1
+  },
+  {
+   "name": "Gianluigi Buffon",
+   "difficulty": 1
+  },
+  {
+   "name": "Sadio Mané",
+   "difficulty": 1
+  },
+  {
+   "name": "Achraf Hakimi",
+   "difficulty": 1
+  },
+  {
+   "name": "Romelu Lukaku",
+   "difficulty": 2
+  },
+  {
+   "name": "Ángel Di María",
+   "difficulty": 2
+  },
+  {
+   "name": "Edinson Cavani",
+   "difficulty": 2
+  },
+  {
+   "name": "Sergio Agüero",
+   "difficulty": 2
+  },
+  {
+   "name": "Olivier Giroud",
+   "difficulty": 2
+  },
+  {
+   "name": "N'Golo Kanté",
+   "difficulty": 2
+  },
+  {
+   "name": "Riyad Mahrez",
+   "difficulty": 2
+  },
+  {
+   "name": "Son Heung-min",
+   "difficulty": 2
+  },
+  {
+   "name": "Bruno Fernandes",
+   "search": "Bruno Fernandes",
+   "difficulty": 2,
+   "hint": "portuguese"
+  },
+  {
+   "name": "Bernardo Silva",
+   "difficulty": 2
+  },
+  {
+   "name": "Rodri",
+   "search": "Rodri",
+   "difficulty": 2,
+   "hint": "spanish"
+  },
+  {
+   "name": "Lautaro Martínez",
+   "difficulty": 2
+  },
+  {
+   "name": "Ousmane Dembélé",
+   "difficulty": 2
+  },
+  {
+   "name": "Kingsley Coman",
+   "difficulty": 2
+  },
+  {
+   "name": "Alexis Sánchez",
+   "difficulty": 2
+  },
+  {
+   "name": "Arturo Vidal",
+   "difficulty": 2
+  },
+  {
+   "name": "James Rodríguez",
+   "difficulty": 2
+  },
+  {
+   "name": "Radamel Falcao",
+   "difficulty": 2
+  },
+  {
+   "name": "Gonzalo Higuaín",
+   "difficulty": 2
+  },
+  {
+   "name": "Mesut Özil",
+   "difficulty": 2
+  },
+  {
+   "name": "Arjen Robben",
+   "difficulty": 2
+  },
+  {
+   "name": "Franck Ribéry",
+   "difficulty": 2
+  },
+  {
+   "name": "Philippe Coutinho",
+   "difficulty": 2
+  },
+  {
+   "name": "Mario Balotelli",
+   "difficulty": 2
+  },
+  {
+   "name": "Cesc Fàbregas",
+   "difficulty": 2
+  },
+  {
+   "name": "Fernando Torres",
+   "difficulty": 2
+  },
+  {
+   "name": "David Villa",
+   "difficulty": 2
+  },
+  {
+   "name": "Samuel Eto'o",
+   "difficulty": 2
+  },
+  {
+   "name": "Yaya Touré",
+   "difficulty": 2
+  },
+  {
+   "name": "Pierre-Emerick Aubameyang",
+   "difficulty": 2
+  },
+  {
+   "name": "Jadon Sancho",
+   "difficulty": 2
+  },
+  {
+   "name": "Martin Ødegaard",
+   "difficulty": 2
+  },
+  {
+   "name": "Kai Havertz",
+   "difficulty": 2
+  },
+  {
+   "name": "Christian Pulisic",
+   "difficulty": 2
+  },
+  {
+   "name": "Victor Osimhen",
+   "difficulty": 2
+  },
+  {
+   "name": "Khvicha Kvaratskhelia",
+   "difficulty": 2
+  },
+  {
+   "name": "Rafael Leão",
+   "difficulty": 2
+  },
+  {
+   "name": "Dušan Vlahović",
+   "difficulty": 2
+  },
+  {
+   "name": "Paulo Dybala",
+   "difficulty": 2
+  },
+  {
+   "name": "Mauro Icardi",
+   "difficulty": 2
+  },
+  {
+   "name": "Hakim Ziyech",
+   "difficulty": 2
+  },
+  {
+   "name": "Roberto Firmino",
+   "difficulty": 2
+  },
+  {
+   "name": "Thibaut Courtois",
+   "difficulty": 2
+  },
+  {
+   "name": "Gianluigi Donnarumma",
+   "difficulty": 2
+  },
+  {
+   "name": "Ivan Rakitić",
+   "difficulty": 2
+  },
+  {
+   "name": "Mateo Kovačić",
+   "difficulty": 2
+  },
+  {
+   "name": "Álvaro Morata",
+   "difficulty": 2
+  },
+  {
+   "name": "Diego Costa",
+   "difficulty": 2
+  },
+  {
+   "name": "Juan Mata",
+   "difficulty": 2
+  },
+  {
+   "name": "Memphis Depay",
+   "difficulty": 2
+  },
+  {
+   "name": "Alexandre Lacazette",
+   "difficulty": 2
+  },
+  {
+   "name": "Anthony Martial",
+   "difficulty": 2
+  },
+  {
+   "name": "Kalidou Koulibaly",
+   "difficulty": 2
+  },
+  {
+   "name": "Antonio Rüdiger",
+   "difficulty": 2
+  },
+  {
+   "name": "Raheem Sterling",
+   "difficulty": 2
+  },
+  {
+   "name": "Marcus Rashford",
+   "difficulty": 2
+  },
+  {
+   "name": "Dimitri Payet",
+   "difficulty": 2
+  },
+  {
+   "name": "Nicolas Anelka",
+   "difficulty": 3
+  },
+  {
+   "name": "Christian Vieri",
+   "difficulty": 3
+  },
+  {
+   "name": "Hernán Crespo",
+   "difficulty": 3
+  },
+  {
+   "name": "Kevin-Prince Boateng",
+   "difficulty": 3
+  },
+  {
+   "name": "Juan Cuadrado",
+   "difficulty": 3
+  },
+  {
+   "name": "Andrea Pirlo",
+   "difficulty": 3
+  },
+  {
+   "name": "Clarence Seedorf",
+   "difficulty": 3
+  },
+  {
+   "name": "Edgar Davids",
+   "difficulty": 3
+  },
+  {
+   "name": "Patrick Kluivert",
+   "difficulty": 3
+  },
+  {
+   "name": "Ruud van Nistelrooy",
+   "difficulty": 3
+  },
+  {
+   "name": "Klaas-Jan Huntelaar",
+   "difficulty": 3
+  },
+  {
+   "name": "Dimitar Berbatov",
+   "difficulty": 3
+  },
+  {
+   "name": "Carlos Tevez",
+   "difficulty": 3
+  },
+  {
+   "name": "Javier Mascherano",
+   "difficulty": 3
+  },
+  {
+   "name": "Iker Casillas",
+   "difficulty": 3
+  },
+  {
+   "name": "Michael Owen",
+   "difficulty": 3
+  },
+  {
+   "name": "Robinho",
+   "difficulty": 3
+  },
+  {
+   "name": "Adriano",
+   "search": "Adriano",
+   "difficulty": 3,
+   "hint": "brazilian"
+  },
+  {
+   "name": "Diego Forlán",
+   "difficulty": 3
+  },
+  {
+   "name": "Samir Nasri",
+   "difficulty": 3
+  },
+  {
+   "name": "Hatem Ben Arfa",
+   "difficulty": 3
+  },
+  {
+   "name": "Bafétimbi Gomis",
+   "difficulty": 3
+  },
+  {
+   "name": "Loïc Rémy",
+   "difficulty": 3
+  },
+  {
+   "name": "Wissam Ben Yedder",
+   "difficulty": 3
+  },
+  {
+   "name": "Georginio Wijnaldum",
+   "difficulty": 3
+  },
+  {
+   "name": "Daniel Sturridge",
+   "difficulty": 3
+  },
+  {
+   "name": "Peter Crouch",
+   "difficulty": 3
+  },
+  {
+   "name": "Emmanuel Adebayor",
+   "difficulty": 3
+  },
+  {
+   "name": "Jérôme Boateng",
+   "difficulty": 3
+  },
+  {
+   "name": "Mario Götze",
+   "difficulty": 3
+  },
+  {
+   "name": "Shinji Kagawa",
+   "difficulty": 3
+  },
+  {
+   "name": "Henrikh Mkhitaryan",
+   "difficulty": 3
+  },
+  {
+   "name": "Radja Nainggolan",
+   "difficulty": 3
+  },
+  {
+   "name": "Miralem Pjanić",
+   "difficulty": 3
+  },
+  {
+   "name": "Fernando Llorente",
+   "difficulty": 3
+  },
+  {
+   "name": "Roberto Soldado",
+   "difficulty": 3
+  },
+  {
+   "name": "Kevin Gameiro",
+   "difficulty": 3
+  },
+  {
+   "name": "Santi Cazorla",
+   "difficulty": 3
+  },
+  {
+   "name": "Ander Herrera",
+   "difficulty": 3
+  },
+  {
+   "name": "Willian",
+   "search": "Willian",
+   "difficulty": 3,
+   "hint": "brazilian"
+  },
+  {
+   "name": "Oscar",
+   "search": "Oscar",
+   "difficulty": 3,
+   "hint": "brazilian"
+  },
+  {
+   "name": "Hulk",
+   "search": "Hulk",
+   "difficulty": 3,
+   "hint": "brazilian"
+  },
+  {
+   "name": "Douglas Costa",
+   "difficulty": 3
+  },
+  {
+   "name": "Javier Hernández",
+   "search": "Javier Hernández",
+   "difficulty": 3,
+   "hint": "mexican"
+  },
+  {
+   "name": "Xherdan Shaqiri",
+   "difficulty": 3
+  },
+  {
+   "name": "Arda Turan",
+   "difficulty": 3
+  },
+  {
+   "name": "Alexandre Pato",
+   "difficulty": 3
+  },
+  {
+   "name": "Mario Mandžukić",
+   "difficulty": 3
+  },
+  {
+   "name": "Nemanja Matić",
+   "difficulty": 3
+  },
+  {
+   "name": "Yannick Carrasco",
+   "difficulty": 3
+  },
+  {
+   "name": "Michy Batshuayi",
+   "difficulty": 3
+  },
+  {
+   "name": "Wilfried Zaha",
+   "difficulty": 3
+  },
+  {
+   "name": "Danny Welbeck",
+   "difficulty": 3
+  },
+  {
+   "name": "Theo Walcott",
+   "difficulty": 3
+  },
+  {
+   "name": "Andriy Shevchenko",
+   "difficulty": 3
+  },
+  {
+   "name": "Fernando Morientes",
+   "difficulty": 3
+  },
+  {
+   "name": "Javier Saviola",
+   "difficulty": 3
+  },
+  {
+   "name": "Royston Drenthe",
+   "difficulty": 4
+  },
+  {
+   "name": "Ryan Babel",
+   "difficulty": 4
+  },
+  {
+   "name": "Ricardo Quaresma",
+   "difficulty": 4
+  },
+  {
+   "name": "Bojan Krkić",
+   "difficulty": 4
+  },
+  {
+   "name": "Freddy Adu",
+   "difficulty": 4
+  },
+  {
+   "name": "Mário Jardel",
+   "difficulty": 4
+  },
+  {
+   "name": "Benni McCarthy",
+   "difficulty": 4
+  },
+  {
+   "name": "Nwankwo Kanu",
+   "difficulty": 4
+  },
+  {
+   "name": "Obafemi Martins",
+   "difficulty": 4
+  },
+  {
+   "name": "Gervinho",
+   "difficulty": 4
+  },
+  {
+   "name": "Salomon Kalou",
+   "difficulty": 4
+  },
+  {
+   "name": "Seydou Keita",
+   "difficulty": 4
+  },
+  {
+   "name": "Keisuke Honda",
+   "difficulty": 4
+  },
+  {
+   "name": "Asamoah Gyan",
+   "difficulty": 4
+  },
+  {
+   "name": "Papiss Cissé",
+   "difficulty": 4
+  },
+  {
+   "name": "Demba Ba",
+   "difficulty": 4
+  },
+  {
+   "name": "Rafael van der Vaart",
+   "difficulty": 4
+  },
+  {
+   "name": "Wesley Sneijder",
+   "difficulty": 4
+  },
+  {
+   "name": "Stefano Okaka",
+   "difficulty": 4
+  },
+  {
+   "name": "Fabio Quagliarella",
+   "difficulty": 4
+  },
+  {
+   "name": "Marko Arnautović",
+   "difficulty": 4
+  },
+  {
+   "name": "Stevan Jovetić",
+   "difficulty": 4
+  },
+  {
+   "name": "Adem Ljajić",
+   "difficulty": 4
+  },
+  {
+   "name": "Adel Taarabt",
+   "difficulty": 4
+  },
+  {
+   "name": "Mohamed Sissoko",
+   "difficulty": 4
+  },
+  {
+   "name": "Antonio Cassano",
+   "difficulty": 4
+  },
+  {
+   "name": "Nicolas Gaitán",
+   "search": "Nicolás Gaitán",
+   "difficulty": 4
+  },
+  {
+   "name": "Jesé",
+   "search": "Jesé",
+   "difficulty": 4,
+   "hint": "spanish"
+  },
+  {
+   "name": "Lassana Diarra",
+   "difficulty": 4
+  },
+  {
+   "name": "Jérémy Ménez",
+   "difficulty": 4
+  },
+  {
+   "name": "Kevin Strootman",
+   "difficulty": 4
+  },
+  {
+   "name": "Emmanuel Emenike",
+   "difficulty": 4
+  },
+  {
+   "name": "Jonathan Biabiany",
+   "difficulty": 4
+  },
+  {
+   "name": "Yoann Gourcuff",
+   "difficulty": 4
+  },
+  {
+   "name": "Gaël Kakuta",
+   "difficulty": 4
+  },
+  {
+   "name": "Jeffrey Bruma",
+   "difficulty": 4
+  },
+  {
+   "name": "Marouane Chamakh",
+   "difficulty": 4
+  },
+  {
+   "name": "Andrea Ranocchia",
+   "difficulty": 4
+  },
+  {
+   "name": "Facundo Ferreyra",
+   "difficulty": 4
+  },
+  {
+   "name": "Ezequiel Lavezzi",
+   "difficulty": 4
+  },
+  {
+   "name": "Bernard",
+   "search": "Bernard",
+   "difficulty": 4,
+   "hint": "brazilian"
+  }
+ ]
+}

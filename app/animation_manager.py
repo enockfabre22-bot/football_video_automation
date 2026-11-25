@@ -15,6 +15,27 @@ from maintenance import has_enough_disk_space
 
 load_dotenv()
 
+def apply_metadata_override(work_dir, metadata):
+    """
+    Une animation peut rédiger elle-même ses métadonnées pendant le rendu (ex. quiz : titre avec le nombre de
+    joueurs, chapitres YouTube, crédits des photos et de la musique) dans <work_dir>/metadata_override.json :
+    elles remplacent alors celles tirées dans les pools de la config. Modifie `metadata` sur place.
+    """
+    path = Path(work_dir) / "metadata_override.json"
+    if metadata is None or not path.exists():
+        return metadata
+    try:
+        override = json.loads(path.read_text(encoding="utf-8"))
+    except (OSError, json.JSONDecodeError) as e:
+        print(f"      [AVERTISSEMENT] metadata_override.json illisible ({e})")
+        return metadata
+    for key in ("title", "description", "hashtags", "youtube_tags", "quiz_players"):
+        if override.get(key):
+            metadata[key] = override[key]
+    print(f"      [MÉTADONNÉES] Rédigées par l'animation : {metadata.get('title', '')[:80]}")
+    return metadata
+
+
 class AnimationManager:
     def __init__(self):
         self.base_dir = Path(__file__).resolve().parent.parent
@@ -66,7 +87,9 @@ class AnimationManager:
             return None
 
         elif strategy == "random":
-            valid_animations = [a for a in animations if a["name"] not in exclude_animations]
+            # "exclude_from_random": true = animation réservée à un créneau fixe (ex. quiz long hebdomadaire)
+            valid_animations = [a for a in animations
+                                if a["name"] not in exclude_animations and not a.get("exclude_from_random")]
             if not valid_animations:
                 print(f"[ERREUR] Toutes les animations ont été exclues pour '{account_name}'.")
                 return None
@@ -223,6 +246,7 @@ class AnimationManager:
         # Validation de la vidéo finale
         if output_video_path.exists() and output_video_path.stat().st_size > 0:
             print(f"[SUCCÈS] Vidéo finale générée et validée : {output_video_path}")
+            apply_metadata_override(job_work_dir, job_metadata)
 
             # Les images intermédiaires (PNG de Processing : plusieurs Go par vidéo) ne servent plus.
             # Sans ce nettoyage, les rendus successifs d'une même préparation remplissaient le disque.

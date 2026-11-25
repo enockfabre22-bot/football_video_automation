@@ -51,6 +51,10 @@ Tous les sons proviennent de [Freesound](https://freesound.org) sous licence **C
 | `tick` | https://freesound.org/s/534094/ |
 | `fanfare` | https://freesound.org/s/456966/ |
 | `victory` | https://freesound.org/s/249524/ |
+| `clock_tick` | https://freesound.org/s/450509/ |
+| `correct` | https://freesound.org/s/528957/ |
+| `correct_bell` | https://freesound.org/s/538147/ |
+| `win_bell` | https://freesound.org/s/97980/ |
 | `beds/stadium_norway` | https://freesound.org/s/206003/ |
 | `beds/stadium_schalke` | https://freesound.org/s/63587/ |
 | `beds/stadium_mexico` | https://freesound.org/s/241630/ |

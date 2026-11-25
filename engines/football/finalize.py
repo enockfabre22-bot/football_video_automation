@@ -18,6 +18,7 @@ from pathlib import Path
 import numpy as np
 
 BASE_DIR = Path(__file__).resolve().parents[2]
+sys.path.insert(0, str(Path(__file__).resolve().parent))
 BEDS_DIR = BASE_DIR / "assets" / "sounds" / "football" / "beds"
 RATE = 48000
 SWELL_SOUNDS = {"crowd_roar": 1.0, "crowd_goal": 0.9, "crowd_cheer": 0.8, "explode_big": 0.7,
@@ -48,6 +49,10 @@ def main():
     ap = argparse.ArgumentParser()
     ap.add_argument("job")
     ap.add_argument("--bed-gain-db", type=float, default=-8.0)
+    ap.add_argument("--no-bed", action="store_true", help="pas d'ambiance de stade (quiz)")
+    ap.add_argument("--music-dir", help="musique de fond : dossier de pistes + credits.json (quiz)")
+    ap.add_argument("--music-gain-db", type=float, default=-15.0)
+    ap.add_argument("--quiz-thumbnail", action="store_true", help="miniature YouTube personnalisée du quiz")
     a = ap.parse_args()
     with open(a.job, "r", encoding="utf-8") as f:
         job = json.load(f)
@@ -78,7 +83,9 @@ def main():
 
     # --- ambiance de stade : extrait aléatoire, fondus, montées aux moments forts ---
     bed_file = BEDS_DIR / meta.get("bed", "") if meta.get("bed") else None
-    if not bed_file or not bed_file.exists():
+    if a.no_bed:
+        bed_file = None
+    elif not bed_file or not bed_file.exists():
         beds = sorted(BEDS_DIR.glob("*.ogg"))
         bed_file = random.choice(beds) if beds else None
     mix = fx.copy()
@@ -99,6 +106,13 @@ def main():
         env *= np.clip(t / 0.6, 0, 1) * np.clip((dur - t) / 1.2, 0, 1)
         mix = fx + bed * env[:, None]
 
+    music_credits = []
+    if a.music_dir:
+        music, music_credits = music_bed(BASE_DIR / a.music_dir, dur, n, seed=job.get("job_id", ""))
+        if music is not None:
+            mix = mix + music * (10 ** (a.music_gain_db / 20))
+            add_music_credits(work, music_credits)
+
     wav = work / "football" / "final_mix.f32"
     mix.astype(np.float32).tofile(wav)
     tmp = video.with_name(video.stem + "_mix.mp4")
@@ -113,7 +127,8 @@ def main():
         log(f"ERREUR ffmpeg (mixage final) : {res.stderr.strip()[-500:]}")
         return 1
     tmp.replace(video)
-    log(f"Son final : ambiance {bed_file.name if bed_file else 'aucune'}, {len(events)} effets, -14 LUFS")
+    log(f"Son final : ambiance {bed_file.name if bed_file else 'aucune'}, musique "
+        f"{', '.join(c.split(chr(34))[1] for c in music_credits if chr(34) in c) or 'aucune'}, {len(events)} effets, -14 LUFS")
 
     # --- miniature ---
     thumb_t = (metrics.get("scene") or {}).get("thumb_time") or max(1.0, dur * 0.4)
@@ -122,7 +137,62 @@ def main():
                          capture_output=True, text=True)
     if res.returncode == 0:
         log(f"Miniature extraite à {thumb_t:.1f} s")
+    if a.quiz_thumbnail:
+        try:
+            import quiz_thumbnail
+            quiz_thumbnail.make(work, work / "thumbnail_source.jpg")
+            log("Miniature du quiz générée")
+        except Exception as e:
+            log(f"Miniature du quiz impossible ({e}) : image de la vidéo conservée")
     return 0
+
+
+def music_bed(folder, dur, n, seed=""):
+    """Enchaîne des pistes (ordre aléatoire, fondus enchaînés de 3 s) jusqu'à couvrir la vidéo."""
+    tracks = sorted(p for p in folder.glob("*") if p.suffix.lower() in (".mp3", ".ogg", ".wav", ".m4a"))
+    if not tracks:
+        return None, []
+    credits_file = folder / "credits.json"
+    credits = json.loads(credits_file.read_text(encoding="utf-8")).get("tracks", {}) if credits_file.exists() else {}
+    rng = random.Random(seed)
+    rng.shuffle(tracks)
+    xf = int(3.0 * RATE)
+    out = np.zeros((0, 2), np.float32)
+    used = []
+    i = 0
+    while len(out) < n + RATE and i < 50:
+        tr = tracks[i % len(tracks)]
+        i += 1
+        x = decode(tr)
+        if len(x) < xf * 2:
+            continue
+        # volume homogène entre pistes (RMS)
+        rms = float(np.sqrt(np.mean(x ** 2))) or 1.0
+        x = x * (0.12 / rms)
+        if len(out) == 0:
+            out = x
+        else:
+            fade = np.linspace(0, 1, xf, dtype=np.float32)[:, None]
+            out[-xf:] = out[-xf:] * (1 - fade) + x[:xf] * fade
+            out = np.vstack([out, x[xf:]])
+        if credits.get(tr.name) and credits[tr.name] not in used:
+            used.append(credits[tr.name])
+    out = out[:n]
+    if len(out) < n:
+        out = np.vstack([out, np.zeros((n - len(out), 2), np.float32)])
+    t = np.arange(n) / RATE
+    out *= (np.clip(t / 1.5, 0, 1) * np.clip((dur - t) / 3.0, 0, 1))[:, None]
+    return out.astype(np.float32), used
+
+
+def add_music_credits(work, credits):
+    """Crédit des musiques (licence CC BY) ajouté à la description préparée (metadata_override.json)."""
+    path = work / "metadata_override.json"
+    if not credits or not path.exists():
+        return
+    meta = json.loads(path.read_text(encoding="utf-8"))
+    meta["description"] = meta.get("description", "") + "\n\nMusic:\n" + "\n".join(credits)
+    path.write_text(json.dumps(meta, indent=1, ensure_ascii=False), encoding="utf-8")
 
 
 if __name__ == "__main__":

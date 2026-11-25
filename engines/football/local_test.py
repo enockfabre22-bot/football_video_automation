@@ -29,7 +29,7 @@ sys.path.insert(0, str(BASE_DIR / "app"))
 import football_data  # noqa: E402
 
 COUNTS = {"royale": [12, 16, 20], "rings": [8, 10], "colorwar": [4, 6], "marble": [16, 18, 20],
-          "knockout": [8], "duel": [2]}
+          "knockout": [8], "duel": [2], "quiz": [0]}
 BIAS = {"colorwar": 1.2, "knockout": 0.9, "rings": 0.5}
 
 
@@ -62,6 +62,7 @@ def main():
     ap.add_argument("--height", type=int, default=1920)
     ap.add_argument("--frames", help="liste d'images à exporter en PNG (aperçu rapide, pas de vidéo)")
     ap.add_argument("--exe", help="binaire déjà compilé (évite la recompilation)")
+    ap.add_argument("--max-rounds", type=int, help="quiz : nombre de joueurs (test rapide)")
     a = ap.parse_args()
 
     stamp = datetime.now().strftime("%Y%m%d_%H%M%S")
@@ -70,7 +71,9 @@ def main():
     work.mkdir(parents=True)
 
     resources, match = {}, {"date": (datetime.now() + timedelta(days=1)).strftime("%Y-%m-%d"), "home": "", "away": ""}
-    if a.format == "duel":
+    if a.format == "quiz":
+        pass
+    elif a.format == "duel":
         h, w = football_data.team_info(a.home), football_data.team_info(a.away)
         match.update({"home": h["name"], "away": w["name"]})
         resources = {"home_logo": h["logo"], "away_logo": w["logo"], "home_key": h["key"], "away_key": w["key"],
@@ -91,7 +94,11 @@ def main():
     job_file.write_text(json.dumps(job, indent=2, ensure_ascii=False), encoding="utf-8")
 
     py = sys.executable
-    run([py, ENGINE / "prepare.py", job_file, "--format", a.format, "--width", a.width, "--height", a.height])
+    if a.format == "quiz":
+        run([py, ENGINE / "quiz_prepare.py", job_file, "--no-history"]
+            + (["--max-rounds", a.max_rounds, "--min-seconds", "0"] if a.max_rounds else []))
+    else:
+        run([py, ENGINE / "prepare.py", job_file, "--format", a.format, "--width", a.width, "--height", a.height])
     exe = Path(a.exe) if a.exe else build(work)
 
     video = json.loads((work / "football" / "video.json").read_text(encoding="utf-8"))
@@ -114,7 +121,8 @@ def main():
         print(f"\n[OK] Images : {out_dir}  (seed {cfg['seed']}, durée {metrics['duration']:.1f} s)")
         return
     shutil.copy2(out_dir / "video.mp4", work / "video.mp4")
-    run([py, ENGINE / "finalize.py", job_file])
+    run([py, ENGINE / "finalize.py", job_file]
+        + (["--no-bed", "--music-dir", "assets/music/quiz", "--quiz-thumbnail"] if a.format == "quiz" else []))
     print(f"\n[OK] Vidéo : {work / 'video.mp4'}  ({metrics['duration']:.1f} s, rendu {metrics['render_seconds']:.0f} s, "
           f"seed {cfg['seed']}, scène {metrics.get('scene')})")
 

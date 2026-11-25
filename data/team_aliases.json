@@ -1,5 +1,5 @@
 {
-  "_doc": "Correspondance identifiant d'équipe football-data.org -> clé de data/teams.json (= nom du logo dans assets/logos), pour les noms que le rapprochement automatique ne reconnaît pas. Les équipes non reconnues sont signalées dans les logs par football_fixtures.py.",
+  "_doc": "Correspondance identifiant d'équipe football-data.org -> clé de data/teams.json (= nom du logo dans assets/logos), pour les noms que le rapprochement automatique ne reconnaît pas. Les équipes non reconnues sont signalées dans les logs par football_fixtures.py. Section « wikidata » : identifiant Wikidata d'un club -> clé (quiz, scripts/quiz_build_players.py).",
   "football_data": {
     "3": "bayer leverkusen",
     "5": "bayern munchen",
@@ -31,5 +31,13 @@
     "563": "west ham",
     "5335": "racing santander",
     "7397": "como"
+  },
+  "wikidata": {
+    "Q631": "inter",
+    "Q11938": "PSV",
+    "Q6601875": "Fenerbahçe",
+    "Q17479": "Flamengo",
+    "Q134241": "Feyenoord",
+    "Q19451": "Bolton"
   }
 }

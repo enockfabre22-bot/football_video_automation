@@ -32,7 +32,7 @@ sys.path.insert(0, str(BASE_DIR / "app"))
 
 import football_data  # noqa: E402
 import midi_library  # noqa: E402
-from animation_manager import AnimationManager  # noqa: E402
+from animation_manager import AnimationManager, apply_metadata_override  # noqa: E402
 from main import apply_song_metadata, metadata_config, setup_logging  # noqa: E402
 from match_manager import MatchManager  # noqa: E402
 from publication_manager import PublicationManager  # noqa: E402
@@ -156,9 +156,12 @@ def main():
         shutil.rmtree(work_dir, ignore_errors=True)
         sys.exit("Échec du rendu (voir les erreurs ci-dessus).")
     thumb = work_dir / "thumbnail_source.jpg"
-    if thumb.exists():
-        for md in metas.values():
+    for md in metas.values():
+        apply_metadata_override(work_dir, md)      # titre / chapitres / crédits rédigés par l'animation (quiz)
+        if thumb.exists():
             md["thumbnail_path"] = str(thumb)
+    if (work_dir / "metadata_override.json").exists():
+        print(f"\nTITRE FINAL : {metas[first].get('title')}\n{metas[first].get('description', '')[:1500]}\n")
 
     if a.dry_run:
         keep = BASE_DIR / "output" / "tests" / f"{job_id}.mp4"

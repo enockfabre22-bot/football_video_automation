@@ -1,0 +1,38 @@
+{
+  "name": "quiz_guess_player",
+  "enabled": true,
+  "accounts": ["youtube_avantfoot"],
+  "requires_match_data": false,
+  "exclude_from_random": true,
+  "inputs": [],
+  "min_free_disk_gb": 4,
+  "metadata": {
+    "titles": ["Guess the Football Player from Their Career Path ⚽"],
+    "descriptions": ["Can you guess every football player from their career path? Comment your score 👇"],
+    "hashtags": ["#footballquiz", "#guesstheplayer", "#football"],
+    "youtube_tags": ["guess the player", "football quiz", "career path quiz"]
+  },
+  "thumbnail": {"enabled": false},
+  "steps": [
+    {
+      "type": "python",
+      "name": "Préparation du quiz (joueurs, minutage, chapitres, crédits)",
+      "script": "engines/football/quiz_prepare.py"
+    },
+    {
+      "type": "sandbox",
+      "name": "Rendu raylib 16:9 (quiz)",
+      "profile": "raylib_box2d",
+      "source": "../../engines/football/scene",
+      "sounds_dir": "../../assets/sounds/football",
+      "seed": "random",
+      "video_from": "football/video.json"
+    },
+    {
+      "type": "python",
+      "name": "Musique, mixage -14 LUFS, miniature personnalisée",
+      "script": "engines/football/finalize.py",
+      "args": ["--no-bed", "--music-dir", "assets/music/quiz", "--quiz-thumbnail"]
+    }
+  ]
+}

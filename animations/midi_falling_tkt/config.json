@@ -42,7 +42,7 @@
         "--format",
         "portrait",
         "--max-seconds",
-        "30",
+        "65",
         "--names",
         "artist_title",
         "--style",

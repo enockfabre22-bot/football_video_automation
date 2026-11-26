@@ -18,7 +18,8 @@
       "animation_strategy": "random",
       "exclude_animations": [
         "midi_falling_ytb",
-        "neon_piano"
+        "neon_piano",
+        "liquid_piano"
       ]
     },
     {
@@ -30,7 +31,8 @@
       "animation_strategy": "random",
       "exclude_animations": [
         "midi_falling_ytb",
-        "neon_piano"
+        "neon_piano",
+        "liquid_piano"
       ]
     },
     {
@@ -42,7 +44,8 @@
       "animation_strategy": "random",
       "exclude_animations": [
         "midi_falling_short",
-        "neon_piano_short"
+        "neon_piano_short",
+        "liquid_piano_short"
       ]
     }
   ],

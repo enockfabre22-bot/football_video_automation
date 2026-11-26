@@ -51,6 +51,17 @@ NEON_PALETTES = [
     ((60, 220, 255), (190, 110, 255)),   # cyan / violet
 ]
 
+# Style liquid : (main droite, main gauche, ligne de frappe) — matière lumineuse sur fond noir
+LIQUID_PALETTES = [
+    ((255, 196, 70), (60, 220, 230), (255, 196, 70)),     # or / cyan
+    ((255, 205, 85), (95, 225, 95), (215, 235, 95)),      # or / vert
+    ((45, 115, 255), (40, 215, 205), (45, 130, 255)),     # bleu / turquoise
+    ((40, 215, 205), (70, 95, 255), (40, 215, 205)),      # turquoise / indigo
+    ((255, 95, 185), (255, 200, 90), (255, 95, 185)),     # rose / or
+    ((175, 115, 255), (60, 220, 230), (175, 115, 255)),   # violet / cyan
+    ((255, 125, 60), (255, 215, 95), (255, 150, 60)),     # orange / or (feu)
+]
+
 # Style premium : couleurs plus douces et élégantes (verre lumineux, pas néon criard)
 PREMIUM_PALETTES = [
     ((110, 210, 255), (255, 150, 120)),   # ciel / corail
@@ -213,7 +224,7 @@ def main():
     ap.add_argument("--names", default="artist_title", choices=["artist_title", "title_artist"])
     ap.add_argument("--fps", type=int, default=60)
     ap.add_argument("--auto-pedal", default="on", choices=["on", "off"])
-    ap.add_argument("--style", default="falling", choices=["falling", "premium", "neon"])
+    ap.add_argument("--style", default="falling", choices=["falling", "premium", "neon", "liquid"])
     ap.add_argument("--lead", type=float, default=LEAD, help="secondes avant la 1re note")
     a = ap.parse_args()
     lead = a.lead
@@ -288,7 +299,7 @@ def main():
     log(f"Audio piano rendu ({soundfont.name}, réverbération de salle, -14 LUFS)")
 
     # --- Visuel ---
-    pals = {"premium": PREMIUM_PALETTES, "neon": NEON_PALETTES}.get(a.style, PALETTES)
+    pals = {"premium": PREMIUM_PALETTES, "neon": NEON_PALETTES, "liquid": LIQUID_PALETTES}.get(a.style, PALETTES)
     palette = pals[int(rng.integers(len(pals)))]           # couleurs tirées au hasard à chaque vidéo
     lo, hi = key_range(visual_notes, fmt["min_whites"])
     title, artist = clean_names(meta.get("song_title") or Path(midi_path).stem, a.names)
@@ -303,6 +314,18 @@ def main():
         # fond étoilé dessiné par la scène ; police des noms de notes ; dièses ou bémols selon la tonalité
         shutil.copy2(FONT_DIR / "Poppins-Bold.ttf", out / "font.ttf")
         style_extra = {"lookahead": 2.2, "title_hold": 3.5, "key_fifths": detect_key_fifths(audio_notes)}
+    elif a.style == "liquid":
+        # fond noir pur (dessiné par la scène) ; titre seul au centre ; niveau selon la densité de notes
+        shutil.copy2(FONT_DIR / "Poppins-Bold.ttf", out / "font.ttf")
+        shutil.copy2(FONT_DIR / "LibreBaskerville-Regular.ttf", out / "font_serif.ttf")
+        nps = len(audio_notes) / max(1.0, s1 - s0)
+        easy = bool(re.search(r"(^|\s-\s)EASY$", Path(midi_path).stem, re.I))
+        level = "Beginner" if easy or nps < 3.5 else "Intermediate" if nps < 7.0 else "Advanced"
+        clean = lambda v: re.sub(r"[\r\n=]", " ", v).strip()
+        style_extra = {"lookahead": 2.3 if a.format == "portrait" else 2.2, "key_fifths": detect_key_fifths(audio_notes),
+                       "title": clean(title), "level": f"{level} Piano Tutorial",
+                       "line_color": ",".join(map(str, palette[2]))}
+        log(f"Niveau : {level} ({nps:.1f} notes/s)")
     else:
         make_background(out / "background.png", res.get("bg_image") or meta.get("bg_image"), (W, H), palette)
 

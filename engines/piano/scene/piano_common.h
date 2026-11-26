@@ -21,13 +21,28 @@
 // ---------------------------------------------------------------------------
 // Formes arrondies anticrénelées (champ de distance) :
 // 0 note lumineuse, 1 touche blanche, 2 touche noire laquée, 5 note en verre (premium),
-// 9 note néon pleine, 10 touche jouée colorée, 11 touche 2D plate, 12 touche noire 2D plate.
+// 9 note néon pleine, 10 touche jouée colorée, 11 touche 2D plate, 12 touche noire 2D plate,
+// 13 note "liquide" (veines lumineuses animées).
 static const char* SHAPE_FS = R"(#version 330
 in vec2 fragTexCoord;
 in vec4 fragColor;
 out vec4 finalColor;
 uniform int style;
 uniform float radius;
+uniform float time;      // style 13 : animation interne de la matière
+uniform float scroll;    // style 13 : défilement des notes (pixels de rendu) -> la texture suit la note
+uniform float zoom;      // style 13 : pixels de rendu par unité logique
+float h21(vec2 p) { p = fract(p * vec2(123.34, 456.21)); p += dot(p, p + 45.32); return fract(p.x * p.y); }
+float vnoise(vec2 p) {
+    vec2 i = floor(p), f = fract(p);
+    f = f * f * (3.0 - 2.0 * f);
+    return mix(mix(h21(i), h21(i + vec2(1.0, 0.0)), f.x), mix(h21(i + vec2(0.0, 1.0)), h21(i + vec2(1.0, 1.0)), f.x), f.y);
+}
+float fbm(vec2 p) {
+    float v = 0.0, a = 0.5;
+    for (int i = 0; i < 4; i++) { v += a * vnoise(p); p *= 2.03; a *= 0.5; }
+    return v;
+}
 float sdRB(vec2 p, vec2 b, float r) {
     vec2 q = abs(p) - b + vec2(r);
     return length(max(q, 0.0)) + min(max(q.x, q.y), 0.0) - r;
@@ -80,6 +95,18 @@ void main() {
         col = mix(min(base * 1.1 + 0.25, vec3(1.0)), base * 0.85, smoothstep(0.0, 0.7, uv.y));
         float side = smoothstep(-2.0, -0.4, d);
         col = mix(col, min(base + 0.45, vec3(1.0)), side * 0.6);
+    } else if (style == 13) {
+        // note "liquide" : veines lumineuses qui ondulent (or / eau en fusion), accrochées à la note
+        vec2 P = vec2(gl_FragCoord.x, gl_FragCoord.y + scroll) / max(zoom, 0.01);
+        vec2 q = vec2(P.x * 0.05, P.y * 0.016);
+        float n = fbm(q + vec2(0.0, time * 0.30));
+        float n2 = fbm(q * 1.6 + vec2(5.2, -time * 0.20));
+        float v = abs(sin((q.y * 1.2 + n * 3.5 + n2 * 1.8) * 3.14159));
+        float ridge = pow(1.0 - v, 2.6);                       // marbrures larges et fluides
+        float pool = smoothstep(0.35, 0.95, n2);               // zones plus lumineuses
+        col = base * (0.40 + 0.55 * n) + mix(base, vec3(1.0), 0.45) * ridge * 0.75 + base * pool * 0.28;
+        float rim = smoothstep(-2.6, -0.7, d);
+        col = mix(col, min(base * 1.1 + 0.35, vec3(1.0)), rim * 0.65);
     } else if (style == 11) {
         // touche 2D plate : dégradé très léger, liseré fin (aucun relief)
         col = base * mix(0.92, 1.0, smoothstep(0.0, 0.4, uv.y));
@@ -212,7 +239,7 @@ struct NoteTrack {
 struct Gfx {
     Texture2D white{}, glow{}, vgrad{};
     Shader shape{}, blur{};
-    int loc_style = -1, loc_radius = -1, loc_dir = -1;
+    int loc_style = -1, loc_radius = -1, loc_dir = -1, loc_time = -1, loc_scroll = -1, loc_zoom = -1;
     RenderTexture2D glowA{}, glowB{};
     int gw = 270, gh = 480;
     std::vector<float> spreads = {1.0f, 2.2f};   // passes de flou du halo ; ajouter 4.5 = bloom multi-échelle
@@ -273,6 +300,9 @@ struct Gfx {
         shape = LoadShaderFromMemory(nullptr, SHAPE_FS);
         loc_style = GetShaderLocation(shape, "style");
         loc_radius = GetShaderLocation(shape, "radius");
+        loc_time = GetShaderLocation(shape, "time");
+        loc_scroll = GetShaderLocation(shape, "scroll");
+        loc_zoom = GetShaderLocation(shape, "zoom");
         blur = LoadShaderFromMemory(nullptr, BLUR_FS);
         loc_dir = GetShaderLocation(blur, "dir");
         gw = std::max(64, (int)(W / 4));
@@ -312,6 +342,12 @@ struct Gfx {
         BeginShaderMode(shape);
     }
     void end_shape() { EndShaderMode(); }
+    // style 13 : temps, défilement (pixels de rendu) et zoom (rendu / logique) — à régler avant begin_shape
+    void set_liquid(float t, float scroll_px, float z) {
+        SetShaderValue(shape, loc_time, &t, SHADER_UNIFORM_FLOAT);
+        SetShaderValue(shape, loc_scroll, &scroll_px, SHADER_UNIFORM_FLOAT);
+        SetShaderValue(shape, loc_zoom, &z, SHADER_UNIFORM_FLOAT);
+    }
 
     // --- halo : dessiner les éléments lumineux entre begin_glow() et end_glow()
     void begin_glow() {
@@ -551,6 +587,7 @@ static inline Texture2D load_tex_opt(const std::string& path, bool& ok) {
 Scene* make_falling_scene();
 Scene* make_premium_scene();
 Scene* make_neon_scene();
+Scene* make_liquid_scene();
 
 static const char* NOTE_NAMES[12] = {"C", "C#", "D", "D#", "E", "F", "F#", "G", "G#", "A", "A#", "B"};
 static const char* NOTE_NAMES_FLAT[12] = {"C", "Db", "D", "Eb", "E", "F", "Gb", "G", "Ab", "A", "Bb", "B"};

@@ -48,7 +48,7 @@ def main():
     midi = Path(a.midi) if a.midi else random.choice(list((BASE_DIR / "assets" / "library").rglob("*.mid")))
     bg_dir = BASE_DIR / "assets" / ("jpg_portrait" if portrait else "jpg")
     bg = Path(a.bg) if a.bg else random.choice(list(bg_dir.glob("*.jpg")))
-    names = a.names or ("artist_title" if portrait else "title_artist")
+    names = a.names or "artist_title"          # bibliothèque : "Artiste - Titre"
 
     job_id = f"piano_{datetime.now():%Y%m%d_%H%M%S}"
     work = BASE_DIR / "output" / "tests" / job_id

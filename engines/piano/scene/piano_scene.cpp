@@ -4,7 +4,7 @@
 //    scene.txt (réglages), notes.txt ("début fin pitch vélocité main" en secondes VIDÉO),
 //    background.png, title.png.
 //  Le son n'est pas géré ici : finalize.py ajoute audio.wav (vrai piano) à la vidéo muette.
-//  Ce fichier contient aussi create_scene(), qui choisit le style (falling | premium | neon).
+//  Ce fichier contient aussi create_scene(), qui choisit le style (falling | premium | neon | liquid).
 // ============================================================================
 #include "piano_common.h"
 
@@ -230,5 +230,6 @@ Scene* create_scene() {
     std::string style = s.str("style", "falling");
     if (style == "premium") return make_premium_scene();
     if (style == "neon") return make_neon_scene();
+    if (style == "liquid") return make_liquid_scene();
     return make_falling_scene();
 }

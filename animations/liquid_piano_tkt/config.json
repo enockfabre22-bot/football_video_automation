@@ -1,0 +1,72 @@
+{
+  "name": "liquid_piano_tkt",
+  "enabled": true,
+  "accounts": [
+    "tiktok_ItPiano"
+  ],
+  "requires_match_data": false,
+  "inputs": [
+    "library",
+    "jpg_portrait"
+  ],
+  "min_free_disk_gb": 3,
+  "metadata": {
+    "titles": [
+      "{title} - {artist} 🎹",
+      "{title} on piano 🎹 ({artist})",
+      "{title} - {artist} | Piano Cover"
+    ],
+    "descriptions": [
+      ""
+    ],
+    "hashtags": [
+      "#{artist_tag}",
+      "#piano",
+      "#pianocover",
+      "#pianotutorial",
+      "#synthesia",
+      "#pianomusic",
+      "#fyp"
+    ],
+    "youtube_tags": []
+  },
+  "thumbnail": {
+    "enabled": false
+  },
+  "steps": [
+    {
+      "type": "python",
+      "name": "Préparation piano (style liquid : notes lumineuses liquides, son Salamander)",
+      "script": "engines/piano/prepare.py",
+      "args": [
+        "--format",
+        "portrait",
+        "--max-seconds",
+        "65",
+        "--names",
+        "artist_title",
+        "--style",
+        "liquid"
+      ]
+    },
+    {
+      "type": "sandbox",
+      "name": "Rendu raylib (Falling Notes liquid)",
+      "profile": "raylib_box2d",
+      "source": "../../engines/piano/scene",
+      "seed": "random",
+      "video_from": "piano/video.json"
+    },
+    {
+      "type": "python",
+      "name": "Assemblage vidéo + piano + miniature",
+      "script": "engines/piano/finalize.py",
+      "args": [
+        "--thumbnail"
+      ]
+    }
+  ],
+  "library": {
+    "repeat_days": 45
+  }
+}

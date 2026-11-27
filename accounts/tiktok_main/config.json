@@ -15,7 +15,7 @@
     {
       "id": "tkmain_matin",
       "window": {
-        "start": "08:00",
+        "start": "09:00",
         "end": "10:00"
       },
       "animation_strategy": "random",
@@ -24,10 +24,10 @@
       ]
     },
     {
-      "id": "tkmain_fin_matinee",
+      "id": "tkmain_midi",
       "window": {
-        "start": "10:30",
-        "end": "12:00"
+        "start": "12:30",
+        "end": "13:30"
       },
       "animation_strategy": "random",
       "exclude_animations": [
@@ -37,24 +37,13 @@
     {
       "id": "tkmain_match_du_jour",
       "window": {
-        "start": "12:30",
-        "end": "14:30"
+        "start": "17:30",
+        "end": "18:30"
       },
       "animation_strategy": "fixed",
       "target_animation": "fb_duel",
-      "max_matches": 2,
+      "max_matches": 1,
       "publish_before_kickoff_min": 180
-    },
-    {
-      "id": "tkmain_soir",
-      "window": {
-        "start": "16:00",
-        "end": "18:00"
-      },
-      "animation_strategy": "random",
-      "exclude_animations": [
-        "fb_duel"
-      ]
     }
   ],
   "timezone": "Europe/Paris"

@@ -1,5 +1,5 @@
 """
-prepare.py — Première étape du moteur foot (formats royale, rings, colorwar, marble, knockout, duel).
+prepare.py — Première étape du moteur foot (formats royale, rings, colorwar, marble, knockout, duel, bigmatch).
 
 Usage : python engines/football/prepare.py <job.json> --format royale [--width 1080 --height 1920]
 
@@ -248,6 +248,18 @@ ICONS = {"heart": _heart, "bolt": _bolt, "shield": _shield, "card": _card, "crow
 # --------------------------------------------------------------------------- #
 # Textes par format (anglais)
 # --------------------------------------------------------------------------- #
+def kickoff_label(job):
+    """« TONIGHT » / « TODAY » d'après le coup d'envoi (metadata.publish_deadline posé par main.py), sinon ""."""
+    ko = (job.get("metadata") or {}).get("publish_deadline") or (job.get("resources") or {}).get("kickoff")
+    if not ko:
+        return ""
+    try:
+        kick = datetime.fromisoformat(ko)
+    except ValueError:
+        return ""
+    return "Tonight" if kick.hour >= 18 else "Today"
+
+
 def texts_for(fmt, lineup, match):
     if fmt == "duel":
         home, away = match["home"], match["away"]
@@ -259,12 +271,17 @@ def texts_for(fmt, lineup, match):
             date_txt = ""
         return {"title1": f"{home} vs {away}", "title2": "Who wins?", "chip": comp, "date": date_txt,
                 "win_line": "wins the battle", "cta": "Comment your score", "noun": "clubs"}
+    if fmt == "bigmatch":
+        comp = match.get("competition") or "Big match"
+        when = match.get("when") or ""
+        return {"chip": f"{comp} · {when}" if when else comp, "cta": "Comment your score prediction",
+                "noun": "clubs", "title1": f"{match['home']} vs {match['away']}"}
     noun = lineup.get("noun", "clubs")
     single = "nation" if noun == "nations" else "club"
     n, comp = lineup["count"], lineup["competition"]
     if fmt == "royale":
-        return {"title1": f"{n} {noun}", "title2": "Only 1 survives", "chip": comp,
-                "win_line": f"Last {single} standing", "cta": f"Comment your {single}", "noun": noun}
+        return {"title1": f"{n} {noun}, 1 ring", "title2": "Pushed out = eliminated", "chip": comp,
+                "win_line": f"Last {single} in the ring", "cta": f"Comment your {single}", "noun": noun}
     if fmt == "rings":
         return {"title1": "Escape the rings", "title2": f"First {single} out wins", "chip": f"{comp} · {n} {noun}",
                 "win_line": "escapes first!", "cta": f"Comment your {single}", "noun": noun}
@@ -277,7 +294,7 @@ def texts_for(fmt, lineup, match):
                 "win_line": "wins the race", "cta": "Where did yours finish?", "noun": noun,
                 "table_title": f"{comp} final table" if league else "Final standings", "zones": 1 if league else 0}
     if fmt == "knockout":
-        return {"title1": f"{n}-{single} knockout", "title2": "Only 1 lifts the trophy", "chip": comp,
+        return {"title1": f"{n}-{single} knockout", "title2": "Pushed out = eliminated", "chip": comp,
                 "win_line": "Champions!", "cta": f"Comment your {single}", "noun": noun}
     raise SystemExit(f"Format inconnu : {fmt}")
 
@@ -285,7 +302,7 @@ def texts_for(fmt, lineup, match):
 def main():
     ap = argparse.ArgumentParser()
     ap.add_argument("job")
-    ap.add_argument("--format", required=True, choices=["royale", "rings", "colorwar", "marble", "knockout", "duel"])
+    ap.add_argument("--format", required=True, choices=["royale", "rings", "colorwar", "marble", "knockout", "duel", "bigmatch"])
     ap.add_argument("--width", type=int, default=1080)
     ap.add_argument("--height", type=int, default=1920)
     ap.add_argument("--fps", type=int, default=60)
@@ -306,7 +323,7 @@ def main():
 
     res = job.get("resources", {})
     lineup, match = None, None
-    if a.format == "duel":
+    if a.format in ("duel", "bigmatch"):
         m = job.get("match", {})
         home = football_data.team_info(res.get("home_key") or m.get("home", ""))
         away = football_data.team_info(res.get("away_key") or m.get("away", ""))
@@ -316,7 +333,7 @@ def main():
             away["logo"] = res["away_logo"]
         team_list = [home, away]
         match = {"home": home["name"], "away": away["name"], "date": m.get("date", ""),
-                 "competition": res.get("competition", "")}
+                 "competition": res.get("competition", ""), "when": kickoff_label(job)}
         accent = (47, 107, 255)
     else:
         lineup = res.get("football_lineup")
@@ -347,7 +364,12 @@ def main():
     make_background(out / "bg.png", a.width, a.height, accent, seed)
 
     texts = texts_for(a.format, lineup, match)
-    scene = {"format": a.format, "accent": rgb_str(accent), "start_time": 1.0, "candidates": 40, **texts}
+    # start_time 0 : l'action commence dès la 1re image (les Shorts se jouent dans la 1re seconde)
+    scene = {"format": a.format, "accent": rgb_str(accent), "start_time": 0.0, "candidates": 40, **texts}
+    if a.format == "royale":
+        scene["candidates"] = 70
+    if a.format == "bigmatch":      # action dès la première image ; plus de candidats (simulation légère)
+        scene.update({"start_time": 0.0, "candidates": 80})
     (out / "scene.txt").write_text("".join(f"{k}={v}\n" for k, v in scene.items()), encoding="utf-8")
 
     video = {"width": a.width, "height": a.height, "fps": a.fps, "duration_s": a.max_seconds, "crf": a.crf}

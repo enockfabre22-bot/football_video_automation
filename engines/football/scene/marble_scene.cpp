@@ -263,7 +263,8 @@ public:
         top_x.assign(n, DW / 2);
         top_a.assign(n, 0);
         cam_y = 600;
-        world_dy = 900 - cam_y;
+        world_dy = 960 - cam_y;
+        rank_now = sim.ranking();          // la 1re image est dessinée avant le 1er update : billes visibles d'emblée
         fx.cull_max_y = 1e9f;
     }
 

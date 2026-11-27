@@ -40,7 +40,7 @@
       "Who wins the {competition} knockout? 🏆"
     ],
     "descriptions": [
-      "8 {competition} {noun}, quarter-finals, semi-finals and a final. Only one lifts the trophy. Who's your champion? 👇\n\n🔔 Subscribe for a new football simulation every day!"
+      "8 {competition} {noun}, quarter-finals, semi-finals and a final, sumo style: push your opponent out of the ring to go through. Only one lifts the trophy. Who's your champion? 👇\n\n🔔 Subscribe for a new football simulation every day!"
     ],
     "hashtags": [
       "#{competition_tag}",
@@ -66,8 +66,8 @@
       "ball battle",
       "who will win",
       "football prediction",
-      "marble race",
-      "physics simulation"
+      "physics simulation",
+      "sumo"
     ]
   },
   "thumbnail": {

@@ -1,17 +1,18 @@
 // ============================================================================
 //  knockout_scene.cpp — « 8-Club Knockout » : tableau à élimination directe (quarts, demies,
-//  finale). Chaque duel se joue dans l'arène du bas avec des vies ; le vainqueur rejoint sa
-//  case suivante du tableau. Le tournoi entier est simulé d'avance (scénario le plus dramatique).
+//  finale). Chaque duel se joue façon sumo sur la plateforme du bas : le premier poussé dehors
+//  est éliminé, le vainqueur rejoint sa case suivante du tableau. Le tournoi entier est simulé
+//  d'avance (scénario le plus dramatique).
 // ============================================================================
 #include "fb_common.h"
 
 namespace {
 
-enum { KV_HIT, KV_KO, KV_ENTER, KV_EXIT, KV_WALL, KV_CHAMP, KV_SUDDEN };
+enum { KV_HIT, KV_KO, KV_ENTER, KV_EXIT, KV_EDGE, KV_CHAMP };
 struct Ev { int type, a, b; float x, y; int match; };
 
-const float ENTER = 0.45f, EXIT = 0.5f;
-const float AX = 540, AY = 1215, AR = 265;
+const float ENTER = 0.45f, EXIT = 0.6f;
+const float AX = 540, AY = 1215, AR = 265, FR = 64;
 
 // cases du tableau : 0-7 quarts, 8-11 demies, 12-13 finale, 14 champion
 static Vector2 slot_pos(int s) {
@@ -33,6 +34,8 @@ static void match_slots(int m, int& s1, int& s2, int& dst) {
     s1 = A[m]; s2 = B[m]; dst = D[m];
 }
 
+// Duels façon sumo : sur la plateforme sans mur, les deux écussons reculent puis chargent ;
+// le premier poussé hors du cercle est éliminé (aucun point de vie : la règle se voit).
 struct KoSim {
     World w;
     Rng rng{1};
@@ -41,61 +44,79 @@ struct KoSim {
     int phase = 0;          // 0 entrée, 1 combat, 2 sortie, 3 terminé
     float phase_t = 0;
     int occ[15];
-    int lives[2] = {2, 2};
     int fighters[2] = {-1, -1};
     int winner_side = -1;
-    float hit_cd = -10;
-    bool done = false, sudden = false;
+    float stun[2] = {0, 0}, edge_cd[2] = {0, 0}, hit_cd = -10;
+    float R = AR, cycle_off = 0;
+    float fall_x = 0, fall_y = 0;
+    bool done = false;
     int champion = -1;
     std::vector<Ev> ev;
     float final_hit = -1;
     std::vector<float> fight_len;
-    bool final_sudden = false;
+    int edges_final = 0;
 
     void init(uint64_t seed, int n) {
         rng.reseed(seed);
         for (int i = 0; i < 15; ++i) occ[i] = i < 8 && i < n ? i : -1;
         w = World();
-        w.arena_x = AX; w.arena_y = AY; w.arena_R = AR;
+        w.arena_R = -1;
+        w.ball_rest = 0.3f;
         Ball a, b;
         a.id = 0; b.id = 1;
         w.balls = {a, b};
         start_match();
     }
-    int max_lives() const { return match < 4 ? 2 : 3; }
-    float speed() const { return (match < 4 ? 700 : match < 6 ? 740 : 780) + std::max(0.0f, phase_t - 3.0f) * 80; }
 
     void start_match() {
         int s1, s2, d;
         match_slots(match, s1, s2, d);
         fighters[0] = occ[s1]; fighters[1] = occ[s2];
-        lives[0] = lives[1] = max_lives();
-        phase = 0; phase_t = 0; sudden = false;
+        phase = 0; phase_t = 0;
         ev.push_back({KV_ENTER, fighters[0], fighters[1], 0, 0, match});
     }
 
     void begin_fight() {
         phase = 1; phase_t = 0;
+        R = AR;
+        cycle_off = rng.r(0.15f, 0.35f);      // première charge presque immédiate
         for (int i = 0; i < 2; ++i) {
             Ball& b = w.balls[i];
             b.on = true;
-            b.r = 68;
+            b.r = FR;
+            b.m = std::exp(rng.r(-0.35f, 0.35f));
             b.x = AX + (i == 0 ? -120 : 120);
-            b.y = AY + rng.r(-40, 40);
-            float a = rng.r(-0.8f, 0.8f) + (i == 0 ? 0 : PI_F);
-            b.vx = std::cos(a) * speed(); b.vy = std::sin(a) * speed();
+            b.y = AY + rng.r(-30, 30);
+            b.vx = b.vy = 0;
+            stun[i] = 0; edge_cd[i] = 0;
         }
     }
 
+    float push_mult() const {
+        float base = match < 4 ? 0.22f : match < 6 ? 0.17f : 0.10f;   // la finale dure plus longtemps
+        return base + std::max(0.0f, phase_t - 1.2f) * 0.16f;
+    }
+
+    void ko(int loser) {
+        winner_side = 1 - loser;
+        fight_len.push_back(phase_t);
+        if (match == 6) final_hit = t;
+        fall_x = w.balls[loser].x; fall_y = w.balls[loser].y;
+        ev.push_back({KV_KO, winner_side, loser, fall_x, fall_y, match});
+        phase = 2; phase_t = 0;
+    }
+
     void step() {
-        t += SIM_DT;
-        phase_t += SIM_DT;
+        float dt = SIM_DT;
+        t += dt;
+        phase_t += dt;
         if (phase == 0) { if (phase_t >= ENTER) begin_fight(); return; }
         if (phase == 2) {
             if (phase_t >= EXIT) {
                 int s1, s2, d;
                 match_slots(match, s1, s2, d);
                 occ[d] = fighters[winner_side];
+                w.balls[0].on = w.balls[1].on = false;
                 if (match == 6) { phase = 3; done = true; champion = occ[14]; ev.push_back({KV_CHAMP, champion, -1, 0, 0, match}); return; }
                 match++;
                 start_match();
@@ -103,50 +124,67 @@ struct KoSim {
             return;
         }
         if (phase != 1) return;
-        w.arena_R = AR - std::max(0.0f, phase_t - 4.0f) * 12;   // combat trop long : l'arène se resserre
+        if (phase_t > 3.0f) R = std::max(150.0f, R - 14 * dt);   // combat long : la plateforme rétrécit
+        float ph = std::fmod(phase_t + 1.25f - cycle_off, 1.25f);
+        for (int i = 0; i < 2; ++i) {
+            Ball& b = w.balls[i];
+            const Ball& o = w.balls[1 - i];
+            edge_cd[i] = std::max(0.0f, edge_cd[i] - dt);
+            if (stun[i] > 0) {
+                stun[i] -= dt;
+                float f = std::exp(-1.1f * dt);
+                b.vx *= f; b.vy *= f;
+                continue;
+            }
+            float ax = b.x - o.x, ay = b.y - o.y, al = std::max(1.0f, len2(ax, ay));
+            float gx, gy, sp;
+            if (ph < 0.5f) { gx = AX + ax / al * R * 0.42f; gy = AY + ay / al * R * 0.42f; sp = 380; }
+            else { gx = o.x; gy = o.y; sp = 980 * (0.85f + 0.3f * (b.m - 0.7f)); }
+            float dx = gx - b.x, dy = gy - b.y, d = std::max(1.0f, len2(dx, dy));
+            b.vx = lerpf(b.vx, dx / d * sp, clamp01(6 * dt));
+            b.vy = lerpf(b.vy, dy / d * sp, clamp01(6 * dt));
+        }
         w.ball_hits.clear();
         w.wall_hits.clear();
-        w.step(SIM_DT);
-        w.normalize_speed(speed(), 4.0f, SIM_DT);
-        for (const auto& h : w.wall_hits)
-            if (h.speed > 300) ev.push_back({KV_WALL, h.ball, -1, h.x, h.y, match});
+        w.step(dt);
         for (const auto& h : w.ball_hits) {
-            if (t - hit_cd < 0.32f) continue;
+            if (t - hit_cd < 0.2f || h.speed < 110) continue;
             hit_cd = t;
-            int att = h.att_a >= h.att_b ? 0 : 1, vic = 1 - att;
-            lives[vic]--;
-            ev.push_back({KV_HIT, att, vic, h.x, h.y, match});
-            if (lives[vic] <= 0) {
-                winner_side = att;
-                fight_len.push_back(phase_t);
-                if (match == 6) final_hit = t;
-                ev.push_back({KV_KO, att, vic, w.balls[vic].x, w.balls[vic].y, match});
-                phase = 2; phase_t = 0;
-                w.balls[0].on = w.balls[1].on = false;
-                w.arena_R = AR;
-                return;
-            }
-            if (!sudden && lives[0] == 1 && lives[1] == 1 && match == 6) {
-                sudden = final_sudden = true;
-                ev.push_back({KV_SUDDEN, -1, -1, 0, 0, match});
+            Ball& A = w.balls[0];
+            Ball& B = w.balls[1];
+            float K = std::min(1000.0f, (60 + 0.38f * h.speed) * push_mult());
+            float sa = 0.6f + 0.8f * clamp01(h.att_b / std::max(1.0f, h.att_a + h.att_b));
+            float sb = 0.6f + 0.8f * clamp01(h.att_a / std::max(1.0f, h.att_a + h.att_b));
+            A.vx -= h.nx * K * sa / A.m; A.vy -= h.ny * K * sa / A.m;
+            B.vx += h.nx * K * sb / B.m; B.vy += h.ny * K * sb / B.m;
+            stun[0] = stun[1] = 0.28f + 0.00025f * h.speed;
+            int att = h.att_a >= h.att_b ? 0 : 1;
+            ev.push_back({KV_HIT, att, 1 - att, h.x, h.y, match});
+        }
+        for (int i = 0; i < 2; ++i) {
+            const Ball& b = w.balls[i];
+            float d = len2(b.x - AX, b.y - AY);
+            if (d > R + FR * 0.15f) { ko(i); return; }
+            if (d > R - FR * 0.55f && edge_cd[i] <= 0) {
+                edge_cd[i] = 0.8f;
+                ev.push_back({KV_EDGE, i, -1, b.x, b.y, match});
+                if (match == 6) edges_final++;
             }
         }
-        if (phase_t > 14) {   // garde-fou
-            winner_side = lives[0] >= lives[1] ? 0 : 1;
-            fight_len.push_back(phase_t);
-            ev.push_back({KV_KO, winner_side, 1 - winner_side, w.balls[1 - winner_side].x, w.balls[1 - winner_side].y, match});
-            phase = 2; phase_t = 0;
+        if (phase_t > 14) {   // garde-fou : le plus excentré tombe
+            float d0 = len2(w.balls[0].x - AX, w.balls[0].y - AY), d1 = len2(w.balls[1].x - AX, w.balls[1].y - AY);
+            ko(d0 >= d1 ? 0 : 1);
         }
     }
 
     float score() const {
         if (!done) return -1e9f;
-        float s = -std::fabs(t - 21) * 1.0f;
-        if (t > 28) s -= 10;
-        if (final_sudden) s += 6;
+        float s = -std::fabs(t - 22) * 1.0f;
+        if (t > 30) s -= 10;
+        s += std::min(edges_final, 3) * 2.0f;
         for (size_t i = 0; i < fight_len.size(); ++i) {
             float L = fight_len[i];
-            float lo = i < 4 ? 1.0f : i < 6 ? 1.8f : 3.0f, hi = i < 4 ? 3.0f : i < 6 ? 4.0f : 6.5f;
+            float lo = i < 4 ? 1.3f : i < 6 ? 1.8f : 3.5f, hi = i < 4 ? 3.0f : i < 6 ? 4.2f : 7.0f;
             if (L < lo) s -= (lo - L) * 3;
             if (L > hi) s -= (L - hi) * 1.5f;
         }
@@ -157,8 +195,10 @@ struct KoSim {
 class KnockoutScene : public FootballScene {
     KoSim sim;
     int n = 0;
-    float final_hit = -1, win_t = -1, sudden_t = -1, last_hitstop = -10;
-    float flash[2] = {0, 0};
+    float final_hit = -1, win_t = -1, last_hitstop = -10, fall_t = -10;
+    float flash[2] = {0, 0}, edge_flash[2] = {0, 0};
+    int fall_team = -1;
+    float fall_x = 0, fall_y = 0;
     std::vector<float> lost_t;     // instant d'élimination de chaque équipe (bracket grisé)
     std::vector<int> lost_round;
     bool started = false, celebrated = false;
@@ -180,6 +220,13 @@ public:
         }
         sim.init(best_seed, n);
         printf("[FOOT] Knockout : meilleur scénario %.1f (finale décidée à %.1f s)\n", best, final_hit);
+        if (getenv("FB_DEBUG")) {
+            KoSim d; d.init(best_seed, n);
+            while (!d.done) { d.step(); d.ev.clear(); }
+            printf("[FOOT] Durée des duels :");
+            for (float L : d.fight_len) printf(" %.1f", L);
+            printf("  | %d frôlements en finale\n", d.edges_final);
+        }
         ctx.metric("drama_score", best);
         ctx.metric("thumb_time", start_time + final_hit * 0.55f);
         lost_t.assign(teams.size(), -1);
@@ -194,10 +241,11 @@ public:
 
     void after_frame(AnimContext& ctx, float dt) override {
         float t = (float)ctx.time;
-        if (!started && t >= start_time - 0.12f) { started = true; ctx.sound("whistle_long", 0.75f); ctx.sound("airhorn", 0.3f); }
+        if (!started) { started = true; ctx.sound("whistle_long", 0.75f); ctx.sound("airhorn", 0.3f); }
         for (const Ev& e : sim.ev) handle(ctx, e, t);
         sim.ev.clear();
         for (float& f : flash) f = std::max(0.0f, f - dt * 4.5f);
+        for (float& f : edge_flash) f = std::max(0.0f, f - dt * 2.5f);
         if (win_t >= 0 && !celebrated && t >= win_t) {
             celebrated = true;
             const Team& w = teams[sim.champion];
@@ -224,24 +272,20 @@ public:
             if (e.match == 6) { ctx.sound("drumroll", 0.5f); ctx.sound("crowd_cheer_small", 0.6f); }
             toast(ROUND[e.match], -1, t, e.match == 6 ? FB_GOLD : WHITE);
             break;
-        case KV_HIT: {
+        case KV_HIT:
             flash[e.b] = 1;
             fx.sparks(e.x, e.y, 22, mixc(teams[sim.fighters[e.a]].glow, WHITE, 0.3f), 1200);
-            const Ball& v = sim.w.balls[e.b];
-            fx.text("-1", v.x, v.y - 100, rgba(255, 90, 90), 60);
-            sound(ctx, "hit_heavy", 2, 0.8f);
-            sound(ctx, "kick", 3, 0.5f);
-            kick_shake(10);
-            if (t - last_hitstop > 0.8f) { hitstop = 0.05f; last_hitstop = t; }
+            sound(ctx, "hit_heavy", 2, 0.75f);
+            kick_shake(9);
+            if (t - last_hitstop > 0.8f) { hitstop = 0.04f; last_hitstop = t; }
             break;
-        }
-        case KV_SUDDEN:
-            sudden_t = t;
-            toast("SUDDEN DEATH!", -1, t, rgba(255, 80, 80));
-            ctx.sound("crowd_ooh", 0.6f);
+        case KV_EDGE:
+            edge_flash[e.a] = 1;
+            ctx.sound("crowd_ooh", e.match == 6 ? 0.6f : 0.35f);
             break;
         case KV_KO: {
             int loser = sim.fighters[e.b];
+            fall_t = t; fall_team = loser; fall_x = e.x; fall_y = e.y;
             lost_t[loser] = t;
             lost_round[loser] = e.match;
             const Team& tv = teams[loser];
@@ -249,17 +293,16 @@ public:
             fx.shock(e.x, e.y, 40, fin ? 520 : 320, 0.7f, tv.glow, 1.2f);
             fx.confetti(e.x, e.y, fin ? 60 : 36, {tv.c1, tv.c2, WHITE}, 1000, PI_F);
             fx.sparks(e.x, e.y, 30, tv.glow, 1400, 1.3f);
-            ctx.sound(fin ? "explode_big" : "explode_1", fin ? 1.0f : 0.8f);
+            ctx.sound("whoosh_low", 0.7f);
+            ctx.sound(fin ? "explode_big" : "splat_big", fin ? 1.0f : 0.55f);
             ctx.sound(fin ? "crowd_roar" : "crowd_cheer_small", fin ? 1.0f : 0.6f);
             kick_shake(fin ? 32 : 18);
             if (fin) { ctx.sound("impact_bass", 0.9f); ctx.sound("whistle_final", 0.8f); }
             else ctx.sound("whistle_short", 0.6f);
+            toast(upper(teams[loser].name) + " FELL OUT", loser, t, rgba(255, 92, 92));
             toast(upper(teams[sim.fighters[e.a]].name) + " GOES THROUGH", sim.fighters[e.a], t + 0.05f, HP_GREEN);
             break;
         }
-        case KV_WALL:
-            sound(ctx, "bounce", 4, 0.2f);
-            break;
         case KV_CHAMP:
             win_t = t + 0.35f;
             ctx.sound("whoosh_long", 0.6f);
@@ -277,17 +320,17 @@ public:
         if (sim.phase == 0) {
             float k = ease_in_out(sim.phase_t / ENTER);
             p = {lerpf(from.x, arena.x, k), lerpf(from.y, arena.y, k)};
-            r = lerpf(slot_r(slot), 68, k);
+            r = lerpf(slot_r(slot), FR, k);
         } else if (sim.phase == 1) {
             p = {sim.w.balls[side].x, sim.w.balls[side].y};
-            r = 68;
+            r = FR;
         } else {
             Vector2 last = {sim.w.balls[side].x, sim.w.balls[side].y};
             if (side == sim.winner_side) {
                 float k = ease_in_out(sim.phase_t / EXIT);
                 Vector2 to = slot_pos(d);
                 p = {lerpf(last.x, to.x, k), lerpf(last.y, to.y, k)};
-                r = lerpf(68, slot_r(d), k);
+                r = lerpf(FR, slot_r(d), k);
             } else { p = last; r = 0; }
         }
     }
@@ -357,16 +400,28 @@ public:
     void draw_world(AnimContext& ctx) override {
         float t = (float)ctx.time;
         draw_bracket(t);
-        // arène de duel
-        float R = sim.w.arena_R;
-        g.disc_grad(AX, AY, AR + 16, rgba(18, 24, 40), rgba(8, 10, 18), 1.4f);
-        g.disc_grad(AX, AY, AR, mixc(rgba(16, 70, 44), accent, 0.1f), rgba(8, 34, 24), 1.8f);
-        g.ring_(AX, AY, 80, 2.5f, withA(WHITE, 0.3f));
-        g.rect(Rectangle{AX - AR + 10, AY - 2.5f, 2 * AR - 20, 5}, withA(WHITE, 0.2f));
-        if (R < AR - 1) g.ring_(AX, AY, (R + AR) / 2, (AR - R) / 2, withA(rgba(40, 4, 12), 0.8f));
+        // plateforme de duel (sans mur) : bande de danger blanche et rouge au bord
+        float R = sim.phase == 1 ? sim.R : AR;
         bool final_round = sim.match == 6;
-        Color wall = final_round ? FB_GOLD : mixc(WHITE, accent, 0.25f);
-        g.ring_(AX, AY, R + 6, 6, withA(wall, 0.95f));
+        g.disc_grad(AX, AY, AR + 110, rgba(4, 6, 12), rgba(2, 3, 8, 0), 1.2f);
+        g.ring_(AX, AY, R + 30, 26, withA(rgba(255, 40, 60), 0.10f + 0.05f * std::sin(t * 4)));
+        g.disc(AX, AY + 22, R, rgba(12, 40, 26));
+        g.disc_grad(AX, AY, R, mixc(rgba(36, 140, 74), accent, 0.08f), rgba(18, 82, 44), 1.6f);
+        g.ring_(AX, AY, std::min(80.0f, R * 0.4f), 2.5f, withA(WHITE, 0.3f));
+        int seg = 40;
+        for (int i = 0; i < seg; ++i) {
+            float a = (i + 0.5f) * 2 * PI_F / seg + t * 0.1f;
+            Color c2 = final_round ? FB_GOLD : rgba(250, 250, 255);
+            g.arc(AX, AY, R - 8, 6.5f, a, PI_F / seg * 0.82f, i % 2 ? rgba(255, 60, 70) : c2);
+        }
+        // le perdant tombe dans le vide
+        float fa = t - fall_t;
+        if (fall_team >= 0 && fa < 0.75f) {
+            float k = fa / 0.75f;
+            float dx = fall_x - AX, dy = fall_y - AY, dd = std::max(1.0f, len2(dx, dy));
+            TokenFx f; f.scale = 1 - 0.65f * k; f.alpha = 1 - k * k; f.gray = k; f.tilt = fa * 520;
+            draw_token(g, teams[fall_team], fall_x + dx / dd * 140 * k, fall_y + dy / dd * 140 * k + 200 * k * k, FR, f);
+        }
         if (sim.phase >= 3) return;
         for (int side = 0; side < 2; ++side) {
             int team = sim.fighters[side];
@@ -374,6 +429,8 @@ public:
             Vector2 p; float r;
             fighter_pose(side, p, r);
             if (r <= 1) continue;
+            if (sim.phase == 2 && side != sim.winner_side) continue;   // il est en train de tomber
+            if (edge_flash[side] > 0 && sim.phase == 1) g.ring_(p.x, p.y, r + 9, 5, withA(rgba(255, 60, 70), edge_flash[side]));
             TokenFx f; f.flash = flash[side] * 0.85f;
             draw_token(g, teams[team], p.x, p.y, r, f);
         }
@@ -381,36 +438,31 @@ public:
 
     void draw_world_glow(AnimContext&) override {
         bool final_round = sim.match == 6;
-        g.ring_(AX, AY, sim.w.arena_R + 6, 9, withA(final_round ? FB_GOLD : mixc(WHITE, accent, 0.4f), 0.9f));
+        g.ring_(AX, AY, (sim.phase == 1 ? sim.R : AR), 8, withA(final_round ? FB_GOLD : rgba(255, 70, 80), 0.55f));
         if (sim.phase >= 3) return;
         for (int side = 0; side < 2; ++side) {
             int team = sim.fighters[side];
             if (team < 0) continue;
             Vector2 p; float r;
             fighter_pose(side, p, r);
-            if (r > 1) draw_token_glow(g, teams[team], p.x, p.y, r, 0.6f + flash[side]);
+            if (r > 1 && !(sim.phase == 2 && side != sim.winner_side))
+                draw_token_glow(g, teams[team], p.x, p.y, r, 0.6f + flash[side] + edge_flash[side]);
         }
     }
 
     void draw_hud(AnimContext& ctx) override {
         float t = (float)ctx.time;
         header(t);
-        // vies des deux combattants, au-dessus de l'arène
+        // les deux combattants du duel en cours, au-dessus de la plateforme
         if (sim.phase == 1 || sim.phase == 2) {
             for (int side = 0; side < 2; ++side) {
                 int team = sim.fighters[side];
                 if (team < 0) continue;
-                float y = 898;
-                int maxl = sim.max_lives();
-                for (int k = 0; k < maxl; ++k) {
-                    float x = side == 0 ? DW / 2 - 100 - k * 68 : DW / 2 + 100 + k * 68;
-                    bool full = k < sim.lives[side];
-                    if (const Texture2D* h = icon("heart"))
-                        g.tex_center(*h, x, y, 62, 57, full ? WHITE : withA(rgba(70, 70, 80), 0.8f));
-                }
-                TextStyle st; st.size = 56; st.outline = 3;
-                float nx = side == 0 ? DW / 2 - 100 - maxl * 68 - 4 : DW / 2 + 100 + maxl * 68 + 4;
-                draw_text(fonts, teams[team].short_name, nx, y, st, 0, side == 0 ? 1.0f : 0.0f);
+                TextStyle st; st.size = 60; st.outline = 3;
+                bool lost = sim.phase == 2 && side != sim.winner_side;
+                st.color = lost ? rgba(255, 92, 92) : WHITE;
+                draw_text(fonts, upper(teams[team].name), side == 0 ? DW / 2 - 70 : DW / 2 + 70, 898, st, 380,
+                          side == 0 ? 1.0f : 0.0f, lost ? 0.6f : 1.0f);
             }
             TextStyle vs; vs.size = 58; vs.color = FB_GOLD; vs.outline = 3;
             draw_text(fonts, "VS", DW / 2, 898, vs);

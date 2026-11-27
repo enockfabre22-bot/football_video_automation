@@ -36,14 +36,14 @@
   "min_free_disk_gb": 3,
   "metadata": {
     "titles": [
-      "{count} {competition} {noun}. Only 1 survives 🏆",
-      "Last {single} standing: {competition} edition ⚔️",
-      "{count} {noun} enter, only 1 leaves 🔥",
-      "{competition} battle royale: who survives? 💥",
-      "Which {competition} {single} survives? 🤔"
+      "{count} {competition} {noun}, 1 ring. Last one in wins 🏆",
+      "Push them out! {competition} sumo battle ⚔️",
+      "{count} {noun} enter the ring, only 1 stays 🔥",
+      "{competition} battle royale: who stays in the ring? 💥",
+      "Which {competition} {single} is the last one in the ring? 🤔"
     ],
     "descriptions": [
-      "{count} {competition} {noun} in one arena. Every hit costs health and the arena keeps shrinking... only one survives. Who did you pick? 👇\n\n🔔 Subscribe for a new football simulation every day!"
+      "{count} {competition} {noun} on one ring with no walls. Every clash pushes them back, fall off the edge and you're out... and the ring keeps shrinking. Only one stays in. Who did you pick? 👇\n\n🔔 Subscribe for a new football simulation every day!"
     ],
     "hashtags": [
       "#{competition_tag}",
@@ -69,8 +69,10 @@
       "ball battle",
       "who will win",
       "football prediction",
-      "marble race",
-      "physics simulation"
+      "physics simulation",
+      "sumo",
+      "{competition} sumo",
+      "last one in the ring"
     ]
   },
   "thumbnail": {

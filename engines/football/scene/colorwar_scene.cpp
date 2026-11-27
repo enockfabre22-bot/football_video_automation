@@ -324,7 +324,7 @@ public:
         for (size_t i = 0; i < sim.w.balls.size(); ++i) {
             const Ball& b = sim.w.balls[i];
             int team = sim.owner_of_ball[i];
-            float pop = ease_out_back(clamp01((t - i * 0.04f) / 0.3f), 2);
+            float pop = ease_out_back(clamp01((t + 0.3f - i * 0.01f) / 0.3f), 2);   // visibles dès la 1re image
             g.disc(b.x, b.y, b.r * pop + 5, withA(col[team], 1));
             TokenFx f; f.scale = pop;
             draw_token(g, teams[team], b.x, b.y, b.r, f);

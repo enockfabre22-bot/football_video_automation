@@ -28,6 +28,7 @@ commande_VPS.txt
 client_secret.json
 token.json
 accounts/**/token.json
+accounts/**/stats_token.json
 
 # SoundFonts (Salamander Grand Piano : 1,3 Go, téléchargé par scripts/setup_piano.sh)
 assets/soundfonts/

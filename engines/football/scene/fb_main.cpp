@@ -1,11 +1,12 @@
 // ============================================================================
 //  fb_main.cpp — Point d'entrée du moteur foot : un seul binaire pour tous les formats,
 //  create_scene() choisit la scène d'après scene.txt
-//  (format=royale|rings|colorwar|marble|knockout|duel = Shorts 9:16, quiz = vidéo longue 16:9).
+//  (format=royale|rings|colorwar|marble|knockout|duel|bigmatch = Shorts 9:16, quiz = vidéo longue 16:9).
 // ============================================================================
 #include "fb_common.h"
 
 Scene* make_quiz_scene();
+Scene* make_bigmatch_scene();
 
 Scene* create_scene() {
     Settings s;
@@ -22,5 +23,6 @@ Scene* create_scene() {
     if (f == "marble") return make_marble_scene();
     if (f == "knockout") return make_knockout_scene();
     if (f == "duel") return make_duel_scene();
+    if (f == "bigmatch") return make_bigmatch_scene();
     return make_royale_scene();
 }

@@ -10,7 +10,7 @@
     {
       "id": "avantfoot_matin",
       "window": {
-        "start": "08:00",
+        "start": "09:00",
         "end": "10:00"
       },
       "animation_strategy": "random",
@@ -19,10 +19,10 @@
       ]
     },
     {
-      "id": "avantfoot_fin_matinee",
+      "id": "avantfoot_midi",
       "window": {
-        "start": "10:30",
-        "end": "12:00"
+        "start": "12:30",
+        "end": "13:30"
       },
       "animation_strategy": "random",
       "exclude_animations": [
@@ -32,24 +32,13 @@
     {
       "id": "avantfoot_match_du_jour",
       "window": {
-        "start": "12:30",
-        "end": "14:30"
+        "start": "17:30",
+        "end": "18:30"
       },
       "animation_strategy": "fixed",
       "target_animation": "fb_duel",
-      "max_matches": 2,
+      "max_matches": 1,
       "publish_before_kickoff_min": 180
-    },
-    {
-      "id": "avantfoot_soir",
-      "window": {
-        "start": "17:00",
-        "end": "19:00"
-      },
-      "animation_strategy": "random",
-      "exclude_animations": [
-        "fb_duel"
-      ]
     },
     {
       "id": "avantfoot_quiz_dimanche",

@@ -29,7 +29,7 @@ sys.path.insert(0, str(BASE_DIR / "app"))
 import football_data  # noqa: E402
 
 COUNTS = {"royale": [12, 16, 20], "rings": [8, 10], "colorwar": [4, 6], "marble": [16, 18, 20],
-          "knockout": [8], "duel": [2], "quiz": [0]}
+          "knockout": [8], "duel": [2], "bigmatch": [2], "quiz": [0]}
 BIAS = {"colorwar": 1.2, "knockout": 0.9, "rings": 0.5}
 
 
@@ -73,11 +73,11 @@ def main():
     resources, match = {}, {"date": (datetime.now() + timedelta(days=1)).strftime("%Y-%m-%d"), "home": "", "away": ""}
     if a.format == "quiz":
         pass
-    elif a.format == "duel":
+    elif a.format in ("duel", "bigmatch"):
         h, w = football_data.team_info(a.home), football_data.team_info(a.away)
         match.update({"home": h["name"], "away": w["name"]})
         resources = {"home_logo": h["logo"], "away_logo": w["logo"], "home_key": h["key"], "away_key": w["key"],
-                     "competition": a.competition}
+                     "competition": a.competition, "kickoff": datetime.now().replace(hour=21, minute=0).isoformat()}
     else:
         cfg = {"name": f"test_{a.format}", "football": {
             "team_counts": [a.count] if a.count else COUNTS[a.format], "popular_bias": BIAS.get(a.format, 0.0),

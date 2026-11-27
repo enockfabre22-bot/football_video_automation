@@ -293,7 +293,7 @@ public:
         for (int i = 0; i < n; ++i) {
             const Ball& b = sim.w.balls[i];
             if (win_t >= 0 && t > win_t) continue;
-            float pop = ease_out_back(clamp01((t - i * 0.05f) / 0.3f), 2.0f);
+            float pop = ease_out_back(clamp01((t + 0.3f - i * 0.01f) / 0.3f), 2.0f);   // visibles dès la 1re image
             TokenFx f; f.scale = pop;
             draw_token(g, teams[i], b.x, b.y, sim.radius, f);
         }

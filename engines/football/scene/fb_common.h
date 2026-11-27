@@ -1167,9 +1167,10 @@ public:
     // En-tête : pastille de compétition + titre sur deux lignes. intro = 0..1 (animation d'entrée)
     void header(float t, float y = 245) {
         std::string l1 = cfg.str("title1"), l2 = cfg.str("title2"), comp = cfg.str("chip");
-        float in = ease_out_back(clamp01(t / 0.35f), 1.2f);
-        float in2 = ease_out_back(clamp01((t - 0.08f) / 0.35f), 1.2f);
-        if (!comp.empty()) chip(upper(comp), DW / 2, y - 118, withA(accent, 0.95f), WHITE, clamp01(t / 0.2f), 28);
+        // visible dès la 1re image (accroche) : seul un léger rebond d'entrée subsiste
+        float in = ease_out_back(clamp01((t + 0.25f) / 0.35f), 1.2f);
+        float in2 = ease_out_back(clamp01((t + 0.2f) / 0.35f), 1.2f);
+        if (!comp.empty()) chip(upper(comp), DW / 2, y - 118, withA(accent, 0.95f), WHITE, 1, 28);
         TextStyle a; a.size = 128; a.outline = 5; a.shadow = 0.6f; a.spacing = 2;
         draw_text(fonts, upper(l1), DW / 2, y - 18 + (1 - in) * -40, a, 980, 0.5f, clamp01(in));
         TextStyle b; b.size = 70; b.color = FB_GOLD; b.outline = 4; b.shadow = 0.6f; b.spacing = 2;

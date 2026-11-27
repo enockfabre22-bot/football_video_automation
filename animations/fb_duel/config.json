@@ -13,14 +13,14 @@
   "min_free_disk_gb": 3,
   "metadata": {
     "titles": [
-      "{home} vs {away}: who wins? ⚔️",
-      "{home} vs {away} prediction 🔮",
-      "{home} or {away}? Comment your score 👇",
-      "Simulating {home} vs {away} before kick-off ⚽",
-      "{home} vs {away} ⚔️ Who takes it?"
+      "{home} vs {away}: we simulated the match ⚽ Final score?",
+      "{home} vs {away} prediction 🔮 Simulated before kick-off",
+      "{home} vs {away} ⚽ Who wins tonight?",
+      "We simulated {home} vs {away}... what's your score? 👇",
+      "{home} vs {away}: the full match in 30 seconds ⚽"
     ],
     "descriptions": [
-      "{home} vs {away}: we simulated the match before kick-off. Power-ups, comebacks, a final KO... who wins for real? Drop your score prediction 👇\n\n🔔 Subscribe for a new football simulation every day!"
+      "{home} vs {away}: we simulated the whole match before kick-off, 90 minutes in 30 seconds. Goals, saves, a late twist... Is this how it ends for real? Drop your score prediction 👇\n\n🔔 Subscribe: every big match simulated before kick-off!"
     ],
     "hashtags": [
       "#{home}",
@@ -39,17 +39,15 @@
       "{competition}",
       "{home} {away}",
       "match prediction",
+      "score prediction",
       "football",
       "soccer",
       "football simulation",
+      "match simulation",
       "simulation",
       "football shorts",
-      "satisfying",
-      "ball battle",
       "who will win",
-      "football prediction",
-      "marble race",
-      "physics simulation"
+      "football prediction"
     ]
   },
   "thumbnail": {
@@ -58,11 +56,11 @@
   "steps": [
     {
       "type": "python",
-      "name": "Préparation (duel : équipes, écussons, fond, textes)",
+      "name": "Préparation (big match : équipes, écussons, fond, textes)",
       "script": "engines/football/prepare.py",
       "args": [
         "--format",
-        "duel"
+        "bigmatch"
       ]
     },
     {

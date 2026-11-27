@@ -425,6 +425,9 @@ def prepare_daily_videos(account_name="tiktok_main"):
         if job["status"] in ["PENDING", "RUNNING"] or not video_path or not Path(video_path).exists():
             job_mgr.update_status(job_id, "RUNNING")
             
+            # Coup d'envoi transmis à l'animation (big match : « TONIGHT » / « TODAY » à l'écran)
+            if match_data and match_data.get("kickoff") and isinstance(match_data.get("resources"), dict):
+                match_data["resources"]["kickoff"] = match_data["kickoff"]
             # Injection du job_id et des metadata (On envoie match_data même si requires_match est False)
             video_path = anim_mgr.execute_animation(match_data, anim_config, job_id, job_metadata=metadata)
             
